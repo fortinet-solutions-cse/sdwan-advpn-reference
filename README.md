@@ -27,6 +27,6 @@ Internet Access:
 
 - Direct Internet Access (DIA) from each Edge CPE
 
-- Remote Internet Access (RIA) via Regional Hub over one of the underlays (e.g. MPLS)
+- Remote Internet Access (RIA) via Regional Hub
 
 - Application-aware SD-WAN rules with different SLA targets per application
