@@ -1,3 +1,6 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+{% set hub_sla_members = [ ] -%}
+{% set hub_t2_members = [ ] -%}
 config system sdwan
   set status enable
   config zone
@@ -10,32 +13,29 @@ config system sdwan
   end
   config members
     edit 1
-      set interface "H1_T1"
-      set zone "overlay"
-    next
-    edit 2
-      set interface "H1_T2"
-      set zone "overlay"
-    next
-    edit 3
-      set interface "H2_T1"
-      set zone "overlay"
-    next
-    edit 4
-      set interface "H2_T2"
-      set zone "overlay"
-    next
-    edit 5
-      set interface {{ globals.wan1_intf }}
+      set interface {{ profile.wan1_intf }}
       set zone "underlay"
     next
+    {%- for h in regions[devices[this_dev].region].hubs %}
+    edit {{ loop.index * 2 }}
+      set interface "H{{loop.index}}_T1"
+      set zone "overlay"
+    next
+    edit {{ loop.index * 2 + 1 }}
+      set interface "H{{loop.index}}_T2"
+      set zone "overlay"
+    next
+    {{- hub_sla_members.append(loop.index * 2) or "" }}
+    {{- hub_sla_members.append(loop.index * 2 + 1) or "" }}
+    {{- hub_t2_members.append(loop.index * 2 + 1) or "" }}
+    {%- endfor %}
   end
   config health-check
     edit "HUB"
       set server {{ globals.loopback_hc_ip }}
       set sla-fail-log-period 10
       set sla-pass-log-period 10
-      set members 1 2 3 4
+      set members {{ hub_sla_members|join(' ') }}
       config sla
         edit 1
           set link-cost-factor latency
@@ -47,7 +47,7 @@ config system sdwan
       set server "www.fortinet.com"
       set sla-fail-log-period 10
       set sla-pass-log-period 10
-      set members 2 4 5
+      set members 1 {{ hub_t2_members|join(' ') }}
       config sla
         edit 1
           set link-cost-factor latency
@@ -61,8 +61,9 @@ config system sdwan
     next
   end
   config service
-    edit 1
-      set name "Corporate-Primary"
+    {%- for h in regions[devices[this_dev].region].hubs %}
+    edit {{loop.index}}
+      set name "Corporate-H{{loop.index}}"
       set mode sla
       set dst "CORP_LAN"
       set src "CORP_LAN"
@@ -71,53 +72,43 @@ config system sdwan
           set id 1
         next
       end
-      # Using Primary Hub
-      set priority-members 1 2
+      # Using Hub {{h}}
+      set priority-members {{ loop.index * 2 }} {{ loop.index * 2 + 1 }}
     next
-    edit 2
-      set name "Corporate-Secondary"
-      set mode sla
-      set dst "CORP_LAN"
-      set src "CORP_LAN"
-      config sla
-        edit "HUB"
-          set id 1
-        next
-      end
-      # Using Secondary Hub
-      set priority-members 3 4
-    next
-    edit 3
+    {%- endfor %}
+    edit 10
       set name "Business-Critical-HighPriority"
       set mode sla
-      # set internet-service enable
-      # set internet-service-app-ctrl ...
+      set internet-service enable
+      # Set ISDB values for high-priority apps (Salesforce, GoToMeeting)
+      set internet-service-app-ctrl 16920 16354
       config sla
           edit "Internet"
               set id 1
           next
       end
       # Using underlay (DIA) + MPLS overlay (RIA)
-      set priority-members 5 2 4
+      set priority-members 1 {{ hub_t2_members|join(' ') }}
     next
-    edit 4
+    edit 11
       set name "Business-Critical-MedPriority"
       set mode sla
-      # set internet-service enable
-      # set internet-service-app-ctrl ...
+      set internet-service enable
+      # Set ISDB values for medium-priority apps (Office365)
+      set internet-service-app-ctrl 33182 41468
       config sla
           edit "Internet"
               set id 2
           next
       end
       # Using underlay (DIA) + MPLS overlay (RIA)
-      set priority-members 5 2 4
+      set priority-members 1 {{ hub_t2_members|join(' ') }}
     next
-    edit 5
+    edit 12
       set name "Non-Business-Critical"
       set dst "all"
       # Using underlay (DIA) only
-      set priority-members 5
+      set priority-members 1
     next
   end
 end

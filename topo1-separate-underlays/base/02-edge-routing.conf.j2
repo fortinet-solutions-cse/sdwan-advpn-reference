@@ -5,7 +5,7 @@ config router static
   next
   edit 101
     # Avoid potential leak of corporate traffic to underlay
-    set dstaddr "CORP_LAN"
+    set dst {{ globals.corp_aggregate }}
     set blackhole enable
   next
   edit 102
@@ -50,7 +50,8 @@ config router route-map
       next
     end
   next
-  edit "H1_T1_IN"
+  {%- for h in regions[devices[this_dev].region].hubs %}
+  edit "H{{loop.index}}_T1_IN"
     config rule
       edit 1
         # Prefer same-overlay routes (T1)
@@ -59,24 +60,11 @@ config router route-map
       next
       edit 100
         # Override BGP NH to allow cross-overlay traffic (last resort)
-        set set-ip-nexthop {{ hubs[regions[edges[e].region].h1].t1_ip }}
+        set set-ip-nexthop {{ devices[h].t1_ip.edge }}
       next
     end
   next
-  edit "H2_T1_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T1)
-        set match-community "T1"
-        set set-weight 200
-      next
-      edit 100
-        # Override BGP NH to allow cross-overlay traffic (last resort)
-        set set-ip-nexthop {{ hubs[regions[edges[e].region].h2].t1_ip }}
-      next
-    end
-  next
-  edit "H1_T2_IN"
+  edit "H{{loop.index}}_T2_IN"
     config rule
       edit 1
         # Prefer same-overlay routes (T2)
@@ -85,28 +73,16 @@ config router route-map
       next
       edit 100
         # Override BGP NH to allow cross-overlay traffic (last resort)
-        set set-ip-nexthop {{ hubs[regions[edges[e].region].h1].t2_ip }}
+        set set-ip-nexthop {{ devices[h].t2_ip.edge }}
       next
     end
   next
-  edit "H2_T2_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T1)
-        set match-community "T2"
-        set set-weight 200
-      next
-      edit 100
-        # Override BGP NH to allow cross-overlay traffic (last resort)
-        set set-ip-nexthop {{ hubs[regions[edges[e].region].h2].t2_ip }}
-      next
-    end
-  next
+  {%- endfor %}
 end
 
 config router bgp
   set as {{ globals.as }}
-  set router-id {{ edges[e].router_id }}
+  set router-id {{ devices[this_dev].router_id }}
   set keepalive-timer 5
   set holdtime-timer 15
   set ibgp-multipath enable
@@ -114,54 +90,34 @@ config router bgp
   # additional-path-select = number of overlays
   set additional-path-select 2
   config neighbor
-    edit {{ hubs[regions[edges[e].region].h1].t1_ip }}
+  {%- for h in regions[devices[this_dev].region].hubs %}
+    edit {{ devices[h].t1_ip.edge }}
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
-      set interface "H1_T1"
+      set interface "H{{loop.index}}_T1"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "H1_T1_IN"
+      set route-map-in "H{{loop.index}}_T1_IN"
       set route-map-out "T1_OUT"
       set additional-path receive
     next
-    edit {{ hubs[regions[edges[e].region].h1].t2_ip }}
+    edit {{ devices[h].t2_ip.edge }}
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
-      set interface "H1_T2"
+      set interface "H{{loop.index}}_T2"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "H1_T2_IN"
+      set route-map-in "H{{loop.index}}_T2_IN"
       set route-map-out "T2_OUT"
       set additional-path receive
     next
-    edit {{ hubs[regions[edges[e].region].h2].t1_ip }}
-      set soft-reconfiguration enable
-      set advertisement-interval 1
-      set link-down-failover enable
-      set interface "H2_T1"
-      set connect-timer 1
-      set remote-as {{ globals.as }}
-      set route-map-in "H2_T1_IN"
-      set route-map-out "T1_OUT"
-      set additional-path receive
-    next
-    edit {{ hubs[regions[edges[e].region].h2].t2_ip }}
-      set soft-reconfiguration enable
-      set advertisement-interval 1
-      set link-down-failover enable
-      set interface "H2_T2"
-      set connect-timer 1
-      set remote-as {{ globals.as }}
-      set route-map-in "H2_T2_IN"
-      set route-map-out "T2_OUT"
-      set additional-path receive
-    next
+  {%- endfor %}
   end
   config network
     edit 1
-      set prefix {{ edges[e].lan_subnet }}
+      set prefix {{ devices[this_dev].lan_subnet }}
     next
   end
 end

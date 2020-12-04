@@ -1,0 +1,79 @@
+---
+  globals:
+    as: 65000
+    corp_aggregate: 10.0.0.0/8
+    tunnel_subnet_aggregate: 10.200.0.0/16
+    phase1_proposal: aes256gcm-prfsha384
+    phase2_proposal: aes256gcm
+    loopback_hc_ip: 10.200.99.1
+    psk: dogcat
+
+  profiles:
+    edge:
+      type: edge
+      wan1_intf: port1
+      wan2_intf: port4
+      lan_intf: vl_lan
+    hub:
+      type: hub
+      wan1_intf: port1
+      wan2_intf: port4
+
+  regions:
+    reg1:
+      hubs:
+        - dc1_fgt
+        - dc2_fgt
+    # ...
+
+  devices:
+    dc1_fgt:
+      profile: hub
+      region: reg1
+      router_id: 10.1.0.1
+      wan1_ip: 100.64.1.1
+      wan2_ip: 172.16.1.5
+      t1_ip:
+        edge: 10.200.11.1
+      t1_remote_ip:
+        edge: 10.200.11.254
+      t2_ip:
+        edge: 10.200.12.1
+      t2_remote_ip:
+        edge: 10.200.12.254
+      t1_start_ip: 10.200.11.2
+      t1_end_ip: 10.200.11.250
+      t1_netmask: 255.255.255.0
+      t2_start_ip: 10.200.12.2
+      t2_end_ip: 10.200.12.250
+      t2_netmask: 255.255.255.0
+    dc2_fgt:
+      profile: hub
+      region: reg1
+      router_id: 10.2.0.1
+      wan1_ip: 100.64.2.1
+      wan2_ip: 172.16.2.5
+      t1_ip:
+        edge: 10.200.21.1
+      t1_remote_ip:
+        edge: 10.200.21.254
+      t2_ip:
+        edge: 10.200.22.1
+      t2_remote_ip:
+        edge: 10.200.22.254
+      t1_start_ip: 10.200.21.2
+      t1_end_ip: 10.200.21.250
+      t1_netmask: 255.255.255.0
+      t2_start_ip: 10.200.22.2
+      t2_end_ip: 10.200.22.250
+      t2_netmask: 255.255.255.0
+    branch1_fgt:
+      profile: edge
+      region: reg1
+      router_id: 10.0.1.1
+      lan_subnet: 10.0.1.0/24
+    branch2_fgt:
+      profile: edge
+      region: reg1
+      router_id: 10.0.2.1
+      lan_subnet: 10.0.2.0/24

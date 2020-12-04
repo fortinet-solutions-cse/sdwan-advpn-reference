@@ -1,6 +1,7 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
 config system zone
   edit "lan"
-    set interface {{ globals.lan_intf }}
+    set interface {{ profile.lan_intf }}
   next
 end
 config firewall address
@@ -20,6 +21,7 @@ config firewall policy
     set schedule "always"
     set service "ALL"
     set utm-status enable
+    set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
   next
@@ -33,6 +35,7 @@ config firewall policy
     set schedule "always"
     set service "ALL"
     set utm-status enable
+    set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
     set nat enable
@@ -47,6 +50,7 @@ config firewall policy
     set schedule "always"
     set service "ALL"
     set utm-status enable
+    set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
   next

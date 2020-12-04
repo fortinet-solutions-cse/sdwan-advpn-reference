@@ -1,0 +1,58 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+{% set reg_tunnels = [ ] -%}
+config system settings
+  # Allow overlay switchover for existing sessions (from shortcut to Hub)
+  set tcp-session-without-syn enable
+end
+config system zone
+  edit "overlay"
+    {% for reg in regions if reg != devices[this_dev].region -%}
+    {{ reg_tunnels.append('"' + reg|upper + '_T1' + '"') or "" -}}
+    {{ reg_tunnels.append('"' + reg|upper + '_T2' + '"') or "" -}}
+    {% endfor -%}
+    set interface "EDGE_T1" "EDGE_T2" {{ reg_tunnels|join(' ') }}
+  next
+  edit "underlay"
+    set interface "{{ profile.wan1_intf }}"
+  next
+end
+config firewall policy
+  edit 1
+    set name "Edge to Edge"
+    set srcintf "overlay"
+    set dstintf "overlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    # Allow overlay switchover for existing sessions (from shortcut to Hub)
+    set anti-replay disable
+    set tcp-session-without-syn all
+  next
+  edit 2
+    set name "Health-Check"
+    set srcintf "overlay"
+    set dstintf "lo-hc"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "PING"
+  next
+  edit 3
+    set name "Edge to Internet (RIA)"
+    set srcintf "overlay"
+    set dstintf "underlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+    set nat enable
+  next
+end

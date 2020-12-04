@@ -3,42 +3,60 @@
     as:
     corp_aggregate:
     tunnel_subnet_aggregate:
-    lan_intf:
-    wan1_intf:
-    wan2_intf:
     phase1_proposal:
     phase2_proposal:
     loopback_hc_ip:
     psk:
 
+  profiles:
+    edge:
+      type: edge
+      wan1_intf:
+      wan2_intf:
+      lan_intf:
+    hub:
+      type: hub
+      wan1_intf:
+      wan2_intf:
+
   regions:
     reg1:
-      h1:
-      h2:
+      hubs:
+        # - ...
+        # - ...
     # ...
 
-  hubs:
+  devices:
     hub1:
+      profile: hub
       region:
       router_id:
-      hub_id:
       wan1_ip:
       wan2_ip:
       t1_ip:
-      t1_remote_ip_dummy:
+        edge:
+        # reg2:
+        # ...
+      t1_remote_ip:
+        edge:
+        # reg2:
+        # ...
       t2_ip:
-      t2_remote_ip_dummy:
+        edge:
+        # reg2:
+        # ...
+      t2_remote_ip:
+        edge:
+        # reg2:
+        # ...
       t1_start_ip:
       t1_end_ip:
       t1_netmask:
       t2_start_ip:
-      t2_end_ip:
+      t2_end_ip: 
       t2_netmask:
-    # ...
-
-  edges:
-    site1:
+    edge1:
+      profile: edge
       region:
       router_id:
       lan_subnet:
-    # ...
