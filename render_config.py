@@ -2,7 +2,7 @@
 
 import argparse, yaml, textwrap
 from jinja2 import Template
-from os import listdir, chdir
+from os import listdir, chdir, path, makedirs
 
 #############################################
 
@@ -24,26 +24,37 @@ parser.add_argument('-j', '--j2file', metavar='jinja2',
                     help='single jinja2 template to render')
 parser.add_argument('-t', '--topology', metavar='dir',
                     help='entire topology to render (specify directory name)')
-parser.add_argument('device',
-                    help='device to render')
+parser.add_argument('-o', '--outdir', metavar='dir', default='out',
+                    help='output directory (default="out")')
+parser.add_argument('device', nargs='?',
+                    help='device to render (default=all)')
 args = parser.parse_args()
 
 #############################################
 
-deployment = yaml.safe_load(args.deployment)
-deployment['this_dev'] = args.device
+outdir = path.abspath(args.outdir)
+makedirs(outdir, exist_ok=True)
 
-dev_type = deployment['profiles'][deployment['devices'][args.device]['profile']]['type']
+deployment = yaml.safe_load(args.deployment)
+list_of_devices = [ args.device ] if args.device else deployment['devices'].keys()
 
 if args.topology:
     chdir(args.topology + '/base')
-list_of_j2files = [ args.j2file ] if args.j2file else sorted(filter(lambda f: dev_type in f, listdir()))
 
-for f in list_of_j2files:
-    print("######################################")
-    print("# " + f)
-    print("######################################")
-    with open(f, 'r') as j2file:
-        template = Template(j2file.read())
-    print(template.render(deployment))
-    print()
+for dev in list_of_devices:
+    deployment['this_dev'] = dev
+    dev_type = deployment['profiles'][deployment['devices'][dev]['profile']]['type']
+    list_of_j2files = [ args.j2file ] if args.j2file else sorted(filter(lambda f: dev_type in f, listdir()))
+    with open(outdir+'/'+dev, 'w') as outfile:
+        print('Rendering device ' + dev + '...')
+        for f in list_of_j2files:
+            print('   Rendering ' + f + '...')
+            print("######################################", file=outfile)
+            print("# " + f, file=outfile)
+            print("######################################", file=outfile)
+            with open(f, 'r') as j2file:
+                template = Template(j2file.read())
+            print(template.render(deployment), file=outfile)
+            print('', file=outfile)
+
+print("Rendering complete.")
