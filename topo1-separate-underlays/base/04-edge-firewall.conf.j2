@@ -4,12 +4,6 @@ config system zone
     set interface {{ profile.lan_intf }}
   next
 end
-config firewall address
-  edit "CORP_LAN"
-    set allow-routing enable
-    set subnet {{ globals.corp_aggregate }}
-  next
-end
 config firewall policy
   edit 1
     set name "Corporate"

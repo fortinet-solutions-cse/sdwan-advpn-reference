@@ -16,6 +16,13 @@ config system zone
     set interface "{{ profile.wan1_intf }}"
   next
 end
+config firewall service custom
+  edit "PING"
+    set category "Network Services"
+    set protocol ICMP
+    set icmptype 8
+  next
+end
 config firewall policy
   edit 1
     set name "Edge to Edge"

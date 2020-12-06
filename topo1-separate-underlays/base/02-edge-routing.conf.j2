@@ -1,7 +1,13 @@
+config firewall address
+  edit "CORP_LAN"
+    set allow-routing enable
+    set subnet {{ globals.corp_aggregate }}
+  next
+end
 config router static
   edit 101
     # Avoid potential leak of corporate traffic to underlay
-    set dst {{ globals.corp_aggregate }}
+    set dstaddr CORP_LAN
     set blackhole enable
   next
   edit 102
