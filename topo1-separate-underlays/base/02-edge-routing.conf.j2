@@ -1,8 +1,4 @@
 config router static
-  edit 100
-    # Default route (mandatory for RIA)
-    set sdwan enable
-  next
   edit 101
     # Avoid potential leak of corporate traffic to underlay
     set dst {{ globals.corp_aggregate }}

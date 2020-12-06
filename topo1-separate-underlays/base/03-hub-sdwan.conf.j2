@@ -27,7 +27,7 @@ config router policy
   {% endfor -%}
 end
 config system interface
-  edit "lo-hc"
+  edit "lo-HC"
     set vdom "root"
     set type loopback
     set ip {{ globals.loopback_hc_ip }} 255.255.255.255

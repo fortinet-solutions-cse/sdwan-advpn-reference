@@ -11,11 +11,14 @@ parser = argparse.ArgumentParser(description='FOS Reference SD-WAN/ADVPN Config 
                                  epilog=textwrap.dedent("""\
                                  Examples:
 
-                                 - Render a single template:
+                                 - Render a single template for a single device:
                                     ./render_config.py -d deployment-example.yml -j topo1-separate-underlays/base/04-hub-firewall.conf.j2 dc1_fgt
 
-                                 - Render the entire topology config:
+                                 - Render the entire topology config for a single device:
                                     ./render_config.py -d deployment-example.yml -j topo1-separate-underlays dc1_fgt
+
+                                 - Render the entire topology config for all devices:
+                                    ./render_config.py -d deployment-example.yml -j topo1-separate-underlays 
                                  """))
 parser.add_argument('-d', '--deployment', metavar='yaml', required=True,
                     type=argparse.FileType('r'),

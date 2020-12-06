@@ -15,14 +15,20 @@ config system sdwan
     edit 1
       set interface {{ profile.wan1_intf }}
       set zone "underlay"
+      # Best priority, used for Internet access in implicit rule / local-out
+      # Gateway is fetched from DHCP
     next
     {%- for h in regions[devices[this_dev].region].hubs %}
     edit {{ loop.index * 2 }}
       set interface "H{{loop.index}}_T1"
+      # Do not use for Internet access in implicit rule / local-out
+      set priority 10
       set zone "overlay"
     next
     edit {{ loop.index * 2 + 1 }}
       set interface "H{{loop.index}}_T2"
+      # Do not use for Internet access in implicit rule / local-out
+      set priority 10
       set zone "overlay"
     next
     {{- hub_sla_members.append(loop.index * 2) or "" }}
@@ -111,4 +117,10 @@ config system sdwan
       set priority-members 1
     next
   end
+end
+config router static
+  edit 100
+    # Default route (mandatory for RIA)
+    set sdwan enable
+  next
 end
