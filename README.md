@@ -60,11 +60,13 @@ Corporate Access (CPE to CPE):
 
 - Full-mesh IPSEC overlays between Regional Hubs, over each underlay transport  
 
+- IBGP sessions over each overlay (both within regions and between regions)
+
 - ADVPN shortcuts are enabled within each overlay
 
 - ADVPN shortcuts are not possible between different overlays (e.g. between Internet and MPLS)
 
-- Cross-regional ADVPN shortcut are enabled
+- Cross-regional ADVPN shortcuts are enabled
 
 - The traffic prefers to flow via ADVPN shortcut, when possible
 
