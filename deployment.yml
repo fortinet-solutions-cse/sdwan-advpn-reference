@@ -3,6 +3,8 @@
     as:
     corp_aggregate:
     tunnel_subnet_aggregate:
+    t1_subnet_aggregate:
+    t2_subnet_aggregate:
     phase1_proposal:
     phase2_proposal:
     loopback_hc_ip:
@@ -24,6 +26,8 @@
       hubs:
         # - ...
         # - ...
+      t1_subnet:
+      t2_subnet:
     # ...
 
   devices:
@@ -53,7 +57,7 @@
       t1_end_ip:
       t1_netmask:
       t2_start_ip:
-      t2_end_ip: 
+      t2_end_ip:
       t2_netmask:
     edge1:
       profile: edge

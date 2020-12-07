@@ -1,3 +1,22 @@
+config firewall address
+  edit "CORP_LAN"
+    set allow-routing enable
+    set subnet {{ globals.corp_aggregate }}
+  next
+end
+config router static
+  edit 101
+    set dstaddr CORP_LAN
+    set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+  edit 102
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set blackhole enable
+    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
+  next
+end
+
 config router bgp
   set as {{ globals.as }}
   set router-id {{ devices[this_dev].router_id }}
@@ -7,33 +26,6 @@ config router bgp
   set additional-path enable
   # additional-path-select = number of overlays
   set additional-path-select 2
-  config neighbor
-    # Remote Regional Hubs
-    {% for reg in regions if reg != devices[this_dev].region -%}
-    edit {{ devices[this_dev].t1_remote_ip[reg] }}
-      set soft-reconfiguration enable
-      set advertisement-interval 1
-      set link-down-failover enable
-      set connect-timer 1
-      set remote-as {{ globals.as }}
-      set additional-path both
-      # adv-additional-path = number of overlays
-      set adv-additional-path 2
-      set route-reflector-client enable
-    next
-    edit {{ devices[this_dev].t2_remote_ip[reg] }}
-      set soft-reconfiguration enable
-      set advertisement-interval 1
-      set link-down-failover enable
-      set connect-timer 1
-      set remote-as {{ globals.as }}
-      set additional-path both
-      # adv-additional-path = number of overlays
-      set adv-additional-path 2
-      set route-reflector-client enable
-    next
-    {% endfor -%}
-  end
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration enable
@@ -54,3 +46,99 @@ config router bgp
     next
   end
 end
+
+{# BEGIN: For multi-regional topology only #}
+{% if regions|reject("==", devices[this_dev].region)|list|count %}
+config router static
+  {% for reg in regions if reg != devices[this_dev].region -%}
+  edit {{ loop.index + 102 }}
+    set dst {{ regions[reg].t1_subnet }}
+    set device "{{reg|upper}}_T1"
+    set comment "Cross-region BGP NH reachability (T1)"
+  next
+  edit {{ loop.index + 103 }}
+    set dst {{ regions[reg].t2_subnet }}
+    set device "{{reg|upper}}_T2"
+    set comment "Cross-region BGP NH reachability (T2)"
+  next
+  {% endfor -%}
+end
+
+# Use BGP communities to identify overlays
+config router community-list
+  edit "T1"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:1"
+      next
+    end
+  next
+  edit "T2"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:2"
+      next
+    end
+  next
+end
+config router route-map
+  # Avoid duplicate advertisement to remote regions
+  edit "T1_OUT"
+    config rule
+      edit 1
+        set match-community "T1"
+        set action permit
+      next
+      edit 100
+        set action deny
+      next
+    end
+  next
+  edit "T2_OUT"
+    config rule
+      edit 1
+        set match-community "T2"
+        set action permit
+      next
+      edit 100
+        set action deny
+      next
+    end
+  next
+end
+
+config router bgp
+  config neighbor
+    # Remote Regional Hubs
+    {% for reg in regions if reg != devices[this_dev].region -%}
+    edit {{ devices[this_dev].t1_remote_ip[reg] }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set additional-path both
+      # adv-additional-path = number of overlays
+      set adv-additional-path 2
+      set route-map-out "T1_OUT"
+      set route-reflector-client enable
+    next
+    edit {{ devices[this_dev].t2_remote_ip[reg] }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set additional-path both
+      # adv-additional-path = number of overlays
+      set adv-additional-path 2
+      set route-map-out "T2_OUT"
+      set route-reflector-client enable
+    next
+    {% endfor -%}
+  end
+end
+{% endif %}
+{# END: For multi-regional topology only #}

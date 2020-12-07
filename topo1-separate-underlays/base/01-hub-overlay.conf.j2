@@ -44,6 +44,7 @@ config vpn ipsec phase1-interface
     set psksecret {{ globals.psk }}
   next
 
+  {# BEGIN: For multi-regional topology only #}
   # Remote Regional Hubs
   {% for reg in regions if reg != devices[this_dev].region -%}
   edit "{{reg|upper}}_T1"
@@ -54,11 +55,10 @@ config vpn ipsec phase1-interface
     set net-device disable
     set proposal {{ globals.phase1_proposal }}
     set add-route disable
-    set idle-timeout enable
     set auto-discovery-sender enable
     set auto-discovery-receiver enable
     set auto-discovery-forwarder enable
-    set remote-gw {{ device[regions[reg].hubs[ns.hub_id]].wan1_ip }}
+    set remote-gw {{ devices[regions[reg].hubs[ns.hub_id-1]].wan1_ip }}
     set tunnel-search nexthop
     set psksecret {{ globals.psk }}
     set dpd-retrycount 3
@@ -72,17 +72,17 @@ config vpn ipsec phase1-interface
     set net-device disable
     set proposal {{ globals.phase1_proposal }}
     set add-route disable
-    set idle-timeout enable
     set auto-discovery-sender enable
     set auto-discovery-receiver enable
     set auto-discovery-forwarder enable
-    set remote-gw {{ device[regions[reg].hubs[ns.hub_id]].wan2_ip }}
+    set remote-gw {{ devices[regions[reg].hubs[ns.hub_id-1]].wan2_ip }}
     set tunnel-search nexthop
     set psksecret {{ globals.psk }}
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
   {% endfor -%}
+  {# END: For multi-regional topology only #}
 end
 config vpn ipsec phase2-interface
   edit "EDGE_T1"
@@ -95,6 +95,7 @@ config vpn ipsec phase2-interface
     set proposal {{ globals.phase2_proposal }}
     set keepalive enable
   next
+  {# BEGIN: For multi-regional topology only #}
   {% for reg in regions if reg != devices[this_dev].region -%}
   edit "{{reg|upper}}_T1"
     set phase1name "{{reg|upper}}_T1"
@@ -102,11 +103,12 @@ config vpn ipsec phase2-interface
     set keepalive enable
   next
   edit "{{reg|upper}}_T2"
-    set phase1name "{{reg|upper}}_T1"
+    set phase1name "{{reg|upper}}_T2"
     set proposal {{ globals.phase2_proposal }}
     set keepalive enable
   next
   {% endfor -%}
+  {# END: For multi-regional topology only #}
 end
 config system interface
   edit "EDGE_T1"
@@ -125,6 +127,7 @@ config system interface
     set remote-ip {{ devices[this_dev].t2_remote_ip.edge }} {{ devices[this_dev].t2_netmask }}
     set interface {{ profile.wan2_intf }}
   next
+  {# BEGIN: For multi-regional topology only #}
   {% for reg in regions if reg != devices[this_dev].region -%}
   edit "{{reg|upper}}_T1"
     set vdom "root"
@@ -143,4 +146,5 @@ config system interface
     set interface {{ profile.wan2_intf }}
   next
   {% endfor -%}
+  {# END: For multi-regional topology only #}
 end

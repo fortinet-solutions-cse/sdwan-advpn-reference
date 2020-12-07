@@ -6,17 +6,34 @@ config firewall address
 end
 config router static
   edit 101
-    # Avoid potential leak of corporate traffic to underlay
     set dstaddr CORP_LAN
     set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
   next
   edit 102
-    # Avoid potential recursive resolution of corporate BGP routes via underlay
     set dst {{ globals.tunnel_subnet_aggregate }}
     set blackhole enable
+    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
+  {# BEGIN: For multi-regional topology only #}
+  {% if regions|reject("==", devices[this_dev].region)|list|count %}
+  {% for h in regions[devices[this_dev].region].hubs -%}
+  edit {{ loop.index + 102 }}
+    set dst {{ globals.t1_subnet_aggregate }}
+    set device "H{{loop.index}}_T1"
+    set comment "Cross-region BGP NH reachability (T1)"
+  next
+  edit {{ loop.index + 103 }}
+    set dst {{ globals.t2_subnet_aggregate }}
+    set device "H{{loop.index}}_T2"
+    set comment "Cross-region BGP NH reachability (T2)"
+  next
+  {% endfor -%}
+  {% endif %}
+  {# END: For multi-regional topology only #}
 end
 
+# Use BGP communities to identify overlays
 config router community-list
   edit "T1"
     config rule

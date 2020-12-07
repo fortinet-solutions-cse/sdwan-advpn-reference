@@ -7,6 +7,7 @@ config router policy
     set input-device "EDGE_T2"
     set output-device "EDGE_T2"
   next
+  {# BEGIN: For multi-regional topology only #}
   {% for reg in regions if reg != devices[this_dev].region -%}
   edit {{ loop.index * 4 }}
     set input-device "EDGE_T1"
@@ -25,6 +26,7 @@ config router policy
     set output-device "EDGE_T2"
   next
   {% endfor -%}
+  {# END: For multi-regional topology only #}
 end
 config system interface
   edit "lo-HC"
