@@ -15,8 +15,6 @@ config router static
     set blackhole enable
     set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
-  {# BEGIN: For multi-regional topology only #}
-  {% if regions|reject("==", devices[this_dev].region)|list|count %}
   {% for h in regions[devices[this_dev].region].hubs -%}
   edit {{ loop.index + 102 }}
     set dst {{ globals.t1_subnet_aggregate }}
@@ -29,8 +27,6 @@ config router static
     set comment "Cross-region BGP NH reachability (T2)"
   next
   {% endfor -%}
-  {% endif %}
-  {# END: For multi-regional topology only #}
 end
 
 # Use BGP communities to identify overlays
@@ -69,8 +65,7 @@ config router route-map
       next
     end
   next
-  {%- for h in regions[devices[this_dev].region].hubs %}
-  edit "H{{loop.index}}_T1_IN"
+  edit "T1_IN"
     config rule
       edit 1
         # Prefer same-overlay routes (T1)
@@ -78,12 +73,10 @@ config router route-map
         set set-weight 200
       next
       edit 100
-        # Override BGP NH to allow cross-overlay traffic (last resort)
-        set set-ip-nexthop {{ devices[h].t1_ip.edge }}
       next
     end
   next
-  edit "H{{loop.index}}_T2_IN"
+  edit "T2_IN"
     config rule
       edit 1
         # Prefer same-overlay routes (T2)
@@ -91,12 +84,9 @@ config router route-map
         set set-weight 200
       next
       edit 100
-        # Override BGP NH to allow cross-overlay traffic (last resort)
-        set set-ip-nexthop {{ devices[h].t2_ip.edge }}
       next
     end
   next
-  {%- endfor %}
 end
 
 config router bgp
@@ -117,7 +107,7 @@ config router bgp
       set interface "H{{loop.index}}_T1"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "H{{loop.index}}_T1_IN"
+      set route-map-in "T1_IN"
       set route-map-out "T1_OUT"
       set additional-path receive
     next
@@ -128,7 +118,7 @@ config router bgp
       set interface "H{{loop.index}}_T2"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "H{{loop.index}}_T2_IN"
+      set route-map-in "T2_IN"
       set route-map-out "T2_OUT"
       set additional-path receive
     next

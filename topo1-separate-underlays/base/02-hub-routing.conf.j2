@@ -36,6 +36,7 @@ config router bgp
       set additional-path send
       # adv-additional-path = number of overlays
       set adv-additional-path 2
+      set next-hop-self enable
       set route-reflector-client enable
     next
   end
@@ -48,7 +49,7 @@ config router bgp
 end
 
 {# BEGIN: For multi-regional topology only #}
-{% if regions|reject("==", devices[this_dev].region)|list|count %}
+{% if regions|reject("==", devices[this_dev].region)|list|count -%}
 config router static
   {% for reg in regions if reg != devices[this_dev].region -%}
   edit {{ loop.index + 102 }}
@@ -82,6 +83,14 @@ config router community-list
       next
     end
   next
+  edit "HUB"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:10"
+      next
+    end
+  next
 end
 config router route-map
   # Avoid duplicate advertisement to remote regions
@@ -90,6 +99,11 @@ config router route-map
       edit 1
         set match-community "T1"
         set action permit
+      next
+      edit 2
+        set match-community "HUB"
+        set set-community "{{ globals.as }}:1"
+        set set-community-additive enable
       next
       edit 100
         set action deny
@@ -101,6 +115,11 @@ config router route-map
       edit 1
         set match-community "T2"
         set action permit
+      next
+      edit 2
+        set match-community "HUB"
+        set set-community "{{ globals.as }}:2"
+        set set-community-additive enable
       next
       edit 100
         set action deny
@@ -122,6 +141,7 @@ config router bgp
       set additional-path both
       # adv-additional-path = number of overlays
       set adv-additional-path 2
+      set next-hop-self enable
       set route-map-out "T1_OUT"
       set route-reflector-client enable
     next
@@ -134,6 +154,7 @@ config router bgp
       set additional-path both
       # adv-additional-path = number of overlays
       set adv-additional-path 2
+      set next-hop-self enable
       set route-map-out "T2_OUT"
       set route-reflector-client enable
     next

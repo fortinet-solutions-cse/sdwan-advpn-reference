@@ -10,6 +10,9 @@
     loopback_hc_ip:
     psk:
 
+  plugins:
+    # - ...
+
   profiles:
     edge:
       type: edge
@@ -20,6 +23,7 @@
       type: hub
       wan1_intf:
       wan2_intf:
+      lan_intf:
 
   regions:
     reg1:
@@ -35,6 +39,7 @@
       profile: hub
       region:
       router_id:
+      lan_subnet:
       wan1_ip:
       wan2_ip:
       t1_ip:

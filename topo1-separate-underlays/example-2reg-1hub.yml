@@ -10,6 +10,9 @@
     loopback_hc_ip: 10.200.99.1
     psk: dogcat
 
+  plugins:
+    - hub-lan.conf.j2
+
   profiles:
     edge:
       type: edge
@@ -20,6 +23,7 @@
       type: hub
       wan1_intf: port1
       wan2_intf: port4
+      lan_intf: port5
 
   regions:
     reg1:
@@ -39,6 +43,7 @@
       profile: hub
       region: reg1
       router_id: 10.1.0.1
+      lan_subnet: 10.1.0.0/24
       wan1_ip: 100.64.1.1
       wan2_ip: 172.16.1.5
       t1_ip:
@@ -63,6 +68,7 @@
       profile: hub
       region: reg2
       router_id: 10.2.0.1
+      lan_subnet: 10.2.0.0/24
       wan1_ip: 100.64.2.1
       wan2_ip: 172.16.2.5
       t1_ip:

@@ -3,10 +3,15 @@
     as: 65000
     corp_aggregate: 10.0.0.0/8
     tunnel_subnet_aggregate: 10.200.0.0/14
+    t1_subnet_aggregate: 10.201.0.0/16
+    t2_subnet_aggregate: 10.202.0.0/16
     phase1_proposal: aes256gcm-prfsha384
     phase2_proposal: aes256gcm
     loopback_hc_ip: 10.200.99.1
     psk: dogcat
+
+  plugins:
+    - hub-lan.conf.j2
 
   profiles:
     edge:
@@ -18,6 +23,7 @@
       type: hub
       wan1_intf: port1
       wan2_intf: port4
+      lan_intf: port5
 
   regions:
     reg1:
@@ -31,14 +37,17 @@
       profile: hub
       region: reg1
       router_id: 10.1.0.1
+      lan_subnet: 10.1.0.0/24
       wan1_ip: 100.64.1.1
       wan2_ip: 172.16.1.5
       t1_ip:
         edge: 10.201.11.1
+        dc2_fgt: 10.201.111.1
       t1_remote_ip:
         edge: 10.201.11.254
       t2_ip:
         edge: 10.202.11.1
+        dc2_fgt: 10.202.111.1
       t2_remote_ip:
         edge: 10.202.11.254
       t1_start_ip: 10.201.11.2
@@ -50,15 +59,18 @@
     dc2_fgt:
       profile: hub
       region: reg1
+      lan_subnet: 10.2.0.0/24
       router_id: 10.2.0.1
       wan1_ip: 100.64.2.1
       wan2_ip: 172.16.2.5
       t1_ip:
         edge: 10.201.21.1
+        dc1_fgt: 10.201.111.2
       t1_remote_ip:
         edge: 10.201.21.254
       t2_ip:
         edge: 10.202.21.1
+        dc1_fgt: 10.202.111.2
       t2_remote_ip:
         edge: 10.202.21.254
       t1_start_ip: 10.201.21.2

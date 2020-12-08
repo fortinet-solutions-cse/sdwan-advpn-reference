@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description='FOS Reference SD-WAN/ADVPN Config 
                                     ./render_config.py -d deployment-example.yml -j topo1-separate-underlays dc1_fgt
 
                                  - Render the entire topology config for all devices:
-                                    ./render_config.py -d deployment-example.yml -j topo1-separate-underlays 
+                                    ./render_config.py -d deployment-example.yml -j topo1-separate-underlays
                                  """))
 parser.add_argument('-d', '--deployment', metavar='yaml', required=True,
                     type=argparse.FileType('r'),
@@ -42,12 +42,24 @@ deployment = yaml.safe_load(args.deployment)
 list_of_devices = [ args.device ] if args.device else deployment['devices'].keys()
 
 if args.topology:
-    chdir(args.topology + '/base')
+    chdir(args.topology)
 
 for dev in list_of_devices:
     deployment['this_dev'] = dev
     dev_type = deployment['profiles'][deployment['devices'][dev]['profile']]['type']
-    list_of_j2files = [ args.j2file ] if args.j2file else sorted(filter(lambda f: dev_type in f, listdir()))
+    if args.j2file:
+        list_of_j2files = [ args.j2file ]
+    else:
+        # Base templates
+        list_of_j2files = sorted(map(lambda f: 'base/' + f,
+                                     filter(lambda f: dev_type in f,
+                                            listdir('base'))))
+        # Plugin templates
+        for p in map(lambda f: 'plugins/' + f,
+                     filter(lambda f: dev_type in f and f in deployment['plugins'],
+                            listdir('plugins'))):
+            list_of_j2files.append(p)
+
     with open(outdir+'/'+dev, 'w') as outfile:
         print('Rendering device ' + dev + '...')
         for f in list_of_j2files:

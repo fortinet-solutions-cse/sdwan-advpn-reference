@@ -1,0 +1,156 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+# Use BGP communities to identify prefixes behind the Hubs
+config router community-list
+  edit "HUB"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:10"
+      next
+    end
+  next
+end
+config router route-map
+  edit "HUB2HUB"
+    config rule
+      edit 1
+        set match-community "HUB"
+        # Prevent duplicate readvertisement to Edges
+        set set-community no-advertise
+        set set-community-additive enable
+        set action permit
+      next
+      edit 100
+        set action deny
+      next
+    end
+  next
+end
+{% if devices[this_dev].lan_subnet is defined -%}
+config router route-map
+  edit "LOCAL"
+    config rule
+      edit 1
+        set set-community "{{ globals.as }}:10"
+      next
+    end
+  next
+end
+config router bgp
+  config network
+    edit 1
+      set prefix {{ devices[this_dev].lan_subnet }}
+      set route-map LOCAL
+    next
+  end
+end
+{% endif -%}
+
+{% for h in regions[devices[this_dev].region].hubs if h != this_dev -%}
+# Local Region (Peer Hub {{h}})
+config vpn ipsec phase1-interface
+  edit "{{h|upper}}_T1"
+    set interface {{ profile.wan1_intf }}
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set proposal {{ globals.phase1_proposal }}
+    set remote-gw {{ devices[h].wan1_ip }}
+    set psksecret {{ globals.psk }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+  edit "{{h|upper}}_T2"
+    set interface {{ profile.wan2_intf }}
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set proposal {{ globals.phase1_proposal }}
+    set remote-gw {{ devices[h].wan2_ip }}
+    set psksecret {{ globals.psk }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+end
+config vpn ipsec phase2-interface
+  edit "{{h|upper}}_T1"
+    set phase1name "{{h|upper}}_T1"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+  edit "{{h|upper}}_T2"
+    set phase1name "{{h|upper}}_T2"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+end
+config system interface
+  edit "{{h|upper}}_T1"
+    set vdom "root"
+    set ip {{ devices[this_dev].t1_ip[h] }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[h].t1_ip[this_dev] }} 255.255.255.252
+    set interface {{ profile.wan1_intf }}
+  next
+  edit "{{h|upper}}_T2"
+    set vdom "root"
+    set ip {{ devices[this_dev].t2_ip[h] }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[h].t2_ip[this_dev] }} 255.255.255.252
+    set interface {{ profile.wan2_intf }}
+  next
+end
+config router bgp
+  config neighbor
+    edit {{ devices[h].t1_ip[this_dev] }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set next-hop-self enable
+      set route-map-out "HUB2HUB"
+    next
+    edit {{ devices[h].t2_ip[this_dev] }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set next-hop-self enable
+      set route-map-out "HUB2HUB"
+    next
+  end
+end
+config system zone
+  edit "overlay"
+    append interface "{{h|upper}}_T1" "{{h|upper}}_T2"
+  next
+end
+{% endfor -%}
+
+config system zone
+  edit "lan"
+    set interface {{ profile.lan_intf }}
+  next
+end
+config firewall policy
+  edit 10
+    set name "Corporate"
+    set srcintf "lan" "overlay"
+    set dstintf "lan" "overlay"
+    set srcaddr "CORP_LAN"
+    set dstaddr "CORP_LAN"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+end
