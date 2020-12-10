@@ -12,6 +12,8 @@
 
   plugins:
     - hub-lan.conf.j2
+    - 035-hub-h2e.j2
+    - edge-h2e.j2
 
   profiles:
     edge:

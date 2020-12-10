@@ -51,18 +51,15 @@ for dev in list_of_devices:
         list_of_j2files = [ args.j2file ]
     else:
         # Base templates
-        list_of_j2files = sorted(map(lambda f: 'base/' + f,
-                                     filter(lambda f: dev_type in f,
-                                            listdir('base'))))
+        list_of_j2files = sorted(filter(lambda f: dev_type in f, listdir('base')))
         # Plugin templates
-        for p in map(lambda f: 'plugins/' + f,
-                     filter(lambda f: dev_type in f and f in deployment['plugins'],
-                            listdir('plugins'))):
+        for p in filter(lambda f: dev_type in f and f in deployment['plugins'], listdir('plugins')):
             list_of_j2files.append(p)
 
     with open(outdir+'/'+dev, 'w') as outfile:
         print('Rendering device ' + dev + '...')
-        for f in list_of_j2files:
+        for f in sorted(list_of_j2files):
+            f = 'base/' + f if f in listdir('base') else 'plugins/' + f
             print('   Rendering ' + f + '...')
             print("######################################", file=outfile)
             print("# " + f, file=outfile)
