@@ -1,0 +1,46 @@
+config router policy
+  edit 1
+    set input-device "EDGE_T11"
+    set output-device "EDGE_T11"
+  next
+  edit 2
+    set input-device "EDGE_T22"
+    set output-device "EDGE_T22"
+  next
+  edit 3
+    set input-device "EDGE_T12"
+    set output-device "EDGE_T12"
+  next
+  edit 4
+    set input-device "EDGE_T21"
+    set output-device "EDGE_T21"
+  next
+  {# BEGIN: For multi-regional topology only #}
+  {% for reg in regions if reg != devices[this_dev].region -%}
+  edit {{ loop.index * 4 }}
+    set input-device "EDGE_T1"
+    set output-device "{{reg|upper}}_T1"
+  next
+  edit {{ loop.index * 4 + 1}}
+    set input-device "EDGE_T2"
+    set output-device "{{reg|upper}}_T2"
+  next
+  edit {{ loop.index * 4 + 2 }}
+    set input-device "{{reg|upper}}_T1"
+    set output-device "EDGE_T1"
+  next
+  edit {{ loop.index * 4 + 3 }}
+    set input-device "{{reg|upper}}_T2"
+    set output-device "EDGE_T2"
+  next
+  {% endfor -%}
+  {# END: For multi-regional topology only #}
+end
+config system interface
+  edit "lo-HC"
+    set vdom "root"
+    set type loopback
+    set ip {{ globals.loopback_hc_ip }} 255.255.255.255
+    set allowaccess ping
+  next
+end

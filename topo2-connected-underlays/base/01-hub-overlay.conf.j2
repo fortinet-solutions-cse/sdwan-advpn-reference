@@ -1,0 +1,208 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+{# Figure out this_dev hub ID -#}
+{% set ns = namespace(hub_id = 0) -%}
+{% for h in regions[devices[this_dev].region].hubs -%}
+  {% set ns.hub_id = loop.index if h == this_dev else ns.hub_id -%}
+{% endfor -%}
+
+config vpn ipsec phase1-interface
+  # Local Region (Edges)
+  edit "EDGE_T11"
+    set type dynamic
+    set interface {{ profile.wan1_intf }}
+    set ike-version 2
+    set peertype any
+    set net-device disable
+    set mode-cfg enable
+    set proposal {{ globals.phase1_proposal }}
+    set add-route disable
+    set auto-discovery-sender enable
+    set network-overlay enable
+    set network-id {{ ns.hub_id }}11
+    set tunnel-search nexthop
+    set ipv4-start-ip {{ devices[this_dev].t11_start_ip }}
+    set ipv4-end-ip {{ devices[this_dev].t11_end_ip }}
+    set ipv4-netmask {{ devices[this_dev].t11_netmask }}
+    set psksecret {{ globals.psk }}
+  next
+  edit "EDGE_T12"
+    set type dynamic
+    set interface {{ profile.wan2_intf }}
+    set ike-version 2
+    set peertype any
+    set net-device disable
+    set mode-cfg enable
+    set proposal {{ globals.phase1_proposal }}
+    set add-route disable
+    set auto-discovery-sender enable
+    set network-overlay enable
+    set network-id {{ ns.hub_id }}12
+    set tunnel-search nexthop
+    set ipv4-start-ip {{ devices[this_dev].t12_start_ip }}
+    set ipv4-end-ip {{ devices[this_dev].t12_end_ip }}
+    set ipv4-netmask {{ devices[this_dev].t12_netmask }}
+    set psksecret {{ globals.psk }}
+  next
+  edit "EDGE_T21"
+    set type dynamic
+    set interface {{ profile.wan1_intf }}
+    set ike-version 2
+    set peertype any
+    set net-device disable
+    set mode-cfg enable
+    set proposal {{ globals.phase1_proposal }}
+    set add-route disable
+    set auto-discovery-sender enable
+    set network-overlay enable
+    set network-id {{ ns.hub_id }}21
+    set tunnel-search nexthop
+    set ipv4-start-ip {{ devices[this_dev].t21_start_ip }}
+    set ipv4-end-ip {{ devices[this_dev].t21_end_ip }}
+    set ipv4-netmask {{ devices[this_dev].t21_netmask }}
+    set psksecret {{ globals.psk }}
+  next
+  edit "EDGE_T22"
+    set type dynamic
+    set interface {{ profile.wan2_intf }}
+    set ike-version 2
+    set peertype any
+    set net-device disable
+    set mode-cfg enable
+    set proposal {{ globals.phase1_proposal }}
+    set add-route disable
+    set auto-discovery-sender enable
+    set network-overlay enable
+    set network-id {{ ns.hub_id }}22
+    set tunnel-search nexthop
+    set ipv4-start-ip {{ devices[this_dev].t22_start_ip }}
+    set ipv4-end-ip {{ devices[this_dev].t22_end_ip }}
+    set ipv4-netmask {{ devices[this_dev].t22_netmask }}
+    set psksecret {{ globals.psk }}
+  next
+end
+config vpn ipsec phase2-interface
+  edit "EDGE_T11"
+    set phase1name "EDGE_T11"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+  edit "EDGE_T12"
+    set phase1name "EDGE_T12"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+  edit "EDGE_T21"
+    set phase1name "EDGE_T21"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+  edit "EDGE_T22"
+    set phase1name "EDGE_T22"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+end
+config system interface
+  edit "EDGE_T11"
+    set vdom "root"
+    set ip {{ devices[this_dev].t11_ip.edge }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[this_dev].t11_remote_ip.edge }} {{ devices[this_dev].t11_netmask }}
+    set interface {{ profile.wan1_intf }}
+  next
+  edit "EDGE_T12"
+    set vdom "root"
+    set ip {{ devices[this_dev].t12_ip.edge }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[this_dev].t12_remote_ip.edge }} {{ devices[this_dev].t12_netmask }}
+    set interface {{ profile.wan1_intf }}
+  next
+  edit "EDGE_T21"
+    set vdom "root"
+    set ip {{ devices[this_dev].t21_ip.edge }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[this_dev].t21_remote_ip.edge }} {{ devices[this_dev].t21_netmask }}
+    set interface {{ profile.wan2_intf }}
+  next
+  edit "EDGE_T22"
+    set vdom "root"
+    set ip {{ devices[this_dev].t22_ip.edge }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[this_dev].t22_remote_ip.edge }} {{ devices[this_dev].t22_netmask }}
+    set interface {{ profile.wan2_intf }}
+  next
+end
+
+{# BEGIN: For multi-regional topology only #}
+{% for reg in regions if reg != devices[this_dev].region -%}
+# Remote Regional Hubs ({{ reg }})
+config vpn ipsec phase1-interface
+  edit "{{reg|upper}}_T1"
+    set interface {{ profile.wan1_intf }}
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set proposal {{ globals.phase1_proposal }}
+    set add-route disable
+    set auto-discovery-sender enable
+    set auto-discovery-receiver enable
+    set auto-discovery-forwarder enable
+    set remote-gw {{ devices[regions[reg].hubs[ns.hub_id-1]].wan1_ip }}
+    set psksecret {{ globals.psk }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+  edit "{{reg|upper}}_T2"
+    set interface {{ profile.wan2_intf }}
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set proposal {{ globals.phase1_proposal }}
+    set add-route disable
+    set auto-discovery-sender enable
+    set auto-discovery-receiver enable
+    set auto-discovery-forwarder enable
+    set remote-gw {{ devices[regions[reg].hubs[ns.hub_id-1]].wan2_ip }}
+    set psksecret {{ globals.psk }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+end
+config vpn ipsec phase2-interface
+  edit "{{reg|upper}}_T1"
+    set phase1name "{{reg|upper}}_T1"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+  edit "{{reg|upper}}_T2"
+    set phase1name "{{reg|upper}}_T2"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+end
+config system interface
+  edit "{{reg|upper}}_T1"
+    set vdom "root"
+    set ip {{ devices[this_dev].t1_ip[reg] }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[this_dev].t1_remote_ip[reg] }} 255.255.255.252
+    set interface {{ profile.wan1_intf }}
+  next
+  edit "{{reg|upper}}_T2"
+    set vdom "root"
+    set ip {{ devices[this_dev].t2_ip[reg] }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ devices[this_dev].t2_remote_ip[reg] }} 255.255.255.252
+    set interface {{ profile.wan2_intf }}
+  next
+end
+{% endfor -%}
+{# END: For multi-regional topology only #}

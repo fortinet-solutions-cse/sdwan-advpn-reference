@@ -105,3 +105,38 @@ Plugins (optional):
   - SLA measured by Edge CPEs and signaled to the Hubs by means of a special BGP community
 
   - This BGP community is then mapped to route-tag and used in SD-WAN rules on Hubs
+
+
+## Topology 2: Interconnected Underlays
+
+Requirements: FOS 6.4.1+
+
+This base topology includes two interconnected underlay transport networks.
+A typical example would be: two Internet links (e.g. two ISPs).
+
+The topology is multi-regional, with arbitrary number of regions and Regional Hubs.
+
+### Features:
+
+Corporate Access (CPE to CPE):
+
+- Full-mesh IPSEC overlays between Edge CPEs (Spokes) and each Regional Hub
+  (hence, with 2 ISPs on CPE and Hub, each Edge CPE builds 4 IPSEC tunnels to each Hub)
+
+- Full-mesh IPSEC overlays between Regional Hubs, over each underlay transport  
+
+- IBGP sessions over each overlay (both within regions and between regions)
+
+- ADVPN shortcuts are enabled within each overlay
+
+- Cross-overlay ADVPN shortcuts are enabled (e.g. across different ISPs)
+
+- Cross-regional ADVPN shortcuts are enabled
+
+- The traffic prefers to flow via ADVPN shortcut, when possible
+
+- Overlay stickiness: the traffic prefers to stay within the same overlay end-to-end
+
+Internet Access:
+
+- Direct Internet Access (DIA) from each Edge CPE, using the best of the available links

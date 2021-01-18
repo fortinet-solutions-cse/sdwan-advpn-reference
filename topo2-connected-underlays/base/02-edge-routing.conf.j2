@@ -1,0 +1,218 @@
+config firewall address
+  edit "CORP_LAN"
+    set allow-routing enable
+    set subnet {{ globals.corp_aggregate }}
+  next
+end
+config router static
+  edit 101
+    set dstaddr CORP_LAN
+    set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+  edit 102
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set blackhole enable
+    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
+  next
+  {% for h in regions[devices[this_dev].region].hubs -%}
+  edit {{ loop.index * 4 + 102 }}
+    set dst {{ globals.t11_subnet_aggregate }}
+    set device "H{{loop.index}}_T11"
+    set comment "Cross-region BGP NH reachability (T11)"
+  next
+  edit {{ loop.index * 4 + 103 }}
+    set dst {{ globals.t12_subnet_aggregate }}
+    set device "H{{loop.index}}_T12"
+    set comment "Cross-region BGP NH reachability (T12)"
+  next
+  edit {{ loop.index * 4 + 104 }}
+    set dst {{ globals.t21_subnet_aggregate }}
+    set device "H{{loop.index}}_T21"
+    set comment "Cross-region BGP NH reachability (T21)"
+  next
+  edit {{ loop.index * 4 + 105 }}
+    set dst {{ globals.t22_subnet_aggregate }}
+    set device "H{{loop.index}}_T22"
+    set comment "Cross-region BGP NH reachability (T22)"
+  next
+  {% endfor -%}
+end
+
+# Use BGP communities to identify overlays
+config router community-list
+  edit "T11"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:11"
+      next
+    end
+  next
+  edit "T12"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:12"
+      next
+    end
+  next
+  edit "T21"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:21"
+      next
+    end
+  next
+  edit "T22"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ globals.as }}:22"
+      next
+    end
+  next
+end
+config router route-map
+  edit "T11_OUT"
+    # Mark overlay community (T11)
+    config rule
+      edit 1
+        set set-community "{{ globals.as }}:11"
+      next
+    end
+  next
+  edit "T12_OUT"
+    # Mark overlay community (T12)
+    config rule
+      edit 1
+        set set-community "{{ globals.as }}:12"
+      next
+    end
+  next
+  edit "T21_OUT"
+    # Mark overlay community (T21)
+    config rule
+      edit 1
+        set set-community "{{ globals.as }}:21"
+      next
+    end
+  next
+  edit "T22_OUT"
+    # Mark overlay community (T22)
+    config rule
+      edit 1
+        set set-community "{{ globals.as }}:22"
+      next
+    end
+  next
+  edit "T11_IN"
+    config rule
+      edit 1
+        # Prefer same-overlay routes (T11)
+        set match-community "T11"
+        set set-weight 200
+      next
+      edit 100
+      next
+    end
+  next
+  edit "T12_IN"
+    config rule
+      edit 1
+        # Prefer same-overlay routes (T12)
+        set match-community "T12"
+        set set-weight 200
+      next
+      edit 100
+      next
+    end
+  next
+  edit "T21_IN"
+    config rule
+      edit 1
+        # Prefer same-overlay routes (T21)
+        set match-community "T21"
+        set set-weight 200
+      next
+      edit 100
+      next
+    end
+  next
+  edit "T22_IN"
+    config rule
+      edit 1
+        # Prefer same-overlay routes (T22)
+        set match-community "T22"
+        set set-weight 200
+      next
+      edit 100
+      next
+    end
+  next
+end
+
+config router bgp
+  set as {{ globals.as }}
+  set router-id {{ devices[this_dev].router_id }}
+  set keepalive-timer 5
+  set holdtime-timer 15
+  set ibgp-multipath enable
+  set additional-path enable
+  # additional-path-select = number of overlays
+  set additional-path-select 2
+  config neighbor
+  {%- for h in regions[devices[this_dev].region].hubs %}
+    edit {{ devices[h].t11_ip.edge }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H{{loop.index}}_T11"
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set route-map-in "T11_IN"
+      set route-map-out "T11_OUT"
+      set additional-path receive
+    next
+    edit {{ devices[h].t12_ip.edge }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H{{loop.index}}_T12"
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set route-map-in "T12_IN"
+      set route-map-out "T12_OUT"
+      set additional-path receive
+    next
+    edit {{ devices[h].t21_ip.edge }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H{{loop.index}}_T21"
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set route-map-in "T21_IN"
+      set route-map-out "T21_OUT"
+      set additional-path receive
+    next
+    edit {{ devices[h].t22_ip.edge }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H{{loop.index}}_T22"
+      set connect-timer 1
+      set remote-as {{ globals.as }}
+      set route-map-in "T22_IN"
+      set route-map-out "T22_OUT"
+      set additional-path receive
+    next
+  {%- endfor %}
+  end
+  config network
+    edit 1
+      set prefix {{ devices[this_dev].lan_subnet }}
+    next
+  end
+end

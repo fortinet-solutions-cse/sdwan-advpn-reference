@@ -15,10 +15,10 @@ parser = argparse.ArgumentParser(description='FOS Reference SD-WAN/ADVPN Config 
                                     ./render_config.py -d deployment-example.yml -j topo1-separate-underlays/base/04-hub-firewall.conf.j2 dc1_fgt
 
                                  - Render the entire topology config for a single device:
-                                    ./render_config.py -d deployment-example.yml -j topo1-separate-underlays dc1_fgt
+                                    ./render_config.py -d deployment-example.yml -t topo1-separate-underlays dc1_fgt
 
                                  - Render the entire topology config for all devices:
-                                    ./render_config.py -d deployment-example.yml -j topo1-separate-underlays
+                                    ./render_config.py -d deployment-example.yml -t topo1-separate-underlays
                                  """))
 parser.add_argument('-d', '--deployment', metavar='yaml', required=True,
                     type=argparse.FileType('r'),
@@ -48,7 +48,7 @@ for dev in list_of_devices:
     deployment['this_dev'] = dev
     dev_type = deployment['profiles'][deployment['devices'][dev]['profile']]['type']
     if args.j2file:
-        list_of_j2files = [ args.j2file ]
+        list_of_j2files = filter(lambda f: dev_type in f, [ args.j2file ])
     else:
         # Base templates
         list_of_j2files = sorted(filter(lambda f: dev_type in f, listdir('base')))
@@ -59,7 +59,8 @@ for dev in list_of_devices:
     with open(outdir+'/'+dev, 'w') as outfile:
         print('Rendering device ' + dev + '...')
         for f in sorted(list_of_j2files):
-            f = 'base/' + f if f in listdir('base') else 'plugins/' + f
+            if args.topology:
+                f = 'base/' + f if f in listdir('base') else 'plugins/' + f
             print('   Rendering ' + f + '...')
             print("######################################", file=outfile)
             print("# " + f, file=outfile)

@@ -1,0 +1,82 @@
+---
+  globals:
+    as: 65000
+    corp_aggregate: 10.0.0.0/8
+    tunnel_subnet_aggregate: 10.192.0.0/11
+    t11_subnet_aggregate: 10.211.0.0/16
+    t12_subnet_aggregate: 10.212.0.0/16
+    t21_subnet_aggregate: 10.221.0.0/16
+    t22_subnet_aggregate: 10.222.0.0/16
+    phase1_proposal: aes256gcm-prfsha384
+    phase2_proposal: aes256gcm
+    loopback_hc_ip: 10.200.99.1
+    psk: dogcat
+
+  profiles:
+    edge:
+      type: edge
+      wan1_intf: port1
+      wan2_intf: port2
+      lan_intf: vl_lan
+    hub:
+      type: hub
+      wan1_intf: port1
+      wan2_intf: port2
+      lan_intf: port5
+
+  regions:
+    reg1:
+      hubs:
+        - dc1_fgt
+    # ...
+
+  devices:
+    dc1_fgt:
+      profile: hub
+      region: reg1
+      router_id: 10.1.0.1
+      lan_subnet: 10.1.0.0/24
+      wan1_ip: 100.64.1.1
+      wan2_ip: 100.64.1.9
+      t11_ip:
+        edge: 10.211.11.1
+        dc2_fgt: 10.211.111.1
+      t11_remote_ip:
+        edge: 10.211.11.254
+      t12_ip:
+        edge: 10.212.11.1
+        dc2_fgt: 10.212.111.1
+      t12_remote_ip:
+        edge: 10.212.11.254
+      t21_ip:
+        edge: 10.221.11.1
+        dc2_fgt: 10.221.111.1
+      t21_remote_ip:
+        edge: 10.221.11.254
+      t22_ip:
+        edge: 10.222.11.1
+        dc2_fgt: 10.222.111.1
+      t22_remote_ip:
+        edge: 10.222.11.254
+      t11_start_ip: 10.211.11.2
+      t11_end_ip: 10.211.11.250
+      t11_netmask: 255.255.255.0
+      t12_start_ip: 10.212.11.2
+      t12_end_ip: 10.212.11.250
+      t12_netmask: 255.255.255.0
+      t21_start_ip: 10.221.11.2
+      t21_end_ip: 10.221.11.250
+      t21_netmask: 255.255.255.0
+      t22_start_ip: 10.222.11.2
+      t22_end_ip: 10.222.11.250
+      t22_netmask: 255.255.255.0
+    branch1_fgt:
+      profile: edge
+      region: reg1
+      router_id: 10.0.1.1
+      lan_subnet: 10.0.1.0/24
+    branch2_fgt:
+      profile: edge
+      region: reg1
+      router_id: 10.0.2.1
+      lan_subnet: 10.0.2.0/24
