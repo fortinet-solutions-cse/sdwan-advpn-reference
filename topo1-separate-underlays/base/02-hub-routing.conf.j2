@@ -52,12 +52,12 @@ end
 {% if regions|reject("==", devices[this_dev].region)|list|count -%}
 config router static
   {% for reg in regions if reg != devices[this_dev].region -%}
-  edit {{ loop.index + 102 }}
+  edit {{ loop.index * 2 + 102 }}
     set dst {{ regions[reg].t1_subnet }}
     set device "{{reg|upper}}_T1"
     set comment "Cross-region BGP NH reachability (T1)"
   next
-  edit {{ loop.index + 103 }}
+  edit {{ loop.index * 2 + 103 }}
     set dst {{ regions[reg].t2_subnet }}
     set device "{{reg|upper}}_T2"
     set comment "Cross-region BGP NH reachability (T2)"

@@ -16,12 +16,12 @@ config router static
     set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
   {% for h in regions[devices[this_dev].region].hubs -%}
-  edit {{ loop.index + 102 }}
+  edit {{ loop.index * 2 + 102 }}
     set dst {{ globals.t1_subnet_aggregate }}
     set device "H{{loop.index}}_T1"
     set comment "Cross-region BGP NH reachability (T1)"
   next
-  edit {{ loop.index + 103 }}
+  edit {{ loop.index * 2 + 103 }}
     set dst {{ globals.t2_subnet_aggregate }}
     set device "H{{loop.index}}_T2"
     set comment "Cross-region BGP NH reachability (T2)"
