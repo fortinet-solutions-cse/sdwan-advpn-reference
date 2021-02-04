@@ -53,7 +53,7 @@ for dev in list_of_devices:
         # Base templates
         list_of_j2files = sorted(filter(lambda f: dev_type in f, listdir('base')))
         # Plugin templates
-        for p in filter(lambda f: dev_type in f and f in deployment['plugins'], listdir('plugins')):
+        for p in filter(lambda f: dev_type in f and f in deployment.get('plugins', []), listdir('plugins')):
             list_of_j2files.append(p)
 
     with open(outdir+'/'+dev, 'w') as outfile:
