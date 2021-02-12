@@ -79,7 +79,8 @@ end
 {% for reg in regions if reg != devices[this_dev].region -%}
 # Remote Regional Hubs ({{ reg }})
 config vpn ipsec phase1-interface
-  edit "{{reg|upper}}_T1"
+  {%- for h in regions[reg].hubs %}
+  edit "{{reg|upper}}_H{{loop.index}}_T1"
     set interface {{ profile.wan1_intf }}
     set ike-version 2
     set keylife 28800
@@ -90,12 +91,12 @@ config vpn ipsec phase1-interface
     set auto-discovery-sender enable
     set auto-discovery-receiver enable
     set auto-discovery-forwarder enable
-    set remote-gw {{ devices[regions[reg].hubs[ns.hub_id-1]].wan1_ip }}
+    set remote-gw {{ devices[regions[reg].hubs[loop.index-1]].wan1_ip }}
     set psksecret {{ globals.psk }}
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
-  edit "{{reg|upper}}_T2"
+  edit "{{reg|upper}}_H{{loop.index}}_T2"
     set interface {{ profile.wan2_intf }}
     set ike-version 2
     set keylife 28800
@@ -106,41 +107,46 @@ config vpn ipsec phase1-interface
     set auto-discovery-sender enable
     set auto-discovery-receiver enable
     set auto-discovery-forwarder enable
-    set remote-gw {{ devices[regions[reg].hubs[ns.hub_id-1]].wan2_ip }}
+    set remote-gw {{ devices[regions[reg].hubs[loop.index-1]].wan2_ip }}
     set psksecret {{ globals.psk }}
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
+  {%- endfor %}
 end
 config vpn ipsec phase2-interface
-  edit "{{reg|upper}}_T1"
-    set phase1name "{{reg|upper}}_T1"
+  {%- for h in regions[reg].hubs %}
+  edit "{{reg|upper}}_H{{loop.index}}_T1"
+    set phase1name "{{reg|upper}}_H{{loop.index}}_T1"
     set proposal {{ globals.phase2_proposal }}
     set keepalive enable
   next
-  edit "{{reg|upper}}_T2"
-    set phase1name "{{reg|upper}}_T2"
+  edit "{{reg|upper}}_H{{loop.index}}_T2"
+    set phase1name "{{reg|upper}}_H{{loop.index}}_T2"
     set proposal {{ globals.phase2_proposal }}
     set keepalive enable
   next
+  {%- endfor %}
 end
 config system interface
-  edit "{{reg|upper}}_T1"
+  {%- for h in regions[reg].hubs %}
+  edit "{{reg|upper}}_H{{loop.index}}_T1"
     set vdom "root"
-    set ip {{ devices[this_dev].t1_ip[reg] }} 255.255.255.255
+    set ip {{ devices[this_dev].t1_ip[reg][loop.index-1] }} 255.255.255.255
     set allowaccess ping
     set type tunnel
-    set remote-ip {{ devices[this_dev].t1_remote_ip[reg] }} 255.255.255.252
+    set remote-ip {{ devices[this_dev].t1_remote_ip[reg][loop.index-1] }} 255.255.255.252
     set interface {{ profile.wan1_intf }}
   next
-  edit "{{reg|upper}}_T2"
+  edit "{{reg|upper}}_H{{loop.index}}_T2"
     set vdom "root"
-    set ip {{ devices[this_dev].t2_ip[reg] }} 255.255.255.255
+    set ip {{ devices[this_dev].t2_ip[reg][loop.index-1] }} 255.255.255.255
     set allowaccess ping
     set type tunnel
-    set remote-ip {{ devices[this_dev].t2_remote_ip[reg] }} 255.255.255.252
+    set remote-ip {{ devices[this_dev].t2_remote_ip[reg][loop.index-1] }} 255.255.255.252
     set interface {{ profile.wan2_intf }}
   next
+  {%- endfor %}
 end
 {% endfor -%}
 {# END: For multi-regional topology only #}

@@ -4,7 +4,7 @@ config vpn ipsec phase1-interface
   edit "H{{loop.index}}_T1"
     set interface {{ profile.wan1_intf }}
     set ike-version 2
-    set keylifeseconds 28800
+    set keylife 28800
     set peertype any
     set net-device enable
     set mode-cfg enable
@@ -22,7 +22,7 @@ config vpn ipsec phase1-interface
   edit "H{{loop.index}}_T2"
     set interface {{ profile.wan2_intf }}
     set ike-version 2
-    set keylifeseconds 28800
+    set keylife 28800
     set peertype any
     set net-device enable
     set mode-cfg enable

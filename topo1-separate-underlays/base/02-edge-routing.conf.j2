@@ -10,66 +10,55 @@ config router static
     set blackhole enable
     set comment "Avoid potential leak of corporate traffic to underlay"
   next
-  edit 102
-    set dst {{ globals.tunnel_subnet_aggregate }}
-    set blackhole enable
-    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
-  next
   {% for h in regions[devices[this_dev].region].hubs -%}
-  edit {{ loop.index * 2 + 102 }}
+  edit {{ loop.index * 4 + 102 }}
     set dst {{ globals.t1_subnet_aggregate }}
     set device "H{{loop.index}}_T1"
     set comment "Cross-region BGP NH reachability (T1)"
   next
-  edit {{ loop.index * 2 + 103 }}
+  edit {{ loop.index * 4 + 103 }}
     set dst {{ globals.t2_subnet_aggregate }}
     set device "H{{loop.index}}_T2"
     set comment "Cross-region BGP NH reachability (T2)"
   next
+  edit {{ loop.index * 4 + 104 }}
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set device "H{{loop.index}}_T1"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+  edit {{ loop.index * 4 + 105 }}
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set device "H{{loop.index}}_T2"
+    set comment "Cross-overlay BGP NH reachability"
+  next
   {% endfor -%}
 end
 
-# Use BGP communities to identify overlays
-config router community-list
-  edit "T1"
+# Use BGP NH aggregates to identify overlays
+config router prefix-list
+  edit "NH_T1"
     config rule
       edit 1
-        set action permit
-        set match "{{ globals.as }}:1"
+        set prefix {{ globals.t1_subnet_aggregate }}
+        set le 32
       next
     end
   next
-  edit "T2"
+  edit "NH_T2"
     config rule
       edit 1
-        set action permit
-        set match "{{ globals.as }}:2"
+        set prefix {{ globals.t2_subnet_aggregate }}
+        set le 32
       next
     end
   next
 end
 config router route-map
-  edit "T1_OUT"
-    # Mark overlay community (T1)
-    config rule
-      edit 1
-        set set-community "{{ globals.as }}:1"
-      next
-    end
-  next
-  edit "T2_OUT"
-    # Mark overlay community (T2)
-    config rule
-      edit 1
-        set set-community "{{ globals.as }}:2"
-      next
-    end
-  next
   edit "T1_IN"
     config rule
       edit 1
         # Prefer same-overlay routes (T1)
-        set match-community "T1"
+        set match-ip-nexthop "NH_T1"
         set set-weight 200
       next
       edit 100
@@ -80,7 +69,7 @@ config router route-map
     config rule
       edit 1
         # Prefer same-overlay routes (T2)
-        set match-community "T2"
+        set match-ip-nexthop "NH_T2"
         set set-weight 200
       next
       edit 100
@@ -96,8 +85,8 @@ config router bgp
   set holdtime-timer 15
   set ibgp-multipath enable
   set additional-path enable
-  # additional-path-select = number of overlays
-  set additional-path-select 2
+  # additional-path-select = number of overlays * number of hubs
+  set additional-path-select 4
   config neighbor
   {%- for h in regions[devices[this_dev].region].hubs %}
     edit {{ devices[h].t1_ip.edge }}
@@ -108,7 +97,6 @@ config router bgp
       set connect-timer 1
       set remote-as {{ globals.as }}
       set route-map-in "T1_IN"
-      set route-map-out "T1_OUT"
       set additional-path receive
     next
     edit {{ devices[h].t2_ip.edge }}
@@ -119,7 +107,6 @@ config router bgp
       set connect-timer 1
       set remote-as {{ globals.as }}
       set route-map-in "T2_IN"
-      set route-map-out "T2_OUT"
       set additional-path receive
     next
   {%- endfor %}

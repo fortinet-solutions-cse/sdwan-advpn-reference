@@ -1,46 +1,41 @@
 {% set profile = profiles[devices[this_dev].profile] -%}
-# Use BGP communities to identify prefixes behind the Hubs
+{% set reg_id = (regions|list).index(devices[this_dev].region) + 1 -%}
+# Use BGP communities to identify local Hub prefixes
 config router community-list
-  edit "HUB"
+  edit "{{ devices[this_dev].region }}_HUB"
     config rule
       edit 1
         set action permit
-        set match "{{ globals.as }}:10"
+        set match "{{ globals.as }}:{{ reg_id * 2 + 1 }}"
       next
     end
   next
 end
 config router route-map
-  edit "HUB2HUB"
+  edit "PEERHUB_OUT"
     config rule
       edit 1
-        set match-community "HUB"
-        # Prevent duplicate readvertisement to Edges
+        set match-community "{{ devices[this_dev].region }}_HUB"
+        # Prevent duplicate readvertisement to Edges and remote regions
         set set-community no-advertise
         set set-community-additive enable
-        set action permit
       next
-      edit 100
-        set action deny
+    end
+  next
+  edit "HUB_IN"
+    config rule
+      edit 1
+        set set-community "{{ globals.as }}:{{ reg_id * 2 + 1 }}"
       next
     end
   next
 end
 {% if devices[this_dev].lan_subnet is defined -%}
-config router route-map
-  edit "LOCAL"
-    config rule
-      edit 1
-        set set-community "{{ globals.as }}:10"
-      next
-    end
-  next
-end
 config router bgp
   config network
     edit 1
       set prefix {{ devices[this_dev].lan_subnet }}
-      set route-map LOCAL
+      set route-map HUB_IN
     next
   end
 end
@@ -113,7 +108,7 @@ config router bgp
       set connect-timer 1
       set remote-as {{ globals.as }}
       set next-hop-self enable
-      set route-map-out "HUB2HUB"
+      set route-map-out "PEERHUB_OUT"
     next
     edit {{ devices[h].t2_ip[this_dev] }}
       set soft-reconfiguration enable
@@ -122,7 +117,7 @@ config router bgp
       set connect-timer 1
       set remote-as {{ globals.as }}
       set next-hop-self enable
-      set route-map-out "HUB2HUB"
+      set route-map-out "PEERHUB_OUT"
     next
   end
 end
@@ -154,3 +149,25 @@ config firewall policy
     set logtraffic all
   next
 end
+
+{# BEGIN: For multi-regional topology only #}
+{% if regions|reject("==", devices[this_dev].region)|list|count -%}
+config router route-map
+  # Advertise Hub prefixes to remote regions
+  edit "T1_OUT"
+    config rule
+      edit 2
+        set match-community "{{ devices[this_dev].region }}_HUB"
+      next
+    end
+  next
+  edit "T2_OUT"
+    config rule
+      edit 2
+        set match-community "{{ devices[this_dev].region }}_HUB"
+      next
+    end
+  next
+end
+{% endif %}
+{# END: For multi-regional topology only #}

@@ -31,11 +31,10 @@ config router bgp
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
-      set connect-timer 1
       set remote-as {{ globals.as }}
       set additional-path send
-      # adv-additional-path = number of overlays
-      set adv-additional-path 2
+      # adv-additional-path = number of overlays * number of hubs
+      set adv-additional-path 4
       set next-hop-self enable
       set route-reflector-client enable
     next
@@ -50,6 +49,7 @@ end
 
 {# BEGIN: For multi-regional topology only #}
 {% if regions|reject("==", devices[this_dev].region)|list|count -%}
+{% set reg_id = (regions|list).index(devices[this_dev].region) + 1 -%}
 config router static
   {% for reg in regions if reg != devices[this_dev].region -%}
   edit {{ loop.index * 2 + 102 }}
@@ -65,29 +65,32 @@ config router static
   {% endfor -%}
 end
 
-# Use BGP communities to identify overlays
+# Use BGP communities to identify local region
 config router community-list
-  edit "T1"
+  edit "{{ devices[this_dev].region }}_EDGE"
     config rule
       edit 1
         set action permit
-        set match "{{ globals.as }}:1"
+        set match "{{ globals.as }}:{{ reg_id * 2 }}"
       next
     end
   next
-  edit "T2"
+end
+# Use BGP NH aggregates to identify overlays
+config router prefix-list
+  edit "NH_T1"
     config rule
       edit 1
-        set action permit
-        set match "{{ globals.as }}:2"
+        set prefix {{ globals.t1_subnet_aggregate }}
+        set le 32
       next
     end
   next
-  edit "HUB"
+  edit "NH_T2"
     config rule
       edit 1
-        set action permit
-        set match "{{ globals.as }}:10"
+        set prefix {{ globals.t2_subnet_aggregate }}
+        set le 32
       next
     end
   next
@@ -97,32 +100,24 @@ config router route-map
   edit "T1_OUT"
     config rule
       edit 1
-        set match-community "T1"
-        set action permit
-      next
-      edit 2
-        set match-community "HUB"
-        set set-community "{{ globals.as }}:1"
-        set set-community-additive enable
-      next
-      edit 100
-        set action deny
+        set match-community "{{ devices[this_dev].region }}_EDGE"
+        set match-ip-nexthop "NH_T1"
       next
     end
   next
   edit "T2_OUT"
     config rule
       edit 1
-        set match-community "T2"
-        set action permit
+        set match-community "{{ devices[this_dev].region }}_EDGE"
+        set match-ip-nexthop "NH_T2"
       next
-      edit 2
-        set match-community "HUB"
-        set set-community "{{ globals.as }}:2"
-        set set-community-additive enable
-      next
-      edit 100
-        set action deny
+    end
+  next
+  # Set regional community
+  edit "EDGE_IN"
+    config rule
+      edit 1
+        set set-community "{{ globals.as }}:{{ reg_id * 2 }}"
       next
     end
   next
@@ -132,7 +127,8 @@ config router bgp
   config neighbor
     # Remote Regional Hubs
     {% for reg in regions if reg != devices[this_dev].region -%}
-    edit {{ devices[this_dev].t1_remote_ip[reg] }}
+    {%- for h in regions[reg].hubs %}
+    edit {{ devices[this_dev].t1_remote_ip[reg][loop.index-1] }}
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
@@ -145,7 +141,7 @@ config router bgp
       set route-map-out "T1_OUT"
       set route-reflector-client enable
     next
-    edit {{ devices[this_dev].t2_remote_ip[reg] }}
+    edit {{ devices[this_dev].t2_remote_ip[reg][loop.index-1] }}
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
@@ -158,7 +154,14 @@ config router bgp
       set route-map-out "T2_OUT"
       set route-reflector-client enable
     next
+    {%- endfor %}
     {% endfor -%}
+  end
+  config neighbor-group
+    # Mark Edge prefixes with regional community
+    edit "EDGE"
+      set route-map-in "EDGE_IN"
+    next
   end
 end
 {% endif %}
