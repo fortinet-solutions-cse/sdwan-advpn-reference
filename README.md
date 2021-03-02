@@ -9,6 +9,12 @@ several examples (see `example-*.yml` under each topology).
 A simple renderer written in python is also provided (see `render_config.py`).
 It can render a single template for a specified device or an entire topology for all devices defined in YAML.
 
+Required python3 modules to run the renderer:
+
+```
+pip3 install requests pyyaml jinja2
+```
+
 Usage example:
 
 ```

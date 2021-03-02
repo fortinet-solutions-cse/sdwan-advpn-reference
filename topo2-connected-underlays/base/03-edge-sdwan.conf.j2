@@ -31,19 +31,19 @@ config system sdwan
       set zone "overlay"
     next
     edit {{ loop.index * 4 + 1 }}
-      set interface "H{{loop.index}}_T12"
+      set interface "H{{loop.index}}_T22"
       # Do not use for Internet access in implicit rule / local-out
       set priority 10
       set zone "overlay"
     next
     edit {{ loop.index * 4 + 2 }}
-      set interface "H{{loop.index}}_T21"
+      set interface "H{{loop.index}}_T12"
       # Do not use for Internet access in implicit rule / local-out
       set priority 10
       set zone "overlay"
     next
     edit {{ loop.index * 4 + 3 }}
-      set interface "H{{loop.index}}_T22"
+      set interface "H{{loop.index}}_T21"
       # Do not use for Internet access in implicit rule / local-out
       set priority 10
       set zone "overlay"

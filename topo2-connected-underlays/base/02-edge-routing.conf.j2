@@ -10,31 +10,46 @@ config router static
     set blackhole enable
     set comment "Avoid potential leak of corporate traffic to underlay"
   next
-  edit 102
-    set dst {{ globals.tunnel_subnet_aggregate }}
-    set blackhole enable
-    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
-  next
   {% for h in regions[devices[this_dev].region].hubs -%}
-  edit {{ loop.index * 4 + 102 }}
+  edit {{ loop.index * 8 + 102 }}
     set dst {{ globals.t11_subnet_aggregate }}
     set device "H{{loop.index}}_T11"
     set comment "Cross-region BGP NH reachability (T11)"
   next
-  edit {{ loop.index * 4 + 103 }}
+  edit {{ loop.index * 8 + 103 }}
+    set dst {{ globals.t22_subnet_aggregate }}
+    set device "H{{loop.index}}_T22"
+    set comment "Cross-region BGP NH reachability (T22)"
+  next
+  edit {{ loop.index * 8 + 104 }}
     set dst {{ globals.t12_subnet_aggregate }}
     set device "H{{loop.index}}_T12"
     set comment "Cross-region BGP NH reachability (T12)"
   next
-  edit {{ loop.index * 4 + 104 }}
+  edit {{ loop.index * 8 + 105 }}
     set dst {{ globals.t21_subnet_aggregate }}
     set device "H{{loop.index}}_T21"
     set comment "Cross-region BGP NH reachability (T21)"
   next
-  edit {{ loop.index * 4 + 105 }}
-    set dst {{ globals.t22_subnet_aggregate }}
+  edit {{ loop.index * 8 + 106 }}
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set device "H{{loop.index}}_T11"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+  edit {{ loop.index * 8 + 107 }}
+    set dst {{ globals.tunnel_subnet_aggregate }}
     set device "H{{loop.index}}_T22"
-    set comment "Cross-region BGP NH reachability (T22)"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+  edit {{ loop.index * 8 + 108 }}
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set device "H{{loop.index}}_T12"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+  edit {{ loop.index * 8 + 109 }}
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set device "H{{loop.index}}_T21"
+    set comment "Cross-overlay BGP NH reachability"
   next
   {% endfor -%}
 end
