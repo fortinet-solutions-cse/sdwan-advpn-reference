@@ -54,120 +54,6 @@ config router static
   {% endfor -%}
 end
 
-# Use BGP communities to identify overlays
-config router community-list
-  edit "T11"
-    config rule
-      edit 1
-        set action permit
-        set match "{{ globals.as }}:11"
-      next
-    end
-  next
-  edit "T12"
-    config rule
-      edit 1
-        set action permit
-        set match "{{ globals.as }}:12"
-      next
-    end
-  next
-  edit "T21"
-    config rule
-      edit 1
-        set action permit
-        set match "{{ globals.as }}:21"
-      next
-    end
-  next
-  edit "T22"
-    config rule
-      edit 1
-        set action permit
-        set match "{{ globals.as }}:22"
-      next
-    end
-  next
-end
-config router route-map
-  edit "T11_OUT"
-    # Mark overlay community (T11)
-    config rule
-      edit 1
-        set set-community "{{ globals.as }}:11"
-      next
-    end
-  next
-  edit "T12_OUT"
-    # Mark overlay community (T12)
-    config rule
-      edit 1
-        set set-community "{{ globals.as }}:12"
-      next
-    end
-  next
-  edit "T21_OUT"
-    # Mark overlay community (T21)
-    config rule
-      edit 1
-        set set-community "{{ globals.as }}:21"
-      next
-    end
-  next
-  edit "T22_OUT"
-    # Mark overlay community (T22)
-    config rule
-      edit 1
-        set set-community "{{ globals.as }}:22"
-      next
-    end
-  next
-  edit "T11_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T11)
-        set match-community "T11"
-        set set-weight 200
-      next
-      edit 100
-      next
-    end
-  next
-  edit "T12_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T12)
-        set match-community "T12"
-        set set-weight 200
-      next
-      edit 100
-      next
-    end
-  next
-  edit "T21_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T21)
-        set match-community "T21"
-        set set-weight 200
-      next
-      edit 100
-      next
-    end
-  next
-  edit "T22_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T22)
-        set match-community "T22"
-        set set-weight 200
-      next
-      edit 100
-      next
-    end
-  next
-end
-
 config router bgp
   set as {{ globals.as }}
   set router-id {{ devices[this_dev].router_id }}
@@ -186,8 +72,6 @@ config router bgp
       set interface "H{{loop.index}}_T11"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "T11_IN"
-      set route-map-out "T11_OUT"
       set additional-path receive
     next
     edit {{ devices[h].t12_ip.edge }}
@@ -197,8 +81,6 @@ config router bgp
       set interface "H{{loop.index}}_T12"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "T12_IN"
-      set route-map-out "T12_OUT"
       set additional-path receive
     next
     edit {{ devices[h].t21_ip.edge }}
@@ -208,8 +90,6 @@ config router bgp
       set interface "H{{loop.index}}_T21"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "T21_IN"
-      set route-map-out "T21_OUT"
       set additional-path receive
     next
     edit {{ devices[h].t22_ip.edge }}
@@ -219,8 +99,6 @@ config router bgp
       set interface "H{{loop.index}}_T22"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "T22_IN"
-      set route-map-out "T22_OUT"
       set additional-path receive
     next
   {%- endfor %}
