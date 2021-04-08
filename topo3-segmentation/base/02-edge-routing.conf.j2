@@ -1,0 +1,46 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+config router bgp
+  set as {{ regions[devices[this_dev].region].as }}
+  set router-id {{ devices[this_dev].router_id }}
+  set keepalive-timer 5
+  set holdtime-timer 15
+  set ibgp-multipath enable
+  set additional-path-vpnv4 enable
+  set recursive-resolve-by-bgp enable
+  config neighbor
+  {%- for h in regions[devices[this_dev].region].hubs %}
+    {%- set hubloop = loop %}
+    {%- for w in profile.wan_intf %}
+    edit {{ devices[h].tunnel_ip[loop.index0] }}
+      set soft-reconfiguration-vpnv4 enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H{{hubloop.index}}_T{{loop.index}}"
+      set connect-timer 1
+      set remote-as {{ regions[devices[this_dev].region].as }}
+      set additional-path-vpnv4 receive
+    next
+    {%- endfor %}
+  {%- endfor %}
+  end
+  config network
+    {%- for i in range(1, globals.segments+1) %}
+    edit {{ i }}
+      set prefix {{ devices[this_dev].lan_subnet[i-1] }}
+    next
+    {%- endfor %}
+  end
+  config vrf
+    edit "0"
+      set role pe
+    next
+    {%- for i in range(1, globals.segments+1) %}
+    edit "{{ i }}"
+      set role ce
+      set rd "{{ globals.as }}:{{ i }}"
+      set export-rt "{{ globals.as }}:{{ i }}"
+      set import-rt "{{ globals.as }}:{{ i }}"
+    next
+    {%- endfor %}
+  end
+end

@@ -1,0 +1,89 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+config router static
+  edit 101
+    set dst {{ globals.corp_aggregate }}
+    set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+  edit 102
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set blackhole enable
+    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
+  next
+end
+
+config router bgp
+  set as {{ regions[devices[this_dev].region].as }}
+  set router-id {{ devices[this_dev].router_id }}
+  set keepalive-timer 5
+  set holdtime-timer 15
+  set ibgp-multipath enable
+  set ebgp-multipath enable
+  set additional-path-vpnv4 enable
+  # Number of overlays
+  set additional-path-select-vpnv4 6
+  set recursive-resolve-by-bgp enable
+  {#- BEGIN: For multi-regional topology only #}
+  config neighbor
+  {%- for reg in regions if reg != devices[this_dev].region %}
+    # Remote Regional Hubs ({{ reg }})
+    {%- for h in regions[reg].hubs %}
+    edit {{ devices[h].lo_bgp }}
+      set soft-reconfiguration-vpnv4 enable
+      set ebgp-enforce-multihop enable
+      set attribute-unchanged-vpnv4 next-hop
+      set advertisement-interval 1
+      set connect-timer 1
+      set link-down-failover enable
+      set remote-as {{ regions[reg].as }}
+      set interface "lo-BGP"
+      set update-source "lo-BGP"
+      set additional-path-vpnv4 both
+      # Number of overlays
+      set adv-additional-path-vpnv4 3
+    next
+    {%- endfor %}
+  {%- endfor %}
+  end
+  {#- END: For multi-regional topology only #}
+  config neighbor-group
+    edit "EDGE"
+      set soft-reconfiguration-vpnv4 enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set remote-as {{ regions[devices[this_dev].region].as }}
+      set additional-path-vpnv4 send
+      # num_of_overlays * num_of_hubs
+      set adv-additional-path-vpnv4 6
+      set attribute-unchanged-vpnv4 next-hop
+      set next-hop-self enable
+      set route-reflector-client-vpnv4 enable
+    next
+  end
+  config neighbor-range
+    edit 1
+      set prefix {{ globals.tunnel_subnet_aggregate }}
+      set neighbor-group "EDGE"
+    next
+  end
+  config network
+    {%- for w in profile.wan_intf %}
+    edit {{ loop.index }}
+      set prefix {{ devices[this_dev].tunnel_subnet[loop.index0] }}
+    next
+    {%- endfor %}
+  end
+  config vrf
+    edit "0"
+      set role pe
+    next
+    {%- for i in range(1, globals.segments+1) %}
+    edit "{{ i }}"
+      set role ce
+      set rd "{{ globals.as }}:{{ i }}"
+      set export-rt "{{ globals.as }}:{{ i }}"
+      set import-rt "{{ globals.as }}:{{ i }}"
+    next
+    {%- endfor %}
+  end
+end
