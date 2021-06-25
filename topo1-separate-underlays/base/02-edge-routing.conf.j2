@@ -34,50 +34,6 @@ config router static
   {% endfor -%}
 end
 
-# Use BGP NH aggregates to identify overlays
-config router prefix-list
-  edit "NH_T1"
-    config rule
-      edit 1
-        set prefix {{ globals.t1_subnet_aggregate }}
-        set le 32
-      next
-    end
-  next
-  edit "NH_T2"
-    config rule
-      edit 1
-        set prefix {{ globals.t2_subnet_aggregate }}
-        set le 32
-      next
-    end
-  next
-end
-config router route-map
-  edit "T1_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T1)
-        set match-ip-nexthop "NH_T1"
-        set set-weight 200
-      next
-      edit 100
-      next
-    end
-  next
-  edit "T2_IN"
-    config rule
-      edit 1
-        # Prefer same-overlay routes (T2)
-        set match-ip-nexthop "NH_T2"
-        set set-weight 200
-      next
-      edit 100
-      next
-    end
-  next
-end
-
 config router bgp
   set as {{ globals.as }}
   set router-id {{ devices[this_dev].router_id }}
@@ -96,7 +52,6 @@ config router bgp
       set interface "H{{loop.index}}_T1"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "T1_IN"
       set additional-path receive
     next
     edit {{ devices[h].t2_ip.edge }}
@@ -106,7 +61,6 @@ config router bgp
       set interface "H{{loop.index}}_T2"
       set connect-timer 1
       set remote-as {{ globals.as }}
-      set route-map-in "T2_IN"
       set additional-path receive
     next
   {%- endfor %}
