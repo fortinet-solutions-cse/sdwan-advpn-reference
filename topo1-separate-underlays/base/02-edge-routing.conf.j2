@@ -43,6 +43,7 @@ config router bgp
   set additional-path enable
   # additional-path-select = number of overlays * number of hubs
   set additional-path-select 4
+  set recursive-next-hop enable
   config neighbor
   {%- for h in regions[devices[this_dev].region].hubs %}
     edit {{ devices[h].t1_ip.edge }}
