@@ -57,7 +57,7 @@ total 112
 
 ## Topology 1: Separate Underlays
 
-Requirements: FOS 6.4.1+
+Requirements: FOS 6.4.5+
 
 This base topology includes two separate underlay transport networks.
 A typical example would be: Internet and MPLS.
@@ -115,7 +115,7 @@ Plugins (optional):
 
 ## Topology 2: Interconnected Underlays
 
-Requirements: FOS 6.4.1+
+Requirements: FOS 6.4.5+
 
 This base topology includes two interconnected underlay transport networks.
 A typical example would be: two Internet links (e.g. two ISPs).
