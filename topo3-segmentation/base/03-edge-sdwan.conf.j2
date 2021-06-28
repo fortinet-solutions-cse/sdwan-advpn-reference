@@ -1,0 +1,64 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+{% set hub_sla_members = [ ] -%}
+{% set hub_rule_members = [ ] -%}
+config firewall address
+  edit "CORP_LAN"
+    set subnet {{ globals.corp_aggregate }}
+  next
+end
+config system sdwan
+  set status enable
+  config zone
+    edit "overlay"
+    next
+  end
+  config members
+  {%- set ns = namespace(mbr_i = 1) %}
+  {%- for h in regions[devices[this_dev].region].hubs %}
+    {%- set hubloop = loop %}
+    {%- set this_hub_members = [] -%}
+    {%- for w in profile.wan_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "H{{hubloop.index}}_T{{loop.index}}"
+      set priority 10
+      set zone "overlay"
+    next
+    {{- hub_sla_members.append(ns.mbr_i) or "" }}
+    {{- this_hub_members.append(ns.mbr_i) or "" }}
+    {%- set ns.mbr_i = ns.mbr_i + 1 %}
+    {%- endfor %}
+    {{- hub_rule_members.append(this_hub_members) or "" }}
+  {%- endfor %}
+  end
+  config health-check
+    edit "HUB"
+      set server {{ globals.loopback_hc_ip }}
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set members {{ hub_sla_members|join(' ') }}
+      config sla
+        edit 1
+          set link-cost-factor latency
+          set latency-threshold 100
+        next
+      end
+    next
+  end
+  config service
+    {%- for h in regions[devices[this_dev].region].hubs %}
+    edit {{loop.index}}
+      set name "Corporate-H{{loop.index}}"
+      set mode sla
+      set dst "CORP_LAN"
+      set src "CORP_LAN"
+      config sla
+        edit "HUB"
+          set id 1
+        next
+      end
+      # Using Hub {{h}}
+      set priority-members {{ hub_rule_members[loop.index0]|join(' ') }}
+    next
+    {%- endfor %}
+  end
+end
