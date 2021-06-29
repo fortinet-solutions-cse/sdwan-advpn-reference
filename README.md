@@ -98,4 +98,8 @@ Internet Access:
 
 Plugins (optional):
 
-- LAN behind Hub (including DC-to-DC communication)
+- LAN behind Hubs:
+
+  - IPSEC tunnels between Hubs of the same region (for Hub-to-Hub traffic only)
+
+  - Cross-regional Spoke-to-Hub ADVPN shortcuts are enabled
