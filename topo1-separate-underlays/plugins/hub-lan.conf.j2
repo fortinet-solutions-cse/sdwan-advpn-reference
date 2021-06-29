@@ -1,0 +1,135 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+
+{% if devices[this_dev].lan_subnet is defined -%}
+config router bgp
+  config network
+    edit 10
+      set prefix {{ devices[this_dev].lan_subnet[0] }}
+    next
+  end
+end
+{% if regions[devices[this_dev].region].hubs|count > 1 -%}
+# Use BGP communities to identify local Hub prefixes
+config router community-list
+  edit "{{ devices[this_dev].region }}_HUB"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ regions[devices[this_dev].region].as }}:20"
+      next
+    end
+  next
+end
+config router route-map
+  edit "PEERHUB_OUT"
+    config rule
+      edit 1
+        set match-community "{{ devices[this_dev].region }}_HUB"
+        # Prevent duplicate readvertisement to Edges and remote regions
+        set set-community no-advertise
+      next
+    end
+  next
+  edit "HUB_IN"
+    config rule
+      edit 1
+        set set-community "{{ regions[devices[this_dev].region].as }}:20"
+      next
+    end
+  next
+end
+config router bgp
+  config network
+    edit 10
+      set route-map "HUB_IN"
+    next
+  end
+end
+{% endif -%}
+{% endif -%}
+
+{#- BEGIN: Hub-to-Hub peering within the region #}
+{% if regions[devices[this_dev].region].hubs|count > 1 -%}
+config system interface
+  edit "lo-BGP"
+    set vdom "root"
+    set type loopback
+    set ip {{ devices[this_dev].lo_bgp }} 255.255.255.255
+    set allowaccess ping
+  next
+end
+{% for h in regions[devices[this_dev].region].hubs if h != this_dev -%}
+# Local Region (Peer Hub {{h}})
+config vpn ipsec phase1-interface
+  {%- for w in profile.wan_intf %}
+  edit "{{h|upper}}_T{{loop.index}}"
+    set interface {{ w }}
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set proposal {{ globals.phase1_proposal }}
+    set exchange-interface-ip enable
+    set exchange-ip-addr4 {{ devices[this_dev].lo_bgp }}
+    set remote-gw {{ devices[h].wan_ip[loop.index0] }}
+    set psksecret {{ globals.psk }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+  {%- endfor %}
+end
+config vpn ipsec phase2-interface
+  {%- for w in profile.wan_intf %}
+  edit "{{h|upper}}_T{{loop.index}}"
+    set phase1name "{{h|upper}}_T{{loop.index}}"
+    set proposal {{ globals.phase2_proposal }}
+    set keepalive enable
+  next
+  {%- endfor %}
+end
+config router bgp
+  config neighbor
+    edit {{ devices[h].lo_bgp }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set connect-timer 1
+      set remote-as {{ regions[devices[this_dev].region].as }}
+      set route-map-out "PEERHUB_OUT"
+      set next-hop-self enable
+    next
+  end
+end
+config system zone
+  edit "overlay"
+    {%- for w in profile.wan_intf %}
+    append interface "{{h|upper}}_T{{loop.index}}"
+    {%- endfor %}
+  next
+end
+{% endfor -%}
+{% endif -%}
+{#- END: Hub-to-Hub peering within the region #}
+
+{% if profile.lan_intf is defined -%}
+config system zone
+  edit "lan"
+    set interface {{ profile.lan_intf[0] }}
+  next
+end
+config firewall policy
+  edit 10
+    set name "Corporate"
+    set srcintf "lan" "overlay"
+    set dstintf "lan" "overlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+end
+{% endif -%}

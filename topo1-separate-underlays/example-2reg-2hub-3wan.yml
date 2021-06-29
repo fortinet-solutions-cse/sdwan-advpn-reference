@@ -8,6 +8,9 @@
     loopback_hc_ip: 10.200.99.1
     psk: dogcat
 
+  plugins:
+    - hub-lan.conf.j2
+
   profiles:
     edge:
       type: edge
@@ -26,6 +29,8 @@
         - port1
         - port2
         - port4
+      lan_intf:
+        - port5
       dia_intf:
         - port1
         - port2
@@ -81,6 +86,8 @@
         - start: 10.203.1.11
           end: 10.203.1.250
           netmask: 255.255.255.0
+      lan_subnet:
+        - 10.1.0.0/24             
     dc2_fgt:
       profile: hub
       region: west
@@ -112,6 +119,8 @@
         - start: 10.203.2.11
           end: 10.203.2.250
           netmask: 255.255.255.0
+      lan_subnet:
+        - 10.2.0.0/24
     dc3_fgt:
       profile: hub
       region: east
@@ -143,6 +152,8 @@
         - start: 10.203.3.11
           end: 10.203.3.250
           netmask: 255.255.255.0
+      lan_subnet:
+        - 10.3.0.0/24
     branch1_fgt:
       profile: edge
       region: west

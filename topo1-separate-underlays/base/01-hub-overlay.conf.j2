@@ -13,7 +13,6 @@ config vpn ipsec phase1-interface
     set interface {{ w }}
     set ike-version 2
     set peertype any
-    set net-device disable
     set mode-cfg enable
     set proposal {{ globals.phase1_proposal }}
     set add-route disable
@@ -61,7 +60,6 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set keylife 28800
     set peertype any
-    set net-device enable
     set proposal {{ globals.phase1_proposal }}
     set auto-discovery-sender enable
     set auto-discovery-receiver enable

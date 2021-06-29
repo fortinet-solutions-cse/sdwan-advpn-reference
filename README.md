@@ -95,3 +95,7 @@ Internet Access:
 - Direct Internet Access (DIA) from each Edge CPE (using Best Quality strategy to pick one of the Internet links)
 
 - Ready for Remote Internet Access (RIA)
+
+Plugins (optional):
+
+- LAN behind Hub (including DC-to-DC communication)
