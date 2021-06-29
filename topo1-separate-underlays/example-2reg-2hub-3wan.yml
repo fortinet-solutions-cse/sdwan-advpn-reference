@@ -3,11 +3,6 @@
     as: 65000
     corp_aggregate: 10.0.0.0/8
     tunnel_subnet_aggregate: 10.200.0.0/14
-    tunnel_subnet:
-      - 10.201.0.0/16
-      - 10.202.0.0/16
-      - 10.203.0.0/16
-    segments: 2
     phase1_proposal: aes256gcm-prfsha384
     phase2_proposal: aes256gcm
     loopback_hc_ip: 10.200.99.1
@@ -22,17 +17,18 @@
         - port4
       lan_intf:
         - port5
-        - port6
+      dia_intf:
+        - port1
+        - port2
     hub:
       type: hub
       wan_intf:
         - port1
         - port2
         - port4
-      wan_domain:
-        - domain1
-        - domain1
-        - domain2
+      dia_intf:
+        - port1
+        - port2
 
   regions:
     west:
@@ -153,18 +149,15 @@
       router_id: 10.0.1.1
       lan_subnet:
         - 10.0.1.0/24
-        - 10.0.101.0/24
     branch2_fgt:
       profile: edge
       region: west
       router_id: 10.0.2.1
       lan_subnet:
         - 10.0.2.0/24
-        - 10.0.102.0/24
     branch3_fgt:
       profile: edge
       region: east
       router_id: 10.0.3.1
       lan_subnet:
         - 10.0.3.0/24
-        - 10.0.103.0/24

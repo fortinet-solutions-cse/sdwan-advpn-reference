@@ -57,9 +57,9 @@ total 112
 
 ## Topology 1: Separate Underlays
 
-Requirements: FOS 6.4.1+
+Requirements: FOS 7.0.1+
 
-This base topology includes two separate underlay transport networks.
+This base topology includes an arbitrary number of separate underlay transport networks.
 A typical example would be: Internet and MPLS.
 
 The topology is multi-regional, with arbitrary number of regions and Regional Hubs.
@@ -73,7 +73,9 @@ Corporate Access (CPE to CPE):
 
 - Full-mesh IPSEC overlays between Regional Hubs, over each underlay transport  
 
-- IBGP sessions over each overlay (both within regions and between regions)
+- IBGP sessions over each overlay within the region (Hub-to-Spoke)
+
+- EBGP sessions between Regional Hubs
 
 - ADVPN shortcuts are enabled within each overlay
 
@@ -90,59 +92,6 @@ Corporate Access (CPE to CPE):
 
 Internet Access:
 
-- Direct Internet Access (DIA) from each Edge CPE, using 1st underlay only (Internet)
+- Direct Internet Access (DIA) from each Edge CPE (using Best Quality strategy to pick one of the Internet links)
 
-- Remote Internet Access (RIA) via Regional Hub, using overlays over 2nd underlay only (MPLS)
-
-- Application-aware SD-WAN rules with different SLA targets per application
-
-Plugins (optional):
-
-- LAN behind Hubs:
-
-  - IPSEC tunnels between Hubs of the same region (for Hub-to-Hub traffic only)
-
-  - Cross-regional Spoke-to-Hub ADVPN shortcuts are enabled
-
-- Hub-to-Edge traffic support with Remote SLA Probing ("Bi-directional SD-WAN")
-
-  - **IMPORTANT:** This plugin is currently implemented only for a single-region topology
-
-  - SLA measured by Edge CPEs and signaled to the Hubs by means of a special BGP community
-
-  - This BGP community is then mapped to route-tag and used in SD-WAN rules on Hubs
-
-
-## Topology 2: Interconnected Underlays
-
-Requirements: FOS 6.4.1+
-
-This base topology includes two interconnected underlay transport networks.
-A typical example would be: two Internet links (e.g. two ISPs).
-
-The topology is multi-regional, with arbitrary number of regions and Regional Hubs.
-
-### Features:
-
-Corporate Access (CPE to CPE):
-
-- Full-mesh IPSEC overlays between Edge CPEs (Spokes) and each Regional Hub
-  (hence, with 2 ISPs on CPE and Hub, each Edge CPE builds 4 IPSEC tunnels to each Hub)
-
-- Full-mesh IPSEC overlays between Regional Hubs, over each underlay transport  
-
-- IBGP sessions over each overlay (both within regions and between regions)
-
-- ADVPN shortcuts are enabled within each overlay
-
-- Cross-overlay ADVPN shortcuts are enabled (e.g. across different ISPs)
-
-- Cross-regional ADVPN shortcuts are enabled
-
-- The traffic prefers to flow via ADVPN shortcut, when possible
-
-- Overlay stickiness: the traffic prefers to stay within the same overlay end-to-end
-
-Internet Access:
-
-- Direct Internet Access (DIA) from each Edge CPE, using the best of the available links
+- Ready for Remote Internet Access (RIA)

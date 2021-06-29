@@ -1,40 +1,47 @@
 {% set profile = profiles[devices[this_dev].profile] -%}
 {% set hub_sla_members = [ ] -%}
-{% set hub_t2_members = [ ] -%}
+{% set hub_rule_members = [ ] -%}
+{% set dia_members = [ ] -%}
+config firewall address
+  edit "CORP_LAN"
+    set subnet {{ globals.corp_aggregate }}
+  next
+end
 config system sdwan
   set status enable
   config zone
-    edit "virtual-wan-link"
-    next
     edit "underlay"
     next
     edit "overlay"
     next
   end
   config members
-    edit 1
-      set interface {{ profile.wan1_intf }}
+  {%- set ns = namespace(mbr_i = 1) %}
+  {%- for i in profile.dia_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "{{ i }}"
       set zone "underlay"
       # Best priority, used for Internet access in implicit rule / local-out
       # Gateway is fetched from DHCP
     next
-    {%- for h in regions[devices[this_dev].region].hubs %}
-    edit {{ loop.index * 2 }}
-      set interface "H{{loop.index}}_T1"
-      # Do not use for Internet access in implicit rule / local-out
+  {{- dia_members.append(ns.mbr_i) or "" }}
+  {%- set ns.mbr_i = ns.mbr_i + 1 %}
+  {%- endfor %}
+  {%- for h in regions[devices[this_dev].region].hubs %}
+    {%- set hubloop = loop %}
+    {%- set this_hub_members = [] -%}
+    {%- for w in profile.wan_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "H{{hubloop.index}}_T{{loop.index}}"
       set priority 10
       set zone "overlay"
     next
-    edit {{ loop.index * 2 + 1 }}
-      set interface "H{{loop.index}}_T2"
-      # Do not use for Internet access in implicit rule / local-out
-      set priority 10
-      set zone "overlay"
-    next
-    {{- hub_sla_members.append(loop.index * 2) or "" }}
-    {{- hub_sla_members.append(loop.index * 2 + 1) or "" }}
-    {{- hub_t2_members.append(loop.index * 2 + 1) or "" }}
+    {{- hub_sla_members.append(ns.mbr_i) or "" }}
+    {{- this_hub_members.append(ns.mbr_i) or "" }}
+    {%- set ns.mbr_i = ns.mbr_i + 1 %}
     {%- endfor %}
+    {{- hub_rule_members.append(this_hub_members) or "" }}
+  {%- endfor %}
   end
   config health-check
     edit "HUB"
@@ -53,17 +60,7 @@ config system sdwan
       set server "www.fortinet.com"
       set sla-fail-log-period 10
       set sla-pass-log-period 10
-      set members 1 {{ hub_t2_members|join(' ') }}
-      config sla
-        edit 1
-          set link-cost-factor latency
-          set latency-threshold 200
-        next
-        edit 2
-          set link-cost-factor latency
-          set latency-threshold 300
-        next
-      end
+      set members {{ dia_members|join(' ') }}
     next
   end
   config service
@@ -73,54 +70,31 @@ config system sdwan
       set mode sla
       set dst "CORP_LAN"
       set src "CORP_LAN"
+      set hold-down-time 20
+      set tie-break fib-best-match
       config sla
         edit "HUB"
           set id 1
         next
       end
       # Using Hub {{h}}
-      set priority-members {{ loop.index * 2 }} {{ loop.index * 2 + 1 }}
+      set priority-members {{ hub_rule_members[loop.index0]|join(' ') }}
     next
     {%- endfor %}
     edit 10
-      set name "Business-Critical-HighPriority"
-      set mode sla
-      set internet-service enable
-      # Set ISDB values for high-priority apps (Salesforce, GoToMeeting)
-      set internet-service-app-ctrl 16920 16354
-      config sla
-          edit "Internet"
-              set id 1
-          next
-      end
-      # Using underlay (DIA) + MPLS overlay (RIA)
-      set priority-members 1 {{ hub_t2_members|join(' ') }}
-    next
-    edit 11
-      set name "Business-Critical-MedPriority"
-      set mode sla
-      set internet-service enable
-      # Set ISDB values for medium-priority apps (Office365)
-      set internet-service-app-ctrl 33182 41468
-      config sla
-          edit "Internet"
-              set id 2
-          next
-      end
-      # Using underlay (DIA) + MPLS overlay (RIA)
-      set priority-members 1 {{ hub_t2_members|join(' ') }}
-    next
-    edit 12
-      set name "Non-Business-Critical"
+      set name "Local-Breakout"
+      set mode priority
       set dst "all"
-      # Using underlay (DIA) only
-      set priority-members 1
+      set health-check Internet
+      # Using best underlay (DIA) link
+      set priority-members {{ dia_members|join(' ') }}
     next
   end
 end
+
 config router static
   edit 100
-    # Default route (mandatory for RIA)
-    set sdwan enable
+    # Default route
+    set sdwan-zone "underlay" "overlay"
   next
 end
