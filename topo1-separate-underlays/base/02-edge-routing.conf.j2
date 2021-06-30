@@ -33,11 +33,3 @@ config router bgp
     next
   end
 end
-
-config router static
-  edit 102
-    set dst {{ globals.tunnel_subnet_aggregate }}
-    set blackhole enable
-    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
-  next
-end
