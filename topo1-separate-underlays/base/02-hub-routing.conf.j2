@@ -39,6 +39,17 @@ end
 
 {#- BEGIN: For multi-regional topology only #}
 {% if regions|reject("==", devices[this_dev].region)|list|count -%}
+config router prefix-list
+  edit "OVERLAY_SUBNET"
+    config rule
+      edit 1
+        set prefix 10.200.0.0 255.252.0.0
+        set ge 24
+        unset le
+      next
+    end
+  next
+end
 config router route-map
   edit "IBGP-ONLY"
     config rule
@@ -48,12 +59,11 @@ config router route-map
       next
     end
   next
-  edit "KEEP-LOCAL"
+  edit "EDGE_OUT"
     config rule
       edit 1
-        # Do not re-advertise overlay subnets received from remote Regional Hubs
+        set action deny
         set match-ip-address "OVERLAY_SUBNET"
-        set set-community "no-advertise"
       next
       edit 100
       next
@@ -75,13 +85,17 @@ config router bgp
       set remote-as {{ regions[reg].as }}
       set interface "lo-BGP"
       set update-source "lo-BGP"
-      set route-map-in "KEEP-LOCAL"
       set additional-path both
       # Number of overlays
       set adv-additional-path {{ profile.wan_intf|count }}
     next
     {%- endfor %}
   {%- endfor %}
+  end
+  config neighbor-group
+    edit EDGE
+      set route-map-out EDGE_OUT
+    next
   end
   config network
     edit 1
