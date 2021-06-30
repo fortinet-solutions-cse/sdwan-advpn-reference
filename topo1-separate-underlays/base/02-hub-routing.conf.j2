@@ -1,22 +1,6 @@
-config firewall address
-  edit "CORP_LAN"
-    set allow-routing enable
-    set subnet {{ globals.corp_aggregate }}
-  next
-end
-config router static
-  edit 101
-    set dstaddr CORP_LAN
-    set blackhole enable
-    set comment "Avoid potential leak of corporate traffic to underlay"
-  next
-  edit 102
-    set dst {{ globals.tunnel_subnet_aggregate }}
-    set blackhole enable
-    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
-  next
-end
-
+{% set profile = profiles[devices[this_dev].profile] -%}
+{# Max. number of WAN interfaces * Max. number of Hubs -#}
+{% set add_path_num = profiles.values()|map(attribute='wan_intf')|map('count')|max * regions.values()|map(attribute='hubs')|map('count')|max -%}
 config router bgp
   set as {{ globals.as }}
   set router-id {{ devices[this_dev].router_id }}
@@ -24,8 +8,8 @@ config router bgp
   set holdtime-timer 15
   set ibgp-multipath enable
   set additional-path enable
-  # additional-path-select = number of overlays
-  set additional-path-select 2
+  # additional-path-select = max. number of overlays * max. number of hubs
+  set additional-path-select {{ add_path_num }}
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration enable
@@ -33,9 +17,8 @@ config router bgp
       set link-down-failover enable
       set remote-as {{ globals.as }}
       set additional-path send
-      # adv-additional-path = number of overlays * number of hubs
-      set adv-additional-path 4
-      set next-hop-self enable
+      # adv-additional-path = max. number of overlays * max. number of hubs
+      set adv-additional-path {{ add_path_num }}
       set route-reflector-client enable
     next
   end
@@ -51,23 +34,25 @@ end
 {% if regions|reject("==", devices[this_dev].region)|list|count -%}
 {% set reg_id = (regions|list).index(devices[this_dev].region) + 1 -%}
 config router static
-  {% for reg in regions if reg != devices[this_dev].region -%}
-  edit {{ loop.index * 2 + 102 }}
-    set dst {{ regions[reg].t1_subnet }}
-    set device "{{reg|upper}}_T1"
-    set comment "Cross-region BGP NH reachability (T1)"
+  {%- set ns = namespace(sr_i = 103) %}
+  {%- for reg in regions if reg != devices[this_dev].region %}
+  {%- for h in regions[reg].hubs %}
+  {%- set hubloop = loop %}
+  {%- for w in profile.wan_intf %}
+  edit {{ ns.sr_i }}
+    set dst {{ regions[reg].tunnel_subnet[loop.index0] }}
+    set device "{{reg|upper}}_H{{hubloop.index}}_T{{loop.index}}"
+    set comment "Cross-region BGP NH reachability (T{{loop.index}})"
   next
-  edit {{ loop.index * 2 + 103 }}
-    set dst {{ regions[reg].t2_subnet }}
-    set device "{{reg|upper}}_T2"
-    set comment "Cross-region BGP NH reachability (T2)"
-  next
-  {% endfor -%}
+  {%- set ns.sr_i = ns.sr_i + 1 %}
+  {%- endfor %}
+  {%- endfor %}
+  {%- endfor %}
 end
 
 # Use BGP communities to identify local region
 config router community-list
-  edit "{{ devices[this_dev].region }}_EDGE"
+  edit "{{ devices[this_dev].region|upper }}_EDGE"
     config rule
       edit 1
         set action permit
@@ -78,41 +63,29 @@ config router community-list
 end
 # Use BGP NH aggregates to identify overlays
 config router prefix-list
-  edit "NH_T1"
+  {%- for w in profile.wan_intf %}
+  edit "NH_T{{loop.index}}"
     config rule
       edit 1
-        set prefix {{ globals.t1_subnet_aggregate }}
+        set prefix {{ globals.tunnel_subnet[loop.index0] }}
         set le 32
       next
     end
   next
-  edit "NH_T2"
-    config rule
-      edit 1
-        set prefix {{ globals.t2_subnet_aggregate }}
-        set le 32
-      next
-    end
-  next
+  {%- endfor %}
 end
 config router route-map
   # Avoid duplicate advertisement to remote regions
-  edit "T1_OUT"
+  {%- for w in profile.wan_intf %}
+  edit "T{{loop.index}}_OUT"
     config rule
       edit 1
-        set match-community "{{ devices[this_dev].region }}_EDGE"
-        set match-ip-nexthop "NH_T1"
+        set match-community "{{ devices[this_dev].region|upper }}_EDGE"
+        set match-ip-nexthop "NH_T{{loop.index}}"
       next
     end
   next
-  edit "T2_OUT"
-    config rule
-      edit 1
-        set match-community "{{ devices[this_dev].region }}_EDGE"
-        set match-ip-nexthop "NH_T2"
-      next
-    end
-  next
+  {%- endfor %}
   # Set regional community
   edit "EDGE_IN"
     config rule
@@ -123,12 +96,25 @@ config router route-map
   next
 end
 
+config system interface
+  {%- for l in devices[this_dev].lo_bgp %}
+  edit "lo-BGP_T{{ loop.index }}"
+    set vdom "root"
+    set type loopback
+    set ip {{ l }} 255.255.255.255
+    set allowaccess ping
+    set description "Inter-regional peering (T{{loop.index}})"
+  next
+  {%- endfor %}
+end
+
 config router bgp
   config neighbor
     # Remote Regional Hubs
     {% for reg in regions if reg != devices[this_dev].region -%}
     {%- for h in regions[reg].hubs %}
-    edit {{ devices[this_dev].t1_remote_ip[reg][loop.index-1] }}
+    {%- for w in profile.wan_intf %}
+    edit {{ devices[h].lo_bgp[loop.index0] }}
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
@@ -136,26 +122,16 @@ config router bgp
       set remote-as {{ globals.as }}
       set additional-path both
       # adv-additional-path = number of overlays
-      set adv-additional-path 2
+      set adv-additional-path {{ profile.wan_intf|count }}
       set next-hop-self enable
-      set route-map-out "T1_OUT"
-      set route-reflector-client enable
-    next
-    edit {{ devices[this_dev].t2_remote_ip[reg][loop.index-1] }}
-      set soft-reconfiguration enable
-      set advertisement-interval 1
-      set link-down-failover enable
-      set connect-timer 1
-      set remote-as {{ globals.as }}
-      set additional-path both
-      # adv-additional-path = number of overlays
-      set adv-additional-path 2
-      set next-hop-self enable
-      set route-map-out "T2_OUT"
+      set interface "lo-BGP_T{{loop.index}}"
+      set update-source "lo-BGP_T{{loop.index}}"
+      set route-map-out "T{{loop.index}}_OUT"
       set route-reflector-client enable
     next
     {%- endfor %}
-    {% endfor -%}
+    {%- endfor %}
+    {%- endfor %}
   end
   config neighbor-group
     # Mark Edge prefixes with regional community
@@ -166,3 +142,16 @@ config router bgp
 end
 {% endif %}
 {# END: For multi-regional topology only #}
+
+config router static
+  edit 101
+    set dst {{ globals.corp_aggregate }}
+    set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+  edit 102
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set blackhole enable
+    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
+  next
+end

@@ -1,30 +1,29 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
 config router policy
-  edit 1
-    set input-device "EDGE_T1"
-    set output-device "EDGE_T1"
+  {%- set ns = namespace(pbr_i = 1) %}
+  {%- for w in profile.wan_intf %}
+  edit {{ ns.pbr_i }}
+    set input-device "EDGE_T{{loop.index}}"
+    set output-device "EDGE_T{{loop.index}}"
   next
-  edit 2
-    set input-device "EDGE_T2"
-    set output-device "EDGE_T2"
-  next
+  {%- set ns.pbr_i = ns.pbr_i + 1 %}
+  {%- endfor %}
   {# BEGIN: For multi-regional topology only #}
   {% for reg in regions if reg != devices[this_dev].region -%}
-  edit {{ loop.index * 4 }}
-    set input-device "EDGE_T1"
-    set output-device "{{reg|upper}}_T1"
+  {%- for h in regions[reg].hubs %}
+  {%- set hubloop = loop %}
+  {%- for w in profile.wan_intf %}
+  edit {{ ns.pbr_i }}
+    set input-device "EDGE_T{{loop.index}}"
+    set output-device "{{reg|upper}}_H{{hubloop.index}}_T{{loop.index}}"
   next
-  edit {{ loop.index * 4 + 1}}
-    set input-device "EDGE_T2"
-    set output-device "{{reg|upper}}_T2"
+  edit {{ ns.pbr_i + 1 }}
+    set input-device "{{reg|upper}}_H{{hubloop.index}}_T{{loop.index}}"
+    set output-device "EDGE_T{{loop.index}}"
   next
-  edit {{ loop.index * 4 + 2 }}
-    set input-device "{{reg|upper}}_T1"
-    set output-device "EDGE_T1"
-  next
-  edit {{ loop.index * 4 + 3 }}
-    set input-device "{{reg|upper}}_T2"
-    set output-device "EDGE_T2"
-  next
+  {%- set ns.pbr_i = ns.pbr_i + 2 %}
+  {%- endfor %}
+  {%- endfor %}
   {% endfor -%}
   {# END: For multi-regional topology only #}
 end

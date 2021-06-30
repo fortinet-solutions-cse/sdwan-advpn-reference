@@ -1,7 +1,7 @@
 {% set profile = profiles[devices[this_dev].profile] -%}
 config system zone
   edit "lan"
-    set interface {{ profile.lan_intf }}
+    set interface {{ profile.lan_intf[0] }}
   next
 end
 config firewall policy
