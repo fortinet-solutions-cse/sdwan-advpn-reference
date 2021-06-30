@@ -15,24 +15,20 @@
       type: edge
       wan_intf:
         - port1
-        - port2
         - port4
       lan_intf:
         - port5
       dia_intf:
         - port1
-        - port2
     hub:
       type: hub
       wan_intf:
         - port1
-        - port2
         - port4
       lan_intf:
         - port5
       dia_intf:
         - port1
-        - port2
 
   regions:
     west:
@@ -52,20 +48,16 @@
       router_id: 10.1.0.1
       wan_ip:
         - 100.64.1.1
-        - 100.64.1.9
         - 172.16.1.5
       tunnel_subnet:
         - 10.201.1.0/24
         - 10.202.1.0/24
-        - 10.203.1.0/24
       tunnel_ip:
         - 10.201.1.1
         - 10.202.1.1
-        - 10.203.1.1
       tunnel_remote_ip:
         - 10.201.1.254
         - 10.202.1.254
-        - 10.203.1.254
       lo_bgp: 10.200.0.1
       tunnel_mode_cfg:
         - start: 10.201.1.11
@@ -73,9 +65,6 @@
           netmask: 255.255.255.0
         - start: 10.202.1.11
           end: 10.202.1.250
-          netmask: 255.255.255.0
-        - start: 10.203.1.11
-          end: 10.203.1.250
           netmask: 255.255.255.0
       lan_subnet:
         - 10.1.0.0/24
@@ -85,12 +74,10 @@
       router_id: 10.2.0.1
       wan_ip:
         - 100.64.2.1
-        - 100.64.2.9
         - 172.16.2.5
       tunnel_subnet:
         - 10.201.2.0/24
         - 10.202.2.0/24
-        - 10.203.2.0/24
       tunnel_ip:
         - 10.201.2.1
         - 10.202.2.1
@@ -98,7 +85,6 @@
       tunnel_remote_ip:
         - 10.201.2.254
         - 10.202.2.254
-        - 10.203.2.254
       lo_bgp: 10.200.0.2
       tunnel_mode_cfg:
         - start: 10.201.2.11
@@ -106,9 +92,6 @@
           netmask: 255.255.255.0
         - start: 10.202.2.11
           end: 10.202.2.250
-          netmask: 255.255.255.0
-        - start: 10.203.2.11
-          end: 10.203.2.250
           netmask: 255.255.255.0
       lan_subnet:
         - 10.2.0.0/24
@@ -118,20 +101,16 @@
       router_id: 10.3.0.1
       wan_ip:
         - 100.64.3.1
-        - 100.64.3.9
         - 172.16.3.5
       tunnel_subnet:
         - 10.201.3.0/24
         - 10.202.3.0/24
-        - 10.203.3.0/24
       tunnel_ip:
         - 10.201.3.1
         - 10.202.3.1
-        - 10.203.3.1
       tunnel_remote_ip:
         - 10.201.3.254
         - 10.202.3.254
-        - 10.203.3.254
       lo_bgp: 10.200.0.3
       tunnel_mode_cfg:
         - start: 10.201.3.11
@@ -139,9 +118,6 @@
           netmask: 255.255.255.0
         - start: 10.202.3.11
           end: 10.202.3.250
-          netmask: 255.255.255.0
-        - start: 10.203.3.11
-          end: 10.203.3.250
           netmask: 255.255.255.0
       lan_subnet:
         - 10.3.0.0/24
