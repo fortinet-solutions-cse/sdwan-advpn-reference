@@ -12,6 +12,24 @@ config router bgp
   # additional-path-select = max. number of overlays * max. number of hubs
   set additional-path-select {{ add_path_num }}
   set recursive-next-hop enable
+end
+
+config router static
+  edit 101
+    set dst {{ globals.corp_aggregate }}
+    set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+  edit 102
+    set dst {{ globals.tunnel_subnet_aggregate }}
+    set blackhole enable
+    set comment "Summary for cross-overlay resolution"
+  next
+end
+
+{#- BEGIN: For single-region topology only #}
+{% if regions|reject("==", devices[this_dev].region)|list|count -%}
+config router bgp
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration enable
@@ -36,19 +54,30 @@ config router bgp
     next
   end
 end
+{% endif %}
+{#- END: For single-region topology only #}
 
 {#- BEGIN: For multi-regional topology only #}
 {% if regions|reject("==", devices[this_dev].region)|list|count -%}
 config router prefix-list
-  edit "OVERLAY_SUBNET"
+  edit "OL_SUBNETS"
     config rule
       edit 1
-        set prefix 10.200.0.0 255.252.0.0
-        set ge 24
+        set prefix {{ globals.tunnel_subnet_aggregate }}
+        set ge {{ globals.tunnel_subnet_aggregate.split('/')[1]|int + 1 }}
         unset le
       next
     end
   next
+  {%- for w in profile.wan_intf %}
+  edit "OL_T{{loop.index}}"
+    config rule
+      edit 1
+        set prefix {{ globals.tunnel_subnet[loop.index0] }}
+      next
+    end
+  next
+  {%- endfor %}
 end
 config router route-map
   edit "IBGP-ONLY"
@@ -59,16 +88,21 @@ config router route-map
       next
     end
   next
-  edit "EDGE_OUT"
+  {%- for w in profile.wan_intf %}
+  edit "EDGE_T{{loop.index}}_OUT"
     config rule
       edit 1
+        set match-ip-address "OL_T{{loop.index}}"
+      next
+      edit 2
         set action deny
-        set match-ip-address "OVERLAY_SUBNET"
+        set match-ip-address "OL_SUBNETS"
       next
       edit 100
       next
     end
   next
+  {%- endfor %}
 end
 config router bgp
   config neighbor
@@ -93,33 +127,56 @@ config router bgp
   {%- endfor %}
   end
   config neighbor-group
-    edit EDGE
-      set route-map-out EDGE_OUT
-    next
-  end
-  config network
-    edit 1
-      set route-map "IBGP-ONLY"
-    next
     {%- for w in profile.wan_intf %}
-    edit {{ loop.index + 1 }}
-      set prefix {{ devices[this_dev].tunnel_subnet[loop.index0] }}
+    edit "EDGE_T{{loop.index}}"
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set remote-as {{ regions[devices[this_dev].region].as }}
+      set additional-path send
+      # adv-additional-path = max. number of overlays * max. number of hubs
+      set adv-additional-path {{ add_path_num }}
+      set route-map-out "EDGE_T{{loop.index}}_OUT"
+      set route-reflector-client enable
     next
     {%- endfor %}
   end
+  config neighbor-range
+    {%- for w in profile.wan_intf %}
+    edit {{ loop.index }}
+      set prefix {{ globals.tunnel_subnet[loop.index0] }}
+      set neighbor-group "EDGE_T{{loop.index}}"
+    next
+    {%- endfor %}
+  end
+  config network
+    edit 1
+      set prefix {{ globals.tunnel_subnet_aggregate }}
+      set route-map "IBGP-ONLY"
+    next
+    {%- set ns = namespace(net_i = 2) %}
+    {%- for w in profile.wan_intf %}
+    edit {{ ns.net_i }}
+      set prefix {{ globals.tunnel_subnet[loop.index0] }}
+      set route-map "IBGP-ONLY"
+    next
+    edit {{ ns.net_i + 1 }}
+      set prefix {{ devices[this_dev].tunnel_subnet[loop.index0] }}
+    next
+    {%- set ns.net_i = ns.net_i + 2 %}
+    {%- endfor %}
+  end
+end
+config router static
+  {%- set ns = namespace(sr_i = 103) %}
+  {%- for w in profile.wan_intf %}
+  edit {{ ns.sr_i }}
+    set dst {{ globals.tunnel_subnet[loop.index0] }}
+    set comment "Summary for cross-regional resolution"
+    set blackhole enable
+  next
+  {%- set ns.sr_i = ns.sr_i + 1 %}
+  {%- endfor %}
 end
 {% endif %}
 {#- END: For multi-regional topology only #}
-
-config router static
-  edit 101
-    set dst {{ globals.corp_aggregate }}
-    set blackhole enable
-    set comment "Avoid potential leak of corporate traffic to underlay"
-  next
-  edit 102
-    set dst {{ globals.tunnel_subnet_aggregate }}
-    set blackhole enable
-    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
-  next
-end

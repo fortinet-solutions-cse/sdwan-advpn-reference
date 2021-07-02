@@ -2,6 +2,10 @@
   globals:
     corp_aggregate: 10.0.0.0/8
     tunnel_subnet_aggregate: 10.200.0.0/14
+    tunnel_subnet:
+      - 10.201.0.0/16
+      - 10.202.0.0/16
+      - 10.203.0.0/16    
     phase1_proposal: aes256gcm-prfsha384
     phase2_proposal: aes256gcm
     loopback_hc_ip: 10.200.99.1

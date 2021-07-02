@@ -11,7 +11,7 @@ end
 {% if regions[devices[this_dev].region].hubs|count > 1 -%}
 # Use BGP communities to identify local Hub prefixes
 config router community-list
-  edit "{{ devices[this_dev].region }}_HUB"
+  edit "{{ devices[this_dev].region|upper }}_HUB"
     config rule
       edit 1
         set action permit
@@ -24,7 +24,7 @@ config router route-map
   edit "PEERHUB_OUT"
     config rule
       edit 1
-        set match-community "{{ devices[this_dev].region }}_HUB"
+        set match-community "{{ devices[this_dev].region|upper }}_HUB"
         # Prevent duplicate readvertisement to Edges and remote regions
         set set-community no-advertise
       next
@@ -94,6 +94,8 @@ config router bgp
       set link-down-failover enable
       set connect-timer 1
       set remote-as {{ regions[devices[this_dev].region].as }}
+      set interface "lo-BGP"
+      set update-source "lo-BGP"      
       set route-map-out "PEERHUB_OUT"
       set next-hop-self enable
     next
