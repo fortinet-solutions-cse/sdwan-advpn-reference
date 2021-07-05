@@ -28,7 +28,7 @@ config router static
 end
 
 {#- BEGIN: For single-region topology only #}
-{% if regions|reject("==", devices[this_dev].region)|list|count -%}
+{% if not regions|reject("==", devices[this_dev].region)|list|count -%}
 config router bgp
   config neighbor-group
     edit "EDGE"
