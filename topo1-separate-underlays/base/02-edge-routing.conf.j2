@@ -12,19 +12,32 @@ config router static
   {%- set hubloop = loop %}
   {%- for w in profile.wan_intf %}
   edit {{ ns.sr_i }}
-    set dst {{ globals.tunnel_subnet[loop.index0] }}
-    set device "H{{hubloop.index}}_T{{loop.index}}"
-    set comment "Cross-region BGP NH reachability (T{{loop.index}})"
-  next
-  edit {{ ns.sr_i + 1 }}
     set dst {{ globals.tunnel_subnet_aggregate }}
     set device "H{{hubloop.index}}_T{{loop.index}}"
     set comment "Cross-overlay BGP NH reachability"
   next
-  {%- set ns.sr_i = ns.sr_i + 2 %}
+  {%- set ns.sr_i = ns.sr_i + 1 %}
   {%- endfor %}
   {%- endfor %}
 end
+
+{# BEGIN: For multi-regional topology only #}
+{% if regions|reject("==", devices[this_dev].region)|list|count -%}
+config router static
+  {%- for h in regions[devices[this_dev].region].hubs %}
+  {%- set hubloop = loop %}
+  {%- for w in profile.wan_intf %}
+  edit {{ ns.sr_i }}
+    set dst {{ globals.tunnel_subnet[loop.index0] }}
+    set device "H{{hubloop.index}}_T{{loop.index}}"
+    set comment "Cross-region BGP NH reachability (T{{loop.index}})"
+  next
+  {%- set ns.sr_i = ns.sr_i + 1 %}
+  {%- endfor %}
+  {%- endfor %}
+end
+{% endif %}
+{# END: For multi-regional topology only #}
 
 config router bgp
   set as {{ globals.as }}

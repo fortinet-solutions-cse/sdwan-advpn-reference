@@ -1,24 +1,31 @@
 {% set profile = profiles[devices[this_dev].profile] -%}
 {% set ol_tunnels = [ ] -%}
+{%- set lo_list = [ ] %}
+
+{%- for w in profile.wan_intf %}
+{{- ol_tunnels.append('"EDGE_T' + loop.index|string + '"') or "" }}
+{%- endfor %}
+
+{# BEGIN: For multi-regional topology only #}
+{% for reg in regions if reg != devices[this_dev].region -%}
+{%- for h in regions[reg].hubs %}
+{%- set hubloop = loop %}
+{%- for w in profile.wan_intf %}
+{{- ol_tunnels.append('"' + reg|upper + '_H' + hubloop.index|string + '_T' + loop.index|string + '"') or "" }}
+{%- endfor %}
+{%- endfor %}
+{%- for w in profile.wan_intf %}
+{{- lo_list.append("lo-BGP_T"+loop.index|string) or "" }}
+{%- endfor %}
+{% endfor -%}
+{# END: For multi-regional topology only #}
+
 config system settings
   # Allow overlay switchover for existing sessions (from shortcut to Hub)
   set tcp-session-without-syn enable
 end
 config system zone
   edit "overlay"
-    {%- for w in profile.wan_intf %}
-    {{- ol_tunnels.append('"EDGE_T' + loop.index|string + '"') or "" }}
-    {%- endfor %}
-    {# BEGIN: For multi-regional topology only #}
-    {% for reg in regions if reg != devices[this_dev].region -%}
-    {%- for h in regions[reg].hubs %}
-    {%- set hubloop = loop %}
-    {%- for w in profile.wan_intf %}
-    {{- ol_tunnels.append('"' + reg|upper + '_H' + hubloop.index|string + '_T' + loop.index|string + '"') or "" }}
-    {%- endfor %}
-    {%- endfor %}
-    {% endfor -%}
-    {# END: For multi-regional topology only #}
     set interface {{ ol_tunnels|join(' ') }}
   next
   edit "underlay"
@@ -46,10 +53,6 @@ config firewall policy
     set anti-replay disable
     set tcp-session-without-syn all
   next
-  {%- set lo_list = [ ] %}
-  {%- for w in profile.wan_intf %}
-  {{- lo_list.append("lo-BGP_T"+loop.index|string) or "" }}
-  {%- endfor %}
   edit 2
     set name "HC BGP"
     set srcintf "overlay"
