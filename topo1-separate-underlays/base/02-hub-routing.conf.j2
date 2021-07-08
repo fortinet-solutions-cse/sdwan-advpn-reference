@@ -1,6 +1,16 @@
 {% set profile = profiles[devices[this_dev].profile] -%}
 {# Max. number of WAN interfaces * Max. number of Hubs -#}
 {% set add_path_num = profiles.values()|map(attribute='wan_intf')|map('count')|max * regions.values()|map(attribute='hubs')|map('count')|max -%}
+config router route-map
+  edit "IBGP-ONLY"
+    config rule
+      edit 1
+        # Do not advertise outside to EBGP peers (outside the SD-WAN region)
+        set set-community "no-export"
+      next
+    end
+  next
+end
 config router bgp
   set as {{ regions[devices[this_dev].region].as }}
   set router-id {{ devices[this_dev].router_id }}
@@ -12,6 +22,12 @@ config router bgp
   # additional-path-select = max. number of overlays * max. number of hubs
   set additional-path-select {{ add_path_num }}
   set recursive-next-hop enable
+  config network
+    edit 1
+      set prefix {{ globals.tunnel_subnet_aggregate }}
+      set route-map "IBGP-ONLY"
+    next
+  end
 end
 
 config router static
@@ -48,11 +64,6 @@ config router bgp
       set neighbor-group "EDGE"
     next
   end
-  config network
-    edit 1
-      set prefix {{ globals.tunnel_subnet_aggregate }}
-    next
-  end
 end
 {% endif %}
 {#- END: For single-region topology only #}
@@ -80,14 +91,6 @@ config router prefix-list
   {%- endfor %}
 end
 config router route-map
-  edit "IBGP-ONLY"
-    config rule
-      edit 1
-        # Do not advertise outside to EBGP peers (outside the region)
-        set set-community "no-export"
-      next
-    end
-  next
   {%- for w in profile.wan_intf %}
   edit "EDGE_T{{loop.index}}_OUT"
     config rule
@@ -150,10 +153,6 @@ config router bgp
     {%- endfor %}
   end
   config network
-    edit 1
-      set prefix {{ globals.tunnel_subnet_aggregate }}
-      set route-map "IBGP-ONLY"
-    next
     {%- set ns = namespace(net_i = 2) %}
     {%- for w in profile.wan_intf %}
     edit {{ ns.net_i }}
