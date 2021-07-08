@@ -1,0 +1,91 @@
+{% set profile = profiles[devices[this_dev].profile] -%}
+config router community-list
+  edit "SLAOK"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ regions[devices[this_dev].region].as }}:99"
+      next
+    end
+  next
+end
+config router route-map
+  edit "EDGE_IN"
+    config rule
+      edit 1
+        set match-community "SLAOK"
+        set set-route-tag 99
+      next
+      edit 100
+      next
+    end
+  next
+end
+
+{#- BEGIN: For single-region topology only #}
+{% if not regions|reject("==", devices[this_dev].region)|list|count -%}
+config router bgp
+  config neighbor-group
+    edit "EDGE"
+      set route-map-in "EDGE_IN"
+    next
+  end
+end
+{% endif -%}
+{#- END: For single-region topology only #}
+
+{#- BEGIN: For multi-regional topology only #}
+{% if regions|reject("==", devices[this_dev].region)|list|count -%}
+config router bgp
+  config neighbor-group
+    {%- for w in profile.wan_intf %}
+    edit "EDGE_T{{loop.index}}"
+      set route-map-in "EDGE_IN"
+    next
+    {%- endfor %}
+  end
+end
+{% endif -%}
+{#- END: For multi-regional topology only #}
+
+config system sdwan
+  set status enable
+  config zone
+    edit "overlay"
+    next
+  end
+  config members
+    {%- set ns = namespace(mbr_i = 1) %}
+    {%- for w in profile.wan_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "EDGE_T{{loop.index}}"
+      set zone "overlay"
+    next
+    {%- set ns.mbr_i = ns.mbr_i + 1 %}
+    {%- endfor %}
+    {# BEGIN: For multi-regional topology only #}
+    {%- for reg in regions if reg != devices[this_dev].region %}
+    {%- for h in regions[reg].hubs %}
+    {%- set hubloop = loop %}
+    {%- for w in profile.wan_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "{{reg|upper}}_H{{hubloop.index}}_T{{loop.index}}"
+      set zone "overlay"
+    next
+    {%- set ns.mbr_i = ns.mbr_i + 1 %}
+    {%- endfor %}
+    {%- endfor %}
+    {%- endfor %}
+    {# END: For multi-regional topology only #}
+  end
+  config service
+    {%- for w in profile.wan_intf %}
+    edit {{loop.index}}
+      set name "T{{loop.index}}-SLA-OK"
+      set route-tag 99
+      set priority-members {{loop.index}}
+    next
+    {%- endfor %}
+    # Implicit rule handles the case when both overlays are out of SLA
+  end
+end
