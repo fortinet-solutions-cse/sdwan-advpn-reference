@@ -1,0 +1,447 @@
+######################################
+# base/01-hub-overlay.conf.j2
+######################################
+config vpn ipsec phase1-interface
+  # Local Region (Edges)
+  edit "EDGE_T1"
+    set type dynamic
+    set interface port1
+    set ike-version 2
+    set peertype any
+    set mode-cfg enable
+    set proposal aes256-sha256
+    set net-device disable
+    set tunnel-search nexthop
+    set add-route disable
+    set auto-discovery-sender enable
+    set network-overlay enable
+    set network-id 21
+    set ipv4-start-ip 10.201.2.11
+    set ipv4-end-ip 10.201.2.250
+    set ipv4-netmask 255.255.255.0
+    set psksecret dogcat
+  next
+  edit "EDGE_T2"
+    set type dynamic
+    set interface port4
+    set ike-version 2
+    set peertype any
+    set mode-cfg enable
+    set proposal aes256-sha256
+    set net-device disable
+    set tunnel-search nexthop
+    set add-route disable
+    set auto-discovery-sender enable
+    set network-overlay enable
+    set network-id 22
+    set ipv4-start-ip 10.202.2.11
+    set ipv4-end-ip 10.202.2.250
+    set ipv4-netmask 255.255.255.0
+    set psksecret dogcat
+  next
+end
+config vpn ipsec phase2-interface
+  edit "EDGE_T1"
+    set phase1name "EDGE_T1"
+    set proposal aes256-sha256
+    set keepalive enable
+  next
+  edit "EDGE_T2"
+    set phase1name "EDGE_T2"
+    set proposal aes256-sha256
+    set keepalive enable
+  next
+end
+config system interface
+  edit "EDGE_T1"
+    set vdom "root"
+    set ip 10.201.2.1 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip 10.201.2.254 255.255.255.0
+    set interface port1
+  next
+  edit "EDGE_T2"
+    set vdom "root"
+    set ip 10.202.2.1 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip 10.202.2.254 255.255.255.0
+    set interface port4
+  next
+end
+
+
+
+
+######################################
+# base/02-hub-routing.conf.j2
+######################################
+config router bgp
+  set as 65001
+  set router-id 10.2.0.1
+  set keepalive-timer 5
+  set holdtime-timer 15
+  set ibgp-multipath enable
+  set additional-path enable
+  # additional-path-select = max. number of overlays * max. number of hubs
+  set additional-path-select 4
+  config neighbor-group
+    edit "EDGE"
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set remote-as 65001
+      set additional-path send
+      # adv-additional-path = max. number of overlays * max. number of hubs
+      set adv-additional-path 4
+      set route-reflector-client enable
+    next
+  end
+  config neighbor-range
+    edit 1
+      set prefix 10.200.0.0/14
+      set neighbor-group "EDGE"
+    next
+  end
+end
+
+
+
+
+
+config router static
+  edit 101
+    set dst 10.0.0.0/8
+    set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+  edit 102
+    set dst 10.200.0.0/14
+    set blackhole enable
+    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
+  next
+end
+
+######################################
+# base/03-hub-sdwan.conf.j2
+######################################
+config router policy
+  edit 1
+    set input-device "EDGE_T1"
+    set output-device "EDGE_T1"
+  next
+  edit 2
+    set input-device "EDGE_T2"
+    set output-device "EDGE_T2"
+  next
+  
+  
+end
+config system interface
+  edit "lo-HC"
+    set vdom "root"
+    set type loopback
+    set ip 10.200.99.1 255.255.255.255
+    set allowaccess ping
+  next
+end
+
+######################################
+# plugins/035-hub-h2e.j2
+######################################
+config router community-list
+  edit "SLAOK"
+    config rule
+      edit 1
+        set action permit
+        set match "65001:99"
+      next
+    end
+  next
+end
+config router route-map
+  edit "EDGE_IN"
+    config rule
+      edit 1
+        set match-community "SLAOK"
+        set set-route-tag 99
+      next
+      edit 100
+      next
+    end
+  next
+end
+config router bgp
+  config neighbor-group
+    edit "EDGE"
+      set route-map-in "EDGE_IN"
+    next
+  end
+end
+
+
+
+config system sdwan
+  set status enable
+  config zone
+    edit "overlay"
+    next
+  end
+  config members
+    edit 1
+      set interface "EDGE_T1"
+      set zone "overlay"
+    next
+    edit 2
+      set interface "EDGE_T2"
+      set zone "overlay"
+    next
+    
+    
+  end
+  config service
+    edit 1
+      set name "T1-SLA-OK"
+      set route-tag 99
+      set priority-members 1
+    next
+    edit 2
+      set name "T2-SLA-OK"
+      set route-tag 99
+      set priority-members 2
+    next
+    # Implicit rule handles the case when both overlays are out of SLA
+  end
+end
+
+######################################
+# base/04-hub-firewall.conf.j2
+######################################
+
+
+
+
+
+config system settings
+  # Allow overlay switchover for existing sessions (from shortcut to Hub)
+  set tcp-session-without-syn enable
+end
+config system zone
+  edit "overlay"
+    set interface "EDGE_T1" "EDGE_T2"
+  next
+  edit "underlay"
+    set interface port1
+  next
+end
+config firewall service custom
+  edit "PING"
+    set category "Network Services"
+    set protocol ICMP
+    set icmptype 8
+  next
+end
+config firewall policy
+  edit 1
+    set name "Edge to Edge"
+    set srcintf "overlay"
+    set dstintf "overlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    # Allow overlay switchover for existing sessions (from shortcut to Hub)
+    set anti-replay disable
+    set tcp-session-without-syn all
+  next
+  edit 2
+    set name "HC BGP"
+    set srcintf "overlay"
+    set dstintf "lo-HC" 
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "PING" "BGP"
+  next
+  edit 3
+    set name "Edge to Internet (RIA)"
+    set srcintf "overlay"
+    set dstintf "underlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+    set nat enable
+  next
+end
+
+######################################
+# plugins/hub-lan.conf.j2
+######################################
+# Use BGP communities to identify local Hub prefixes
+config router community-list
+  edit "WEST_HUB"
+    config rule
+      edit 1
+        set action permit
+        set match "65001:3"
+      next
+    end
+  next
+end
+config router route-map
+  edit "PEERHUB_OUT"
+    config rule
+      edit 1
+        set match-community "WEST_HUB"
+        # Prevent duplicate readvertisement to Edges and remote regions
+        set set-community no-advertise
+        set set-community-additive enable
+      next
+    end
+  next
+  edit "HUB_IN"
+    config rule
+      edit 1
+        set set-community "65001:3"
+      next
+    end
+  next
+end
+config router bgp
+  config network
+    edit 1
+      set prefix 10.2.0.0/24
+      set route-map HUB_IN
+    next
+  end
+end
+
+config system interface
+  edit "lo-BGP_T1"
+    set vdom "root"
+    set type loopback
+    set ip 10.201.0.2 255.255.255.255
+    set allowaccess ping
+    set description "Inter-regional peering (T1)"
+  next
+  edit "lo-BGP_T2"
+    set vdom "root"
+    set type loopback
+    set ip 10.202.0.2 255.255.255.255
+    set allowaccess ping
+    set description "Inter-regional peering (T2)"
+  next
+end
+# Local Region (Peer Hub site1-H1)
+config vpn ipsec phase1-interface
+  edit "SITE1-H1_T1"
+    set interface port1
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set proposal aes256-sha256
+    set exchange-interface-ip enable
+    set exchange-ip-addr4 10.201.0.2
+    set net-device disable
+    set tunnel-search nexthop
+    set remote-gw 100.64.1.1
+    set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+  edit "SITE1-H1_T2"
+    set interface port4
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set proposal aes256-sha256
+    set exchange-interface-ip enable
+    set exchange-ip-addr4 10.202.0.2
+    set net-device disable
+    set tunnel-search nexthop
+    set remote-gw 172.16.1.5
+    set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+end
+config vpn ipsec phase2-interface
+  edit "SITE1-H1_T1"
+    set phase1name "SITE1-H1_T1"
+    set proposal aes256-sha256
+    set keepalive enable
+  next
+  edit "SITE1-H1_T2"
+    set phase1name "SITE1-H1_T2"
+    set proposal aes256-sha256
+    set keepalive enable
+  next
+end
+config router bgp
+  config neighbor
+    edit 10.201.0.1
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set connect-timer 1
+      set remote-as 65001
+      set interface "lo-BGP_T1"
+      set update-source "lo-BGP_T1"
+      set next-hop-self enable
+      set route-map-out "PEERHUB_OUT"
+    next
+    edit 10.202.0.1
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set connect-timer 1
+      set remote-as 65001
+      set interface "lo-BGP_T2"
+      set update-source "lo-BGP_T2"
+      set next-hop-self enable
+      set route-map-out "PEERHUB_OUT"
+    next
+  end
+end
+config system zone
+  edit "overlay"
+    append interface "SITE1-H1_T1"
+    append interface "SITE1-H1_T2"
+  next
+end
+
+
+config system zone
+  edit "lan"
+    set interface port5
+  next
+end
+config firewall policy
+  edit 10
+    set name "Corporate"
+    set srcintf "lan" "overlay"
+    set dstintf "lan" "overlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+end
+
+
+
+

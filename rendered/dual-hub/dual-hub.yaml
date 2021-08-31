@@ -2,16 +2,15 @@
   globals:
     corp_aggregate: 10.0.0.0/8
     tunnel_subnet_aggregate: 10.200.0.0/14
-    tunnel_subnet:
-      - 10.201.0.0/16
-      - 10.202.0.0/16
-    phase1_proposal: aes256gcm-prfsha384
-    phase2_proposal: aes256gcm
+    phase1_proposal: aes256-sha256
+    phase2_proposal: aes256-sha256
     loopback_hc_ip: 10.200.99.1
     psk: dogcat
 
   plugins:
     - hub-lan.conf.j2
+    - 035-hub-h2e.j2
+    - edge-h2e.j2
 
   profiles:
     edge:
@@ -35,41 +34,25 @@
 
   regions:
     west:
-      as: 65000
+      as: 65001
       hubs:
-        - dc1_fgt
-        - dc2_fgt
-      tunnel_subnet:
-        - 10.201.0.0/22
-        - 10.202.0.0/22
-    east:
-      as: 65000
-      hubs:
-        - dc3_fgt
-      tunnel_subnet:
-        - 10.201.4.0/22
-        - 10.202.4.0/22
+        - site1-H1
+        - site1-H2
 
   devices:
-    dc1_fgt:
+    site1-H1:
       profile: hub
       region: west
       router_id: 10.1.0.1
       wan_ip:
         - 100.64.1.1
         - 172.16.1.5
-      tunnel_subnet:
-        - 10.201.1.0/24
-        - 10.202.1.0/24
       tunnel_ip:
         - 10.201.1.1
         - 10.202.1.1
       tunnel_remote_ip:
         - 10.201.1.254
         - 10.202.1.254
-      lo_bgp:
-        - 10.201.1.2
-        - 10.202.1.2
       tunnel_mode_cfg:
         - start: 10.201.1.11
           end: 10.201.1.250
@@ -77,27 +60,24 @@
         - start: 10.202.1.11
           end: 10.202.1.250
           netmask: 255.255.255.0
+      lo_bgp:
+        - 10.201.0.1
+        - 10.202.0.1
       lan_subnet:
         - 10.1.0.0/24
-    dc2_fgt:
+    site1-H2:
       profile: hub
       region: west
       router_id: 10.2.0.1
       wan_ip:
         - 100.64.2.1
         - 172.16.2.5
-      tunnel_subnet:
-        - 10.201.2.0/24
-        - 10.202.2.0/24
       tunnel_ip:
         - 10.201.2.1
         - 10.202.2.1
       tunnel_remote_ip:
         - 10.201.2.254
         - 10.202.2.254
-      lo_bgp:
-        - 10.201.2.2
-        - 10.202.2.2
       tunnel_mode_cfg:
         - start: 10.201.2.11
           end: 10.201.2.250
@@ -105,51 +85,20 @@
         - start: 10.202.2.11
           end: 10.202.2.250
           netmask: 255.255.255.0
+      lo_bgp:
+        - 10.201.0.2
+        - 10.202.0.2           
       lan_subnet:
         - 10.2.0.0/24
-    dc3_fgt:
-      profile: hub
-      region: east
-      router_id: 10.3.0.1
-      wan_ip:
-        - 100.64.3.1
-        - 172.16.3.5
-      tunnel_subnet:
-        - 10.201.4.0/24
-        - 10.202.4.0/24
-      tunnel_ip:
-        - 10.201.4.1
-        - 10.202.4.1
-      tunnel_remote_ip:
-        - 10.201.4.254
-        - 10.202.4.254
-      lo_bgp:
-        - 10.201.4.2
-        - 10.202.4.2
-      tunnel_mode_cfg:
-        - start: 10.201.4.11
-          end: 10.201.4.250
-          netmask: 255.255.255.0
-        - start: 10.202.4.11
-          end: 10.202.4.250
-          netmask: 255.255.255.0
-      lan_subnet:
-        - 10.3.0.0/24
-    branch1_fgt:
+    site1-1:
       profile: edge
       region: west
       router_id: 10.0.1.1
       lan_subnet:
         - 10.0.1.0/24
-    branch2_fgt:
+    site1-2:
       profile: edge
       region: west
       router_id: 10.0.2.1
       lan_subnet:
         - 10.0.2.0/24
-    branch3_fgt:
-      profile: edge
-      region: east
-      router_id: 10.0.3.1
-      lan_subnet:
-        - 10.0.3.0/24

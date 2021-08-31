@@ -1,6 +1,5 @@
 ---
   globals:
-    as: 65000
     corp_aggregate: 10.0.0.0/8
     tunnel_subnet_aggregate: 10.200.0.0/14
     tunnel_subnet:
@@ -41,6 +40,7 @@
 
   regions:
     west:
+      as: 65000
       hubs:
         - dc1_fgt
         - dc2_fgt
@@ -49,6 +49,7 @@
         - 10.202.0.0/22
         - 10.203.0.0/22
     east:
+      as: 65000
       hubs:
         - dc3_fgt
       tunnel_subnet:

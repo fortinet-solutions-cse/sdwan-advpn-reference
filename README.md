@@ -2,9 +2,16 @@
 
 ## Intro
 
-This repository contains FortiOS configuration templates for different SD-WAN topologies with ADVPN.
-All the templates are written in Jinja. Deployment variables can be defined in YAML, as demonstrated in
-several examples (see `example-*.yml` under each topology).
+This repository contains reference FortiOS configuration for SD-WAN topologies with ADVPN.
+It covers several popular topology variations.
+
+Under `rendered` directory, you will find several fully rendered examples with their
+respective diagrams.
+
+But more importantly, in addition to the rendered configuration examples, you will
+find **configuration templates** that allow you to customize and render the configuration
+for your own environment. All the templates are written in Jinja.
+Deployment variables can be defined in YAML, as demonstrated in several examples (see `example-*.yml` under each topology type).
 
 A simple renderer written in python is also provided (see `render_config.py`).
 It can render a single template for a specified device or an entire topology for all devices defined in YAML.
@@ -55,14 +62,14 @@ total 112
 -rw-r--r--@ 1 dperets  staff   9511 Dec 10 12:17 dc2_fgt
 ```
 
-## Topology 1: Separate Underlays
+## Topology Type 1: Separate Underlays
 
 Requirements: FOS 6.4.5+
 
 This base topology includes two separate underlay transport networks.
 A typical example would be: Internet and MPLS.
 
-The topology is multi-regional, with arbitrary number of regions and Regional Hubs.
+The topology templates support arbitrary number of regions and Regional Hubs.
 
 ### Features:
 

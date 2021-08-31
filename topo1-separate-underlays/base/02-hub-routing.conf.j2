@@ -2,7 +2,7 @@
 {# Max. number of WAN interfaces * Max. number of Hubs -#}
 {% set add_path_num = profiles.values()|map(attribute='wan_intf')|map('count')|max * regions.values()|map(attribute='hubs')|map('count')|max -%}
 config router bgp
-  set as {{ globals.as }}
+  set as {{ regions[devices[this_dev].region].as }}
   set router-id {{ devices[this_dev].router_id }}
   set keepalive-timer 5
   set holdtime-timer 15
@@ -15,7 +15,7 @@ config router bgp
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
-      set remote-as {{ globals.as }}
+      set remote-as {{ regions[devices[this_dev].region].as }}
       set additional-path send
       # adv-additional-path = max. number of overlays * max. number of hubs
       set adv-additional-path {{ add_path_num }}
@@ -56,7 +56,7 @@ config router community-list
     config rule
       edit 1
         set action permit
-        set match "{{ globals.as }}:{{ reg_id * 2 }}"
+        set match "{{ regions[devices[this_dev].region].as }}:{{ reg_id * 2 }}"
       next
     end
   next
@@ -90,7 +90,7 @@ config router route-map
   edit "EDGE_IN"
     config rule
       edit 1
-        set set-community "{{ globals.as }}:{{ reg_id * 2 }}"
+        set set-community "{{ regions[devices[this_dev].region].as }}:{{ reg_id * 2 }}"
       next
     end
   next
@@ -119,7 +119,7 @@ config router bgp
       set advertisement-interval 1
       set link-down-failover enable
       set connect-timer 1
-      set remote-as {{ globals.as }}
+      set remote-as {{ regions[devices[this_dev].region].as }}
       set additional-path both
       # adv-additional-path = number of overlays
       set adv-additional-path {{ profile.wan_intf|count }}

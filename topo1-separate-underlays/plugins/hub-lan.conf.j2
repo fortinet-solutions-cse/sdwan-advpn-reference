@@ -6,7 +6,7 @@ config router community-list
     config rule
       edit 1
         set action permit
-        set match "{{ globals.as }}:{{ reg_id * 2 + 1 }}"
+        set match "{{ regions[devices[this_dev].region].as }}:{{ reg_id * 2 + 1 }}"
       next
     end
   next
@@ -25,7 +25,7 @@ config router route-map
   edit "HUB_IN"
     config rule
       edit 1
-        set set-community "{{ globals.as }}:{{ reg_id * 2 + 1 }}"
+        set set-community "{{ regions[devices[this_dev].region].as }}:{{ reg_id * 2 + 1 }}"
       next
     end
   next
@@ -92,7 +92,7 @@ config router bgp
       set advertisement-interval 1
       set link-down-failover enable
       set connect-timer 1
-      set remote-as {{ globals.as }}
+      set remote-as {{ regions[devices[this_dev].region].as }}
       set interface "lo-BGP_T{{loop.index}}"
       set update-source "lo-BGP_T{{loop.index}}"
       set next-hop-self enable

@@ -1,0 +1,437 @@
+######################################
+# base/01-edge-overlay.conf.j2
+######################################
+config vpn ipsec phase1-interface
+  edit "H1_T1"
+    set interface port1
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set mode-cfg enable
+    set proposal aes256-sha256
+    set add-route disable
+    set idle-timeout enable
+    set auto-discovery-receiver enable
+    set network-overlay enable
+    set network-id 11
+    set remote-gw 100.64.1.1
+    set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+  edit "H1_T2"
+    set interface port4
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set mode-cfg enable
+    set proposal aes256-sha256
+    set add-route disable
+    set idle-timeout enable
+    set auto-discovery-receiver enable
+    set network-overlay enable
+    set network-id 12
+    set remote-gw 172.16.1.5
+    set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+  edit "H2_T1"
+    set interface port1
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set mode-cfg enable
+    set proposal aes256-sha256
+    set add-route disable
+    set idle-timeout enable
+    set auto-discovery-receiver enable
+    set network-overlay enable
+    set network-id 21
+    set remote-gw 100.64.2.1
+    set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+  edit "H2_T2"
+    set interface port4
+    set ike-version 2
+    set keylife 28800
+    set peertype any
+    set net-device enable
+    set mode-cfg enable
+    set proposal aes256-sha256
+    set add-route disable
+    set idle-timeout enable
+    set auto-discovery-receiver enable
+    set network-overlay enable
+    set network-id 22
+    set remote-gw 172.16.2.5
+    set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+  next
+end
+config vpn ipsec phase2-interface
+  edit "H1_T1"
+    set phase1name "H1_T1"
+    set proposal aes256-sha256
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+  edit "H1_T2"
+    set phase1name "H1_T2"
+    set proposal aes256-sha256
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+  edit "H2_T1"
+    set phase1name "H2_T1"
+    set proposal aes256-sha256
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+  edit "H2_T2"
+    set phase1name "H2_T2"
+    set proposal aes256-sha256
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "H1_T1"
+    set vdom "root"
+    set allowaccess ping
+    set type tunnel
+    set interface port1
+  next
+  edit "H1_T2"
+    set vdom "root"
+    set allowaccess ping
+    set type tunnel
+    set interface port4
+  next
+  edit "H2_T1"
+    set vdom "root"
+    set allowaccess ping
+    set type tunnel
+    set interface port1
+  next
+  edit "H2_T2"
+    set vdom "root"
+    set allowaccess ping
+    set type tunnel
+    set interface port4
+  next
+end
+
+######################################
+# base/02-edge-routing.conf.j2
+######################################
+config router static
+  edit 101
+    set dst 10.0.0.0/8
+    set blackhole enable
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+  edit 102
+    set dst 10.200.0.0/14
+    set device "H1_T1"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+  edit 103
+    set dst 10.200.0.0/14
+    set device "H1_T2"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+  edit 104
+    set dst 10.200.0.0/14
+    set device "H2_T1"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+  edit 105
+    set dst 10.200.0.0/14
+    set device "H2_T2"
+    set comment "Cross-overlay BGP NH reachability"
+  next
+end
+
+
+
+
+
+config router bgp
+  set as 65001
+  set router-id 10.0.1.1
+  set keepalive-timer 5
+  set holdtime-timer 15
+  set ibgp-multipath enable
+  set additional-path enable
+  # additional-path-select = max. number of overlays * max. number of hubs
+  set additional-path-select 4
+  config neighbor
+    edit 10.201.1.1
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H1_T1"
+      set connect-timer 1
+      set remote-as 65001
+      set additional-path receive
+    next
+    edit 10.202.1.1
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H1_T2"
+      set connect-timer 1
+      set remote-as 65001
+      set additional-path receive
+    next
+    edit 10.201.2.1
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H2_T1"
+      set connect-timer 1
+      set remote-as 65001
+      set additional-path receive
+    next
+    edit 10.202.2.1
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set link-down-failover enable
+      set interface "H2_T2"
+      set connect-timer 1
+      set remote-as 65001
+      set additional-path receive
+    next
+  end
+  config network
+    edit 1
+      set prefix 10.0.1.0/24
+    next
+  end
+end
+
+######################################
+# base/03-edge-sdwan.conf.j2
+######################################
+config firewall address
+  edit "CORP_LAN"
+    set subnet 10.0.0.0/8
+  next
+end
+config system sdwan
+  set status enable
+  config zone
+    edit "underlay"
+    next
+    edit "overlay"
+    next
+  end
+  config members
+    edit 1
+      set interface "port1"
+      set zone "underlay"
+      # Best priority, used for Internet access in implicit rule / local-out
+      # Gateway is fetched from DHCP
+    next
+    edit 2
+      set interface "H1_T1"
+      set priority 10
+      set zone "overlay"
+    next
+    edit 3
+      set interface "H1_T2"
+      set priority 10
+      set zone "overlay"
+    next
+    edit 4
+      set interface "H2_T1"
+      set priority 10
+      set zone "overlay"
+    next
+    edit 5
+      set interface "H2_T2"
+      set priority 10
+      set zone "overlay"
+    next
+  end
+  config health-check
+    edit "HUB"
+      set server 10.200.99.1
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set members 2 3 4 5
+      config sla
+        edit 1
+          set link-cost-factor latency
+          set latency-threshold 100
+        next
+      end
+    next
+    edit "Internet"
+      set server "www.fortinet.com"
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set members 1
+    next
+  end
+  config service
+    edit 1
+      set name "Corporate-H1"
+      set mode sla
+      set dst "CORP_LAN"
+      set src "CORP_LAN"
+      set hold-down-time 20
+      config sla
+        edit "HUB"
+          set id 1
+        next
+      end
+      # Using Hub site1-H1
+      set priority-members 2 3
+    next
+    edit 2
+      set name "Corporate-H2"
+      set mode sla
+      set dst "CORP_LAN"
+      set src "CORP_LAN"
+      set hold-down-time 20
+      config sla
+        edit "HUB"
+          set id 1
+        next
+      end
+      # Using Hub site1-H2
+      set priority-members 4 5
+    next
+    edit 10
+      set name "Local-Breakout"
+      set mode priority
+      set dst "all"
+      set health-check Internet
+      # Using best underlay (DIA) link
+      set priority-members 1
+    next
+  end
+end
+
+config router static
+  edit 100
+    # Default route
+    set sdwan enable
+  next
+end
+
+######################################
+# base/04-edge-firewall.conf.j2
+######################################
+config system zone
+  edit "lan"
+    set interface port5
+  next
+end
+config firewall policy
+  edit 1
+    set name "Corporate"
+    set srcintf "lan" "overlay"
+    set dstintf "lan" "overlay"
+    set srcaddr "CORP_LAN"
+    set dstaddr "CORP_LAN"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+  edit 2
+    set name "Internet (DIA)"
+    set srcintf "lan"
+    set dstintf "underlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+    set nat enable
+  next
+  edit 3
+    set name "Internet (RIA)"
+    set srcintf "lan"
+    set dstintf "overlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+end
+
+######################################
+# plugins/edge-h2e.j2
+######################################
+config router route-map
+  edit "SLAOK"
+    config rule
+      edit 1
+        set set-community "65001:99"
+      next
+    end
+  end
+end
+config system sdwan
+  config neighbor
+    edit 10.201.1.1
+      set member 
+      set health-check "HUB"
+      set sla-id 1
+    next
+    edit 10.202.1.1
+      set member 
+      set health-check "HUB"
+      set sla-id 1
+    next
+    edit 10.201.2.1
+      set member 
+      set health-check "HUB"
+      set sla-id 1
+    next
+    edit 10.202.2.1
+      set member 
+      set health-check "HUB"
+      set sla-id 1
+    next
+  end
+end
+config router bgp
+  config neighbor
+    edit 10.201.1.1
+      set route-map-out-preferable "SLAOK"
+    next
+    edit 10.202.1.1
+      set route-map-out-preferable "SLAOK"
+    next
+    edit 10.201.2.1
+      set route-map-out-preferable "SLAOK"
+    next
+    edit 10.202.2.1
+      set route-map-out-preferable "SLAOK"
+    next
+  end
+end
+

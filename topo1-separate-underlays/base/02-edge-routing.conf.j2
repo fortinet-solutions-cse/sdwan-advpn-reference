@@ -40,7 +40,7 @@ end
 {# END: For multi-regional topology only #}
 
 config router bgp
-  set as {{ globals.as }}
+  set as {{ regions[devices[this_dev].region].as }}
   set router-id {{ devices[this_dev].router_id }}
   set keepalive-timer 5
   set holdtime-timer 15
@@ -58,7 +58,7 @@ config router bgp
       set link-down-failover enable
       set interface "H{{hubloop.index}}_T{{loop.index}}"
       set connect-timer 1
-      set remote-as {{ globals.as }}
+      set remote-as {{ regions[devices[this_dev].region].as }}
       set additional-path receive
     next
     {%- endfor %}
