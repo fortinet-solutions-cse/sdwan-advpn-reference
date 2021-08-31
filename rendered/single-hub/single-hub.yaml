@@ -1,0 +1,75 @@
+---
+  globals:
+    corp_aggregate: 10.0.0.0/8
+    tunnel_subnet_aggregate: 10.200.0.0/14
+    phase1_proposal: aes256-sha256
+    phase2_proposal: aes256-sha256
+    loopback_hc_ip: 10.200.99.1
+    psk: dogcat
+
+  plugins:
+    - hub-lan.conf.j2
+    - 035-hub-h2e.j2
+    - edge-h2e.j2
+
+  profiles:
+    edge:
+      type: edge
+      wan_intf:
+        - port1
+        - port4
+      lan_intf:
+        - port5
+      dia_intf:
+        - port1
+    hub:
+      type: hub
+      wan_intf:
+        - port1
+        - port4
+      lan_intf:
+        - port5
+      dia_intf:
+        - port1
+
+  regions:
+    west:
+      as: 65001
+      hubs:
+        - site1-H1
+
+  devices:
+    site1-H1:
+      profile: hub
+      region: west
+      router_id: 10.1.0.1
+      wan_ip:
+        - 100.64.1.1
+        - 172.16.1.5
+      tunnel_ip:
+        - 10.201.1.1
+        - 10.202.1.1
+      tunnel_remote_ip:
+        - 10.201.1.254
+        - 10.202.1.254
+      tunnel_mode_cfg:
+        - start: 10.201.1.11
+          end: 10.201.1.250
+          netmask: 255.255.255.0
+        - start: 10.202.1.11
+          end: 10.202.1.250
+          netmask: 255.255.255.0
+      lan_subnet:
+        - 10.1.0.0/24
+    site1-1:
+      profile: edge
+      region: west
+      router_id: 10.0.1.1
+      lan_subnet:
+        - 10.0.1.0/24
+    site1-2:
+      profile: edge
+      region: west
+      router_id: 10.0.2.1
+      lan_subnet:
+        - 10.0.2.0/24
