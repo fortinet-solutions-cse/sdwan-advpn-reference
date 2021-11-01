@@ -20,6 +20,7 @@ config vpn ipsec phase1-interface
     set psksecret {{ globals.psk }}
     set dpd-retrycount 3
     set dpd-retryinterval 5
+    set dpd on-idle
   next
   {%- endfor %}
 {%- endfor %}
