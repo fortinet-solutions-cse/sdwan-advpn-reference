@@ -285,12 +285,12 @@ end
 config system sdwan
   config neighbor
     edit 10.201.1.1
-      set member 
+      set member 2
       set health-check "HUB"
       set sla-id 1
     next
     edit 10.202.1.1
-      set member 
+      set member 3
       set health-check "HUB"
       set sla-id 1
     next
