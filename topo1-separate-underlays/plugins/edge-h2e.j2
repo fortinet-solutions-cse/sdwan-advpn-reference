@@ -14,7 +14,7 @@ config system sdwan
     {%- for h in regions[devices[this_dev].region].hubs %}
     {%- for w in profile.wan_intf %}
     edit {{ devices[h].tunnel_ip[loop.index0] }}
-      set member {{ mbr_i }}
+      set member {{ ns.mbr_i }}
       set health-check "HUB"
       set sla-id 1
     next
