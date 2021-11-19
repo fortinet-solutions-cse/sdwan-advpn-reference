@@ -1,19 +1,19 @@
-{% import 'Globals' as globals with context %}
+{% import 'Project' as project with context %}
 
 config system interface
   edit "lo-BGP"
     set vdom "root"
     set type loopback
-    set ip {{ globals.hubs[hostname].lo_bgp }}/32
+    set ip {{ project.hubs[hostname].lo_bgp }}/32
     set allowaccess ping
   next
 end
 
 {% set hub2hub_ol = [] %}
-{% for i in globals.profiles[profile].interfaces if i.role == 'wan' %}
-  {% for r in globals.regions if r != region %}
-    {% for h in globals.regions[r].hubs %}
-      {% if i.ol_type in globals.hubs[h].overlays %}
+{% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+  {% for r in project.regions if r != region %}
+    {% for h in project.regions[r].hubs %}
+      {% if i.ol_type in project.hubs[h].overlays %}
       config vpn ipsec phase1-interface
         edit "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
           set interface "{{ i.name }}"
@@ -22,10 +22,17 @@ end
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
-          set remote-gw {{ globals.hubs[h].overlays[i.ol_type].wan_ip }}
-          set exchange-ip-addr4 {{ globals.hubs[hostname].lo_bgp }}
+          {% if project.multireg_advpn %}
+          set auto-discovery-sender enable
+          set auto-discovery-receiver enable
+          set auto-discovery-forwarder enable
+          set add-route disable
+          {% else %}
           set exchange-interface-ip enable
-          set certificate "Hub"
+          {% endif %}
+          set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
+          set exchange-ip-addr4 {{ project.hubs[hostname].lo_bgp }}
+          set certificate "{{ project.hub_cert_template|default('Hub') }}"
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -43,12 +50,12 @@ end
         edit {{ hub2hub_ol|length * 2 + 11 }}
           set input-device "EDGE_{{ i.ol_type }}"
           set output-device "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
-          set dst {{ globals.lan_summary }}
+          set dst {{ project.lan_summary }}
         next
         edit {{ hub2hub_ol|length * 2 + 12 }}
           set input-device "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
           set output-device "EDGE_{{ i.ol_type }}"
-          set dst {{ globals.lan_summary }}
+          set dst {{ project.lan_summary }}
         next
       end
       {{ hub2hub_ol.append(r|upper~'_H'~loop.index~'_'~i.ol_type) or "" }}
@@ -57,16 +64,37 @@ end
   {% endfor %}
 {% endfor %}
 
+{% if project.create_hub2hub_zone|default(true) %}
 config system zone
-  edit hub2hub-overlay
+  edit "{{project.hub2hub_zone|default('hub2hub_overlay')}}"
     set interface {{ hub2hub_ol|join(' ') }}
   next
 end
+{% endif %}
 
+{% if project.multireg_advpn %}
+config router bgp
+  config neighbor-group
+    edit "EDGE"
+      {# Preserve next-hop of prefixes coming from remote regions #}
+      unset next-hop-self
+    next
+  end
+  config network
+    {# Advertise local overlay subnets to remote regions #}
+    {% for k, v in project.hubs[hostname].overlays.items() %}
+    edit {{ loop.index + 10 }}
+      set prefix {{ v.tunnel_net|ipaddr(0) }}
+    next
+    {% endfor %}
+  end
+end
+{% else %}
+{# Advertise regional summaries between the regions #}
 config router bgp
   config aggregate-address
     edit 1
-      set prefix {{ globals.regions[region].lan_summary }}
+      set prefix {{ project.regions[region].lan_summary }}
     next
   end
 end
@@ -74,7 +102,7 @@ config router access-list
   edit "REGION_SUMMARY"
     config rule
       edit 1
-        set prefix {{ globals.regions[region].lan_summary }}
+        set prefix {{ project.regions[region].lan_summary }}
         set exact-match enable
       next
     end
@@ -92,21 +120,28 @@ config router route-map
     end
   next
 end
+{% endif %}
 
 config router bgp
   config neighbor
-    {% for r in globals.regions if r != region %}
-    {% for h in globals.regions[r].hubs %}
-    edit {{ globals.hubs[h].lo_bgp }}
+    {% for r in project.regions if r != region %}
+    {% for h in project.regions[r].hubs %}
+    edit {{ project.hubs[h].lo_bgp }}
       set ebgp-enforce-multihop enable
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
       set interface "lo-BGP"
       set update-source "lo-BGP"
+      {% if project.multireg_advpn %}
+      set attribute-unchanged next-hop
+      set additional-path both
+      set adv-additional-path 255
+      {% else %}
       set route-map-out "HUB2HUB_OUT"
+      {% endif %}
       set connect-timer 1
-      set remote-as {{ globals.regions[r].as }}
+      set remote-as {{ project.regions[r].as }}
     next
     {% endfor %}
     {% endfor %}

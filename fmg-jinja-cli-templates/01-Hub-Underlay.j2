@@ -1,11 +1,11 @@
-{% import 'Globals' as globals with context %}
+{% import 'Project' as project with context %}
 
 config system settings
   set tcp-session-without-syn enable
 end
 
 config system interface
-  {% for i in globals.profiles[profile].interfaces %}
+  {% for i in project.profiles[profile].interfaces %}
   edit "{{i.name}}"
     {% if i.ip == 'dhcp' %}
     set mode dhcp
@@ -24,15 +24,17 @@ config system interface
   next
 end
 
+{% set lan_intf = [] %}
+{% if project.create_lan_zone|default(true) %}
 config system zone
-  edit "lan"
-    {% set lan_intf = [] %}
-    {% for i in globals.profiles[profile].interfaces if i.role == 'lan'  %}
+  edit "{{ project.lan_zone|default('lan_zone') }}"
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan'  %}
     {{  lan_intf.append(i.name) or "" }}
     {% endfor %}
     set interface {{ lan_intf|join(' ') }}
   next
 end
+{% endif %}
 
 config system global
     set hostname {{ hostname }}

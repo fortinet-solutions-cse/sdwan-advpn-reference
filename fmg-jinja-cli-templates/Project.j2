@@ -1,6 +1,23 @@
+{# This file describes the project: its Regions, Hubs and Device Profiles #}
+{# Normally, this is the only file that needs to be edited between different projects #}
+
+{#  Mandatory Global Definitions #}
 {% set tunnel_summary = '10.200.0.0/14' %}
 {% set lan_summary = '10.0.0.0/8' %}
 
+{# Optional Settings (showing default values) #}
+{#
+{% set create_hub2hub_zone = true %}
+{% set hub2hub_zone = 'hub2hub_overlay' %}
+{% set create_lan_zone = true %}
+{% set lan_zone = 'lan_zone' %}
+
+{% set multireg_advpn = false %}
+{% set hub_cert_template = 'Hub' %}
+{% set edge_cert_template = 'Edge' %}
+#}
+
+{# Regions #}
 {% set regions = {
     'west': {
       'as': '65001',
@@ -15,7 +32,7 @@
   }
 %}
 
-
+{# Device Profiles #}
 {% set profiles = {
 
     '2wan-site': {
@@ -71,7 +88,7 @@
   }
 %}
 
-
+{# Hubs #}
 {% set hubs = {
 
     'site1-H1': {
