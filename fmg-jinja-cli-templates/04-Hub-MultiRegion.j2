@@ -73,6 +73,30 @@ end
 {% endif %}
 
 {% if project.multireg_advpn %}
+{# Advertise overlay subnets between the regions #}
+config router access-list
+  edit "TUNNEL_SUBNETS"
+    config rule
+      edit 1
+        set prefix {{ project.tunnel_summary }}
+        set exact-match disable
+      next
+    end
+  next
+end
+config router route-map
+  edit "HUB2HUB_OUT"
+    config rule
+      edit 1
+        {# Do not readvertise overlay subnets to Edges and other regions #}
+        set match-ip-address "TUNNEL_SUBNETS"
+        set set-community no-advertise
+      next
+      edit 100
+      next
+    end
+  next
+end
 config router bgp
   config neighbor-group
     edit "EDGE"
@@ -81,7 +105,7 @@ config router bgp
     next
   end
   config network
-    {# Advertise local overlay subnets to remote regions #}
+    {# Local overlay subnets #}
     {% for k, v in project.hubs[hostname].overlays.items() %}
     edit {{ loop.index + 10 }}
       set prefix {{ v.tunnel_net|ipaddr(0) }}
@@ -113,6 +137,7 @@ config router route-map
     config rule
       edit 1
         set match-ip-address "REGION_SUMMARY"
+        unset set-community
       next
       edit 100
         set action deny
@@ -133,12 +158,11 @@ config router bgp
       set link-down-failover enable
       set interface "lo-BGP"
       set update-source "lo-BGP"
+      set route-map-out "HUB2HUB_OUT"
       {% if project.multireg_advpn %}
       set attribute-unchanged next-hop
       set additional-path both
       set adv-additional-path 255
-      {% else %}
-      set route-map-out "HUB2HUB_OUT"
       {% endif %}
       set connect-timer 1
       set remote-as {{ project.regions[r].as }}
