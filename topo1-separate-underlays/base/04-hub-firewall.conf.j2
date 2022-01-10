@@ -24,14 +24,6 @@ config system settings
   # Allow overlay switchover for existing sessions (from shortcut to Hub)
   set tcp-session-without-syn enable
 end
-config system zone
-  edit "overlay"
-    set interface {{ ol_tunnels|join(' ') }}
-  next
-  edit "underlay"
-    set interface {{ profile.dia_intf|join(' ') }}
-  next
-end
 config firewall service custom
   edit "PING"
     set category "Network Services"

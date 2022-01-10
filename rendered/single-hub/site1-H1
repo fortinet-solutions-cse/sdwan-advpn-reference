@@ -9,7 +9,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set peertype any
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set net-device disable
     set tunnel-search nexthop
     set add-route disable
@@ -27,7 +27,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set peertype any
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set net-device disable
     set tunnel-search nexthop
     set add-route disable
@@ -43,12 +43,12 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_T1"
     set phase1name "EDGE_T1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
   edit "EDGE_T2"
     set phase1name "EDGE_T2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -78,7 +78,7 @@ end
 # base/02-hub-routing.conf.j2
 ######################################
 config router bgp
-  set as 65001
+  set as 65000
   set router-id 10.1.0.1
   set keepalive-timer 5
   set holdtime-timer 15
@@ -91,7 +91,7 @@ config router bgp
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
-      set remote-as 65001
+      set remote-as 65000
       set additional-path send
       # adv-additional-path = max. number of overlays * max. number of hubs
       set adv-additional-path 2
@@ -146,72 +146,30 @@ config system interface
     set allowaccess ping
   next
 end
-
-######################################
-# plugins/035-hub-h2e.j2
-######################################
-config router community-list
-  edit "SLAOK"
-    config rule
-      edit 1
-        set action permit
-        set match "65001:99"
-      next
-    end
-  next
-end
-config router route-map
-  edit "EDGE_IN"
-    config rule
-      edit 1
-        set match-community "SLAOK"
-        set set-route-tag 99
-      next
-      edit 100
-      next
-    end
-  next
-end
-config router bgp
-  config neighbor-group
-    edit "EDGE"
-      set route-map-in "EDGE_IN"
-    next
-  end
-end
-
-
-
 config system sdwan
   set status enable
   config zone
+    edit "underlay"
+    next
     edit "overlay"
     next
   end
   config members
     edit 1
+      set interface "port1"
+      set zone "underlay"
+      # Gateway is fetched from DHCP
+    next
+    edit 2
       set interface "EDGE_T1"
       set zone "overlay"
     next
-    edit 2
+    edit 3
       set interface "EDGE_T2"
       set zone "overlay"
     next
     
     
-  end
-  config service
-    edit 1
-      set name "T1-SLA-OK"
-      set route-tag 99
-      set priority-members 1
-    next
-    edit 2
-      set name "T2-SLA-OK"
-      set route-tag 99
-      set priority-members 2
-    next
-    # Implicit rule handles the case when both overlays are out of SLA
   end
 end
 
@@ -226,14 +184,6 @@ end
 config system settings
   # Allow overlay switchover for existing sessions (from shortcut to Hub)
   set tcp-session-without-syn enable
-end
-config system zone
-  edit "overlay"
-    set interface "EDGE_T1" "EDGE_T2"
-  next
-  edit "underlay"
-    set interface port1
-  next
 end
 config firewall service custom
   edit "PING"
@@ -292,7 +242,7 @@ config router community-list
     config rule
       edit 1
         set action permit
-        set match "65001:3"
+        set match "65000:3"
       next
     end
   next
@@ -311,7 +261,7 @@ config router route-map
   edit "HUB_IN"
     config rule
       edit 1
-        set set-community "65001:3"
+        set set-community "65000:3"
       next
     end
   next

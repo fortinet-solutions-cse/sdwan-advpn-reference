@@ -9,7 +9,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set peertype any
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set net-device disable
     set tunnel-search nexthop
     set add-route disable
@@ -27,7 +27,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set peertype any
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set net-device disable
     set tunnel-search nexthop
     set add-route disable
@@ -43,12 +43,12 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_T1"
     set phase1name "EDGE_T1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
   edit "EDGE_T2"
     set phase1name "EDGE_T2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -78,7 +78,7 @@ end
 # base/02-hub-routing.conf.j2
 ######################################
 config router bgp
-  set as 65001
+  set as 65000
   set router-id 10.1.0.1
   set keepalive-timer 5
   set holdtime-timer 15
@@ -91,7 +91,7 @@ config router bgp
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
-      set remote-as 65001
+      set remote-as 65000
       set additional-path send
       # adv-additional-path = max. number of overlays * max. number of hubs
       set adv-additional-path 4
@@ -146,72 +146,30 @@ config system interface
     set allowaccess ping
   next
 end
-
-######################################
-# plugins/035-hub-h2e.j2
-######################################
-config router community-list
-  edit "SLAOK"
-    config rule
-      edit 1
-        set action permit
-        set match "65001:99"
-      next
-    end
-  next
-end
-config router route-map
-  edit "EDGE_IN"
-    config rule
-      edit 1
-        set match-community "SLAOK"
-        set set-route-tag 99
-      next
-      edit 100
-      next
-    end
-  next
-end
-config router bgp
-  config neighbor-group
-    edit "EDGE"
-      set route-map-in "EDGE_IN"
-    next
-  end
-end
-
-
-
 config system sdwan
   set status enable
   config zone
+    edit "underlay"
+    next
     edit "overlay"
     next
   end
   config members
     edit 1
+      set interface "port1"
+      set zone "underlay"
+      # Gateway is fetched from DHCP
+    next
+    edit 2
       set interface "EDGE_T1"
       set zone "overlay"
     next
-    edit 2
+    edit 3
       set interface "EDGE_T2"
       set zone "overlay"
     next
     
     
-  end
-  config service
-    edit 1
-      set name "T1-SLA-OK"
-      set route-tag 99
-      set priority-members 1
-    next
-    edit 2
-      set name "T2-SLA-OK"
-      set route-tag 99
-      set priority-members 2
-    next
-    # Implicit rule handles the case when both overlays are out of SLA
   end
 end
 
@@ -226,14 +184,6 @@ end
 config system settings
   # Allow overlay switchover for existing sessions (from shortcut to Hub)
   set tcp-session-without-syn enable
-end
-config system zone
-  edit "overlay"
-    set interface "EDGE_T1" "EDGE_T2"
-  next
-  edit "underlay"
-    set interface port1
-  next
 end
 config firewall service custom
   edit "PING"
@@ -292,7 +242,7 @@ config router community-list
     config rule
       edit 1
         set action permit
-        set match "65001:3"
+        set match "65000:3"
       next
     end
   next
@@ -311,7 +261,7 @@ config router route-map
   edit "HUB_IN"
     config rule
       edit 1
-        set set-community "65001:3"
+        set set-community "65000:3"
       next
     end
   next
@@ -329,28 +279,28 @@ config system interface
   edit "lo-BGP_T1"
     set vdom "root"
     set type loopback
-    set ip 10.201.0.1 255.255.255.255
+    set ip 10.201.1.2 255.255.255.255
     set allowaccess ping
     set description "Inter-regional peering (T1)"
   next
   edit "lo-BGP_T2"
     set vdom "root"
     set type loopback
-    set ip 10.202.0.1 255.255.255.255
+    set ip 10.202.1.2 255.255.255.255
     set allowaccess ping
     set description "Inter-regional peering (T2)"
   next
 end
-# Local Region (Peer Hub site1-H2)
+# Local Region (Peer Hub dc2_fgt)
 config vpn ipsec phase1-interface
-  edit "SITE1-H2_T1"
+  edit "DC2_FGT_T1"
     set interface port1
     set ike-version 2
     set keylife 28800
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set exchange-interface-ip enable
-    set exchange-ip-addr4 10.201.0.1
+    set exchange-ip-addr4 10.201.1.2
     set net-device disable
     set tunnel-search nexthop
     set remote-gw 100.64.2.1
@@ -358,14 +308,14 @@ config vpn ipsec phase1-interface
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
-  edit "SITE1-H2_T2"
+  edit "DC2_FGT_T2"
     set interface port4
     set ike-version 2
     set keylife 28800
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set exchange-interface-ip enable
-    set exchange-ip-addr4 10.202.0.1
+    set exchange-ip-addr4 10.202.1.2
     set net-device disable
     set tunnel-search nexthop
     set remote-gw 172.16.2.5
@@ -375,36 +325,36 @@ config vpn ipsec phase1-interface
   next
 end
 config vpn ipsec phase2-interface
-  edit "SITE1-H2_T1"
-    set phase1name "SITE1-H2_T1"
-    set proposal aes256-sha256
+  edit "DC2_FGT_T1"
+    set phase1name "DC2_FGT_T1"
+    set proposal aes256gcm
     set keepalive enable
   next
-  edit "SITE1-H2_T2"
-    set phase1name "SITE1-H2_T2"
-    set proposal aes256-sha256
+  edit "DC2_FGT_T2"
+    set phase1name "DC2_FGT_T2"
+    set proposal aes256gcm
     set keepalive enable
   next
 end
 config router bgp
   config neighbor
-    edit 10.201.0.2
+    edit 10.201.2.2
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
       set connect-timer 1
-      set remote-as 65001
+      set remote-as 65000
       set interface "lo-BGP_T1"
       set update-source "lo-BGP_T1"
       set next-hop-self enable
       set route-map-out "PEERHUB_OUT"
     next
-    edit 10.202.0.2
+    edit 10.202.2.2
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
       set connect-timer 1
-      set remote-as 65001
+      set remote-as 65000
       set interface "lo-BGP_T2"
       set update-source "lo-BGP_T2"
       set next-hop-self enable
@@ -414,8 +364,8 @@ config router bgp
 end
 config system zone
   edit "overlay"
-    append interface "SITE1-H2_T1"
-    append interface "SITE1-H2_T2"
+    append interface "DC2_FGT_T1"
+    append interface "DC2_FGT_T2"
   next
 end
 

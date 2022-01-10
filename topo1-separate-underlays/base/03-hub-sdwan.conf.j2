@@ -35,3 +35,44 @@ config system interface
     set allowaccess ping
   next
 end
+config system sdwan
+  set status enable
+  config zone
+    edit "underlay"
+    next
+    edit "overlay"
+    next
+  end
+  config members
+    {%- set ns = namespace(mbr_i = 1) %}
+    {%- for i in profile.dia_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "{{ i }}"
+      set zone "underlay"
+      # Gateway is fetched from DHCP
+    next
+    {%- set ns.mbr_i = ns.mbr_i + 1 %}
+    {%- endfor %}
+    {%- for w in profile.wan_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "EDGE_T{{loop.index}}"
+      set zone "overlay"
+    next
+    {%- set ns.mbr_i = ns.mbr_i + 1 %}
+    {%- endfor %}
+    {# BEGIN: For multi-regional topology only #}
+    {%- for reg in regions if reg != devices[this_dev].region %}
+    {%- for h in regions[reg].hubs %}
+    {%- set hubloop = loop %}
+    {%- for w in profile.wan_intf %}
+    edit {{ ns.mbr_i }}
+      set interface "{{reg|upper}}_H{{hubloop.index}}_T{{loop.index}}"
+      set zone "overlay"
+    next
+    {%- set ns.mbr_i = ns.mbr_i + 1 %}
+    {%- endfor %}
+    {%- endfor %}
+    {%- endfor %}
+    {# END: For multi-regional topology only #}
+  end
+end
