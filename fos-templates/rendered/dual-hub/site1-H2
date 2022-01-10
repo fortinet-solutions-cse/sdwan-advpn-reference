@@ -9,7 +9,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set peertype any
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set add-route disable
     set auto-discovery-sender enable
     set network-overlay enable
@@ -25,7 +25,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set peertype any
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set add-route disable
     set auto-discovery-sender enable
     set network-overlay enable
@@ -39,12 +39,12 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_T1"
     set phase1name "EDGE_T1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
   edit "EDGE_T2"
     set phase1name "EDGE_T2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -160,73 +160,37 @@ config system interface
     set allowaccess ping
   next
 end
-
-######################################
-# plugins/035-hub-h2e.j2
-######################################
-config router community-list
-  edit "SLAOK"
-    config rule
-      edit 1
-        set action permit
-        set match "65001:99"
-      next
-    end
-  next
-end
-config router route-map
-  edit "EDGE_IN"
-    config rule
-      edit 1
-        set match-community "SLAOK"
-        set set-route-tag 99
-      next
-      edit 100
-      next
-    end
-  next
-end
-config router bgp
-  config neighbor-group
-    edit "EDGE"
-      set route-map-in "EDGE_IN"
-    next
-  end
-end
-
-
-
 config system sdwan
   set status enable
   config zone
+    edit "underlay"
+    next
     edit "overlay"
     next
   end
   config members
     edit 1
+      set interface "port1"
+      set zone "underlay"
+      # Gateway is fetched from DHCP
+    next
+    edit 2
       set interface "EDGE_T1"
       set zone "overlay"
     next
-    edit 2
+    edit 3
       set interface "EDGE_T2"
       set zone "overlay"
     next
     
     
   end
-  config service
-    edit 1
-      set name "T1-SLA-OK"
-      set route-tag 99
-      set priority-members 1
-    next
-    edit 2
-      set name "T2-SLA-OK"
-      set route-tag 99
-      set priority-members 2
-    next
-    # Implicit rule handles the case when both overlays are out of SLA
-  end
+end
+config router static
+  edit 100
+    # Default route
+    set sdwan-zone "underlay"
+  next
 end
 
 ######################################
@@ -235,16 +199,6 @@ end
 config system settings
   # Allow overlay switchover for existing sessions (from shortcut to Hub)
   set tcp-session-without-syn enable
-end
-config system zone
-  edit "overlay"
-    
-    
-    set interface "EDGE_T1" "EDGE_T2"
-  next
-  edit "underlay"
-    set interface port1
-  next
 end
 config firewall service custom
   edit "PING"
@@ -268,14 +222,14 @@ config firewall policy
     set tcp-session-without-syn all
   next
   edit 2
-    set name "HC BGP"
+    set name "Health-Check"
     set srcintf "overlay"
-    set dstintf "lo-HC" "lo-BGP"
+    set dstintf "lo-HC"
     set srcaddr "all"
     set dstaddr "all"
     set action accept
     set schedule "always"
-    set service "PING" "BGP"
+    set service "PING"
   next
   edit 3
     set name "Edge to Internet (RIA)"
@@ -292,7 +246,7 @@ config firewall policy
     set logtraffic all
     set nat enable
   next
-end
+  end
 
 ######################################
 # plugins/hub-lan.conf.j2
@@ -345,33 +299,33 @@ config system interface
   edit "lo-BGP"
     set vdom "root"
     set type loopback
-    set ip ['10.201.0.2', '10.202.0.2'] 255.255.255.255
+    set ip 10.200.0.2 255.255.255.255
     set allowaccess ping
   next
 end
-# Local Region (Peer Hub site1-H1)
+# Local Region (Peer Hub dc1_fgt)
 config vpn ipsec phase1-interface
-  edit "SITE1-H1_T1"
+  edit "DC1_FGT_T1"
     set interface port1
     set ike-version 2
     set keylife 28800
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set exchange-interface-ip enable
-    set exchange-ip-addr4 ['10.201.0.2', '10.202.0.2']
+    set exchange-ip-addr4 10.200.0.2
     set remote-gw 100.64.1.1
     set psksecret dogcat
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
-  edit "SITE1-H1_T2"
+  edit "DC1_FGT_T2"
     set interface port4
     set ike-version 2
     set keylife 28800
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set exchange-interface-ip enable
-    set exchange-ip-addr4 ['10.201.0.2', '10.202.0.2']
+    set exchange-ip-addr4 10.200.0.2
     set remote-gw 172.16.1.5
     set psksecret dogcat
     set dpd-retrycount 3
@@ -379,20 +333,20 @@ config vpn ipsec phase1-interface
   next
 end
 config vpn ipsec phase2-interface
-  edit "SITE1-H1_T1"
-    set phase1name "SITE1-H1_T1"
-    set proposal aes256-sha256
+  edit "DC1_FGT_T1"
+    set phase1name "DC1_FGT_T1"
+    set proposal aes256gcm
     set keepalive enable
   next
-  edit "SITE1-H1_T2"
-    set phase1name "SITE1-H1_T2"
-    set proposal aes256-sha256
+  edit "DC1_FGT_T2"
+    set phase1name "DC1_FGT_T2"
+    set proposal aes256gcm
     set keepalive enable
   next
 end
 config router bgp
   config neighbor
-    edit ['10.201.0.1', '10.202.0.1']
+    edit 10.200.0.1
       set soft-reconfiguration enable
       set advertisement-interval 1
       set link-down-failover enable
@@ -407,8 +361,8 @@ config router bgp
 end
 config system zone
   edit "overlay"
-    append interface "SITE1-H1_T1"
-    append interface "SITE1-H1_T2"
+    append interface "DC1_FGT_T1"
+    append interface "DC1_FGT_T2"
   next
 end
 

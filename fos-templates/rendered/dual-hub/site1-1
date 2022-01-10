@@ -9,7 +9,7 @@ config vpn ipsec phase1-interface
     set peertype any
     set net-device enable
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set add-route disable
     set idle-timeout enable
     set auto-discovery-receiver enable
@@ -28,7 +28,7 @@ config vpn ipsec phase1-interface
     set peertype any
     set net-device enable
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set add-route disable
     set idle-timeout enable
     set auto-discovery-receiver enable
@@ -47,7 +47,7 @@ config vpn ipsec phase1-interface
     set peertype any
     set net-device enable
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set add-route disable
     set idle-timeout enable
     set auto-discovery-receiver enable
@@ -66,7 +66,7 @@ config vpn ipsec phase1-interface
     set peertype any
     set net-device enable
     set mode-cfg enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha384
     set add-route disable
     set idle-timeout enable
     set auto-discovery-receiver enable
@@ -82,25 +82,25 @@ end
 config vpn ipsec phase2-interface
   edit "H1_T1"
     set phase1name "H1_T1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
   edit "H1_T2"
     set phase1name "H1_T2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
   edit "H2_T1"
     set phase1name "H2_T1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
   edit "H2_T2"
     set phase1name "H2_T2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -267,7 +267,7 @@ config system sdwan
           set id 1
         next
       end
-      # Using Hub site1-H1
+      # Using Hub dc1_fgt
       set priority-members 2 3
     next
     edit 2
@@ -282,7 +282,7 @@ config system sdwan
           set id 1
         next
       end
-      # Using Hub site1-H2
+      # Using Hub dc2_fgt
       set priority-members 4 5
     next
     edit 10
@@ -355,58 +355,5 @@ config firewall policy
     set application-list "default"
     set logtraffic all
   next
-end
-
-######################################
-# plugins/edge-h2e.j2
-######################################
-config router route-map
-  edit "SLAOK"
-    config rule
-      edit 1
-        set set-community "65001:99"
-      next
-    end
-  end
-end
-config system sdwan
-  config neighbor
-    edit 10.201.1.1
-      set member 2
-      set health-check "HUB"
-      set sla-id 1
-    next
-    edit 10.202.1.1
-      set member 3
-      set health-check "HUB"
-      set sla-id 1
-    next
-    edit 10.201.2.1
-      set member 4
-      set health-check "HUB"
-      set sla-id 1
-    next
-    edit 10.202.2.1
-      set member 5
-      set health-check "HUB"
-      set sla-id 1
-    next
-  end
-end
-config router bgp
-  config neighbor
-    edit 10.201.1.1
-      set route-map-out-preferable "SLAOK"
-    next
-    edit 10.202.1.1
-      set route-map-out-preferable "SLAOK"
-    next
-    edit 10.201.2.1
-      set route-map-out-preferable "SLAOK"
-    next
-    edit 10.202.2.1
-      set route-map-out-preferable "SLAOK"
-    next
-  end
 end
 
