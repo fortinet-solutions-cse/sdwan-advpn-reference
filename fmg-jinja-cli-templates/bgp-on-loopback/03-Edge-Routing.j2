@@ -41,12 +41,3 @@ config router bgp
     {% endfor %}
   end
 end
-
-config router static
-  edit 101
-    set dst {{ project.lan_summary }}
-    set blackhole enable
-    set distance 254
-    set comment "Avoid potential leak of corporate traffic to underlay"
-  next
-end
