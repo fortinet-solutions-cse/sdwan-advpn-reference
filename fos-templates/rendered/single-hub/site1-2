@@ -177,7 +177,7 @@ config system sdwan
           set id 1
         next
       end
-      # Using Hub dc1_fgt
+      # Using Hub site1-H1
       set priority-members 2 3
     next
     edit 10

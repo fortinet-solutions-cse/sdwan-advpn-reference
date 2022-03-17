@@ -18,6 +18,9 @@ config vpn ipsec phase1-interface
     set ipv4-end-ip 10.201.2.250
     set ipv4-netmask 255.255.255.0
     set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-demand
   next
   edit "EDGE_T2"
     set type dynamic
@@ -34,6 +37,9 @@ config vpn ipsec phase1-interface
     set ipv4-end-ip 10.202.2.250
     set ipv4-netmask 255.255.255.0
     set psksecret dogcat
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-demand
   next
 end
 config vpn ipsec phase2-interface
@@ -303,9 +309,9 @@ config system interface
     set allowaccess ping
   next
 end
-# Local Region (Peer Hub dc1_fgt)
+# Local Region (Peer Hub site1-H1)
 config vpn ipsec phase1-interface
-  edit "DC1_FGT_T1"
+  edit "SITE1-H1_T1"
     set interface port1
     set ike-version 2
     set keylife 28800
@@ -318,7 +324,7 @@ config vpn ipsec phase1-interface
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
-  edit "DC1_FGT_T2"
+  edit "SITE1-H1_T2"
     set interface port4
     set ike-version 2
     set keylife 28800
@@ -333,13 +339,13 @@ config vpn ipsec phase1-interface
   next
 end
 config vpn ipsec phase2-interface
-  edit "DC1_FGT_T1"
-    set phase1name "DC1_FGT_T1"
+  edit "SITE1-H1_T1"
+    set phase1name "SITE1-H1_T1"
     set proposal aes256gcm
     set keepalive enable
   next
-  edit "DC1_FGT_T2"
-    set phase1name "DC1_FGT_T2"
+  edit "SITE1-H1_T2"
+    set phase1name "SITE1-H1_T2"
     set proposal aes256gcm
     set keepalive enable
   next
@@ -361,8 +367,8 @@ config router bgp
 end
 config system zone
   edit "overlay"
-    append interface "DC1_FGT_T1"
-    append interface "DC1_FGT_T2"
+    append interface "SITE1-H1_T1"
+    append interface "SITE1-H1_T2"
   next
 end
 

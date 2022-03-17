@@ -23,6 +23,9 @@ config vpn ipsec phase1-interface
     set ipv4-end-ip {{ devices[this_dev].tunnel_mode_cfg[loop.index0].end }}
     set ipv4-netmask {{ devices[this_dev].tunnel_mode_cfg[loop.index0].netmask }}
     set psksecret {{ globals.psk }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-demand
   next
   {%- endfor %}
 end
@@ -70,6 +73,7 @@ config vpn ipsec phase1-interface
     set psksecret {{ globals.psk }}
     set dpd-retrycount 3
     set dpd-retryinterval 5
+    set dpd on-idle
   next
   {%- endfor %}
 {%- endfor %}

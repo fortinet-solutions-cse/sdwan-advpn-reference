@@ -34,10 +34,10 @@
     west:
       as: 65001
       hubs:
-        - dc1_fgt
+        - site1-H1
 
   devices:
-    dc1_fgt:
+    site1-H1:
       profile: hub
       region: west
       router_id: 10.1.0.1
@@ -63,13 +63,13 @@
           netmask: 255.255.255.0
       lan_subnet:
         - 10.1.0.0/24
-    branch1_fgt:
+    site1-1:
       profile: edge
       region: west
       router_id: 10.0.1.1
       lan_subnet:
         - 10.0.1.0/24
-    branch2_fgt:
+    site1-2:
       profile: edge
       region: west
       router_id: 10.0.2.1

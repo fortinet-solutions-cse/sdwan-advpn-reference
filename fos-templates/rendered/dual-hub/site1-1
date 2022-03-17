@@ -267,7 +267,7 @@ config system sdwan
           set id 1
         next
       end
-      # Using Hub dc1_fgt
+      # Using Hub site1-H1
       set priority-members 2 3
     next
     edit 2
@@ -282,7 +282,7 @@ config system sdwan
           set id 1
         next
       end
-      # Using Hub dc2_fgt
+      # Using Hub site1-H2
       set priority-members 4 5
     next
     edit 10
