@@ -1,0 +1,161 @@
+{# This file describes the project: its Regions, Hubs and Device Profiles #}
+{# Normally, this is the only file that needs to be edited between different projects #}
+
+{#  Mandatory Global Definitions #}
+{% set lo_summary = '10.200.0.0/14' %}
+{% set lan_summary = '10.0.0.0/8' %}
+
+{# Optional Settings (showing default values) #}
+{#
+{% set create_hub2hub_zone = true %}
+{% set hub2hub_zone = 'hub2hub_overlay' %}
+{% set create_lan_zone = true %}
+{% set lan_zone = 'lan_zone' %}
+
+{% set multireg_advpn = false %}
+{% set hub_cert_template = 'Hub' %}
+{% set edge_cert_template = 'Edge' %}
+{% set hub_hc_server = '10.200.99.1' %}
+#}
+{% set multireg_advpn = true %}
+
+{# Regions #}
+{% set regions = {
+    'West': {
+      'as': '65001',
+      'lan_summary': '10.0.0.0/14',
+      'lo_summary': '10.200.1.0/24',
+      'hubs': [ 'site1-H1', 'site1-H2' ]
+    },
+    'East': {
+      'as': '65002',
+      'lan_summary': '10.4.0.0/14',
+      'lo_summary': '10.200.2.0/24',
+      'hubs': [ 'site2-H1' ]
+    }
+  }
+%}
+
+{# Device Profiles #}
+{% set profiles = {
+
+    'Silver': {
+      'interfaces': [
+        {
+          'name': 'port1',
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp',
+          'outbandwidth': outbandwidth,
+          'inbandwidth': inbandwidth,
+          'shaping_profile': shaping_profile
+        },
+        {
+          'name': 'port4',
+          'role': 'wan',
+          'ol_type': 'MPLS',
+          'ip': mpls_wan_ip,
+          'outbandwidth': outbandwidth,
+          'inbandwidth': inbandwidth,
+          'shaping_profile': shaping_profile
+        },
+        {
+          'name': 'port5',
+          'role': 'lan',
+          'ip': lan_ip
+        }
+      ]
+    },
+
+    'Gold': {
+      'interfaces': [
+        {
+          'name': 'port1',
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp',
+          'outbandwidth': outbandwidth,
+          'inbandwidth': inbandwidth
+        },
+        {
+          'name': 'port2',
+          'role': 'wan',
+          'ol_type': 'ISP2',
+          'ip': 'dhcp',
+          'outbandwidth': outbandwidth,
+          'inbandwidth': inbandwidth
+        },
+        {
+          'name': 'port4',
+          'role': 'wan',
+          'ol_type': 'MPLS',
+          'ip': mpls_wan_ip,
+          'outbandwidth': outbandwidth,
+          'inbandwidth': inbandwidth
+        },
+        {
+          'name': 'port5',
+          'role': 'lan',
+          'ip': lan_ip
+        }
+      ]
+    }
+
+  }
+%}
+
+{# Hubs #}
+{% set hubs = {
+
+    'site1-H1': {
+      'lo_bgp': '10.200.1.253',
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.1.1',
+          'network_id': '11'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.1.9',
+          'network_id': '12'
+        },
+        'MPLS': {
+          'wan_ip': '172.16.1.5',
+          'network_id': '13'
+        }
+      }
+    },
+
+    'site1-H2': {
+      'lo_bgp': '10.200.1.254',
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.2.1',
+          'network_id': '21'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.2.9',
+          'network_id': '22'
+        },
+        'MPLS': {
+          'wan_ip': '172.16.2.5',
+          'network_id': '23'
+        }
+      }
+    },
+
+    'site2-H1': {
+      'lo_bgp': '10.200.2.253',
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.4.1',
+          'network_id': '41'
+        },
+        'MPLS': {
+          'wan_ip': '172.16.4.5',
+          'network_id': '43'
+        }
+      }
+    }
+
+  }
+%}

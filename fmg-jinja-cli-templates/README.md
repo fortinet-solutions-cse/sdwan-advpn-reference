@@ -7,6 +7,22 @@ In order to fine-tune it to your project, you must fill in `Project.j2` template
 No modifications should be necessary to the rest of files.
 
 
+## Routing Design
+
+You will find two flavors of the routing design, each in its own sub-folder:
+
+1. **BGP per Overlay** is a traditional routing design, similar to the one used in older FOS versions.
+  Edge devices establish a separate BGP session over each available overlay to each Hub, using
+  the tunnel IPs as BGP next-hops.
+
+2. **BGP on Loopback** is a new routing design that requires _FOS 7.0.4 or later_ to work properly.
+  Edge devices establish a single BGP session to each Hub, using the loopback IP
+  as BGP next-hop.
+
+Please consult the official Deployment Guides and/or contact your Fortinet representatives for
+more information about choosing the right routing design for your project!
+
+
 ## How-To
 
 Follow these simple steps:

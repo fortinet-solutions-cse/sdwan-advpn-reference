@@ -1,0 +1,52 @@
+{% import 'Project' as project with context %}
+
+config router route-map
+  {% for i in range(1,3) %}
+  edit "H{{loop.index}}_TAG"
+    config rule
+      edit 1
+        set set-tag {{ loop.index }}
+      next
+    end
+  next
+  {% endfor %}
+end
+
+config router bgp
+  set as {{ project.regions[region].as }}
+  set router-id {{ loopback }}
+  set keepalive-timer 15
+  set holdtime-timer 45
+  set ibgp-multipath enable
+  set recursive-next-hop enable
+  set tag-resolve-mode merge
+  config neighbor
+    {% for h in project.regions[region].hubs %}
+    edit {{ project.hubs[h].lo_bgp }}
+      set soft-reconfiguration enable
+      set advertisement-interval 1
+      set interface "Lo"
+      set update-source "Lo"
+      set connect-timer 1
+      set remote-as {{ project.regions[region].as }}
+      set route-map-in "H{{loop.index}}_TAG"
+    next
+    {% endfor %}
+  end
+  config network
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' %}
+    edit {{ loop.index }}
+      set prefix {{ i.ip|ipaddr(0) }}
+    next
+    {% endfor %}
+  end
+end
+
+config router static
+  edit 101
+    set dst {{ project.lan_summary }}
+    set blackhole enable
+    set distance 254
+    set comment "Avoid potential leak of corporate traffic to underlay"
+  next
+end
