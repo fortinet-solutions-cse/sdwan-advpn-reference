@@ -20,6 +20,9 @@ config vpn ipsec phase1-interface
     set ipv4-end-ip 10.201.1.250
     set ipv4-netmask 255.255.255.0
     set psksecret dogcat
+    set dpd on-demand
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
   next
   edit "EDGE_T2"
     set type dynamic
@@ -38,6 +41,9 @@ config vpn ipsec phase1-interface
     set ipv4-end-ip 10.202.1.250
     set ipv4-netmask 255.255.255.0
     set psksecret dogcat
+    set dpd on-demand
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
   next
 end
 config vpn ipsec phase2-interface

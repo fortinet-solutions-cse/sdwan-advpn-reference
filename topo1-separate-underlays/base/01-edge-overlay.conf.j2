@@ -14,10 +14,12 @@ config vpn ipsec phase1-interface
     set add-route disable
     set idle-timeout enable
     set auto-discovery-receiver enable
+    set auto-discovery-shortcuts dependent
     set network-overlay enable
     set network-id {{hubloop.index}}{{loop.index}}
     set remote-gw {{ devices[h].wan_ip[loop.index0] }}
     set psksecret {{ globals.psk }}
+    set dpd on-idle
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next

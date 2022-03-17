@@ -13,10 +13,12 @@ config vpn ipsec phase1-interface
     set add-route disable
     set idle-timeout enable
     set auto-discovery-receiver enable
+    set auto-discovery-shortcuts dependent
     set network-overlay enable
     set network-id 11
     set remote-gw 100.64.1.1
     set psksecret dogcat
+    set dpd on-idle
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
@@ -31,10 +33,12 @@ config vpn ipsec phase1-interface
     set add-route disable
     set idle-timeout enable
     set auto-discovery-receiver enable
+    set auto-discovery-shortcuts dependent
     set network-overlay enable
     set network-id 12
     set remote-gw 172.16.1.5
     set psksecret dogcat
+    set dpd on-idle
     set dpd-retrycount 3
     set dpd-retryinterval 5
   next
@@ -195,7 +199,7 @@ config system sdwan
           set id 1
         next
       end
-      # Using Hub dc1_fgt
+      # Using Hub site1-H1
       set priority-members 2 3
     next
     edit 10

@@ -37,14 +37,14 @@
     west:
       as: 65000
       hubs:
-        - dc1_fgt
-        - dc2_fgt
+        - site1-H1
+        - site1-H2
       tunnel_subnet:
         - 10.201.0.0/22
         - 10.202.0.0/22
 
   devices:
-    dc1_fgt:
+    site1-H1:
       profile: hub
       region: west
       router_id: 10.1.0.1
@@ -72,7 +72,7 @@
           netmask: 255.255.255.0
       lan_subnet:
         - 10.1.0.0/24
-    dc2_fgt:
+    site1-H2:
       profile: hub
       region: west
       router_id: 10.2.0.1
@@ -100,13 +100,13 @@
           netmask: 255.255.255.0
       lan_subnet:
         - 10.2.0.0/24
-    branch1_fgt:
+    site1-1:
       profile: edge
       region: west
       router_id: 10.0.1.1
       lan_subnet:
         - 10.0.1.0/24
-    branch2_fgt:
+    site1-2:
       profile: edge
       region: west
       router_id: 10.0.2.1
