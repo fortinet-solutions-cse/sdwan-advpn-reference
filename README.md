@@ -9,7 +9,7 @@ about using these templates for your projects.
 
 Additionally, we provide a simple renderer written in Python, which you can use to render the templates without FortiManager.
 It will generate a set of plain-text files with FOS configuration for each device, which you can simply copy-paste to your
-FortiGate devices (or use the "Configuration Scripts"(https://docs.fortinet.com/document/fortigate/7.0.6/administration-guide/780930/configuration-scripts) feature).
+FortiGate devices (or use the [Configuration Scripts](https://docs.fortinet.com/document/fortigate/7.0.6/administration-guide/780930/configuration-scripts) feature).
 This method is handy to build a quick and simple lab or to quickly validate the changes made to your Jinja templates.
 
 
@@ -115,9 +115,9 @@ Follow these steps:
 
 1. Render the desired design flavor, as follows:
 
-  ```
-  ./render_config.py -f <flavor_dir> -i <inventory_file>
-  ```
+    ```
+    ./render_config.py -f <flavor_dir> -i <inventory_file>
+    ```
 
 By default, the rendered configuration will be saved under "out" sub-directory.
 
