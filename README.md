@@ -1,13 +1,173 @@
-# Reference Configuration: SD-WAN with ADVPN
+# Jinja CLI Templates for Fortinet SD-WAN/ADVPN
 
-This repository contains the following:
+FortiManager 7.0.1+ includes built-in Jinja engine that allows you to use Jinja syntax for CLI Templates.
+This repository contains generic, ready-to-use templates that generate our best-practice SD-WAN/ADVPN configuration.
+These templates are easily tunable for your projects, as will be briefly explained below.
 
-1. Reference FortiOS configuration for SD-WAN topologies with ADVPN (templated with Jinja).
-   It covers overlay, routing, security and SD-WAN configuration.
-   It can be rendered externally (a sample renderer is provided here as well) and applied directly on Fortigate devices.
+**[COMING SOON]** Our upcoming Secure SD-WAN Deployment Guide for Service Providers (Release 7.0) will contain more information
+about using these templates for your projects.
 
-2. Reference set of FortiManager CLI Templates for SD-WAN topologies with ADVPN (templated with Jinja).
-   It covers underlay, overlay and routing.
-   It can be used "as is" in the CLI Template Group, relying on the built-in Jinja support introduced in FortiManager 7.0.
+Additionally, we provide a simple renderer written in Python, which you can use to render the templates without FortiManager.
+It will generate a set of plain-text files with FOS configuration for each device, which you can simply copy-paste to your
+FortiGate devices (or use the "Configuration Scripts"(https://docs.fortinet.com/document/fortigate/7.0.6/administration-guide/780930/configuration-scripts) feature).
+This method is handy to build a quick and simple lab or to quickly validate the changes made to your Jinja templates.
 
-Please refer to the README files under respective folders for more information.
+
+## Routing Design Flavors
+
+Currently we provide two main routing design flavors - each under its own directory:
+
+- **"BGP per Overlay"** is the traditional routing design for our SD-WAN/ADVPN deployments,
+  in which a separate IBGP session is established over each overlay between an Edge device and a Hub.
+  This IBGP session is terminated on the tunnel IP of both sides. For each LAN prefix,
+  multiple BGP routes are generated (one route per overlay), and all these routes
+  are propagated across the network.
+
+- **"BGP on Loopback"** is a new alternative supported for our SD-WAN/ADVPN deployments starting from FOS 7.0.4.
+  With this routing design, a single IBGP session is established between an Edge device and a Hub.
+  This IBGP session is terminated on the loopback interface on both sides, but the routes are
+  recursively resolved via all available overlays. For each LAN prefix, a single BGP route
+  is generated and propagated across the network.
+
+Please refer to our Deployment Guide or consult your Fortinet representatives, in order to select
+a design flavor which is the most suitable for your project.
+
+
+## File Structure
+
+We provide a separate set of templates for each design flavor, each under its own directory.
+Once you make your choice, simply use only the templates from the respective directory.
+
+The file structure for all the design flavors is identical, as follows:
+
+- **Project** - the most crucial file from the users' perspective.
+  This is where you "tune" the templates to your project(s).
+  Normally, this will be the only file that you must modify per project.
+
+- **??-Edge-\*.j2, ??-Hub-\*.j2** - the templates configuring Underlay, Overlay and Routing pillars.
+  Normally, there will be no need to edit these files, as they are already designed to generate our
+  best-practice configuration.
+
+- **pre-run** - sub-directory that contains the Pre-Run CLI Templates for different
+  FortiGate models. [Pre-Run CLI Templates](https://docs.fortinet.com/document/fortimanager/7.0.0/new-features/195747/pre-run-cli-template-runs-once-on-model-device-to-preconfigure-it-with-required-settings-7-0-2) are not mandatory, but you may need to use
+  them depending on your environment.
+
+- **optional** - additional templates configuring Security and SD-WAN pillars.
+  Normally, they are not used when configuring your solution with FortiManager.
+  But they are used by the provided Python renderer, so that the generated FOS configuration is complete.
+
+- **rendered** - sub-directory that contains a fully rendered FOS configuration, as an example.
+
+Additionally, in the root directory you will find the following files:
+
+- **render_config.py** is the Python renderer.
+
+- **inventory.json** is an example inventory file for the Python renderer.
+  When deploying the solution with FortiManager, per device meta fields are used instead of this file.
+  Hence, it is only needed when using the Python renderer.
+
+
+## How-To: Deploy with FortiManager
+
+Follow these steps:
+
+1. Download the selected design flavor
+
+1. Edit the `Project` template to describe your project. Use your favorite plain text editor
+   (how about trying [Atom](https://atom.io/) or [Visual Studio Code](https://code.visualstudio.com/)?).
+   The guidelines to describe your project will follow below.
+   There is no need to edit any other files.
+
+1. Import the edited `Project` template into your FortiManager.
+   Remember to set its type to "Jinja Script".
+   Create the missing meta fields, when prompted.
+
+1. Import the rest of the templates from the set ("as is"), setting their type to "Jinja Script" as well.
+   Create the missing meta fields, when prompted.  
+
+   You DO NOT need to import the "optional" templates, but you MAY need to use one of the "pre-run" templates.
+   For example, when deploying your solution on FortiGate-VM devices, use the "pre-run/FGTVM-initial.j2" template.
+   Remember to specify that it is a "Pre-Run" template, in addition to setting its type to "Jinja Script".
+
+1. Create CLI Template Groups for your Hubs and Edges, as follows:
+
+   - Edge-Template:
+     - 01-Edge-Underlay
+     - 02-Edge-Overlay
+     - 03-Edge-Routing
+
+   - Hub-Template
+     - 01-Hub-Underlay
+     - 02-Hub-Overlay
+     - 03-Hub-Routing
+     - 04-Hub-MultiRegion
+
+1. Deploy your devices, filling in per-device meta fields and assigning the above CLI Template Groups to them.
+
+
+## How-To: Use the Python Renderer
+
+1. Clone the repository
+
+1. Edit the `Project` template to describe your project.
+
+1. Prepare an inventory file, setting per-device variables
+
+1. Render the desired design flavor, as follows:
+
+  ```
+  ./render_config.py -f <flavor_dir> -i <inventory_file>
+  ```
+
+By default, the rendered configuration will be saved under "out" sub-directory.
+
+Rendering example:
+
+```
+% ./render_config.py -f bgp-on-loopback -i inventory.json
+Rendering group 'Hub'...
+['01-Hub-Underlay.j2', '02-Hub-Overlay.j2', '03-Hub-Routing.j2', '04-Hub-MultiRegion.j2', 'optional/05-Hub-SDWAN.j2', 'optional/06-Hub-Firewall.j2']
+Rendering device site1-H1...
+Rendering device site1-H2...
+Rendering device site2-H1...
+Rendering group 'Edge'...
+['01-Edge-Underlay.j2', '02-Edge-Overlay.j2', '03-Edge-Routing.j2', 'optional/05-Edge-SDWAN.j2', 'optional/06-Edge-Firewall.j2']
+Rendering device site1-1...
+Rendering device site1-2...
+Rendering device site2-1...
+Rendering complete.
+
+% ls out
+site1-1		site1-2		site1-H1	site1-H2	site2-1		site2-H1
+```
+
+
+## Describing Your Project
+
+The `Project` template contains comments inside that should be useful to understand its contents.
+Pay special attention to the syntax - it must be a valid Jinja.
+It is recommended to validate the syntax using any online Jinja validation tool, such as [this](https://j2live.ttl255.com/). If there are no syntax errors, the rendering
+will return an empty result (since the `Project` template is only defining data structures).
+
+The template contains the following sections:
+
+- **Mandatory Global Definitions** for your project, such as your corporate LAN summary
+
+- **Optional Settings** to control the resulting configuration (you can keep them all commented out for the default behavior)
+
+- **Regions** describe the regions in your project, including the list of Hubs servicing each region
+
+- **Profiles** describe device profiles, mainly physical connectivity of your different sites (LAN ports, WAN ports, whether DHCP is present etc.)
+
+- **Hubs** describe all the Hubs in your project, mainly the overlays that they create (and how Edges can connect to them)
+
+We recommend that you start from the pre-configured examples and adjust them as necessary!
+
+For more details, please refer to our Deployment Guide or consult your Fortinet representatives.
+
+
+## Example Project
+
+All the provided examples and the rendered configuration refer to the following project:
+
+![](example_project.png)

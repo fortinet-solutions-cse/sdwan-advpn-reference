@@ -1,0 +1,52 @@
+{% import 'Project' as project with context %}
+
+config firewall address
+  edit "CORP_LAN"
+    set subnet {{ project.lan_summary }}
+  next
+end
+config firewall policy
+  edit 1
+    set name "Corporate"
+    set srcintf {{ project.lan_zone|default('lan_zone') }} "overlay"
+    set dstintf {{ project.lan_zone|default('lan_zone') }} "overlay"
+    set srcaddr "CORP_LAN"
+    set dstaddr "CORP_LAN"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+  edit 2
+    set name "Internet (DIA)"
+    set srcintf {{ project.lan_zone|default('lan_zone') }}
+    set dstintf "underlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+    set nat enable
+  next
+  edit 3
+    set name "Internet (RIA)"
+    set srcintf {{ project.lan_zone|default('lan_zone') }}
+    set dstintf "overlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+end

@@ -1,0 +1,34 @@
+{% import 'Project' as project with context %}
+config system sdwan
+  set status enable
+  config zone
+    edit "underlay"
+    next
+    edit "overlay"
+    next
+  end
+  config members
+    {% set ns = namespace(mbr_i = 1) %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.dia %}
+    edit {{ ns.mbr_i }}
+      set interface "{{ i.name }}"
+      set zone "underlay"
+      # Gateway is fetched from DHCP
+    next
+    {% set ns.mbr_i = ns.mbr_i + 1 %}
+    {% endfor %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+    edit {{ ns.mbr_i }}
+      set interface "EDGE_{{ i.ol_type }}"
+      set zone "overlay"
+    next
+    {% set ns.mbr_i = ns.mbr_i + 1 %}
+    {% endfor %}
+  end
+end
+config router static
+  edit 100
+    # Default route
+    set sdwan-zone "underlay"
+  next
+end

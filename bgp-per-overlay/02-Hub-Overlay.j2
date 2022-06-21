@@ -1,0 +1,47 @@
+{% import 'Project' as project with context %}
+
+{% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+config vpn ipsec phase1-interface
+  edit "EDGE_{{ i.ol_type }}"
+    set type dynamic
+    set interface "{{ i.name }}"
+    set ike-version 2
+    {% if project.cert_auth|default(true) %}
+    set authmethod signature
+    set certificate "{{ project.edge_cert_template|default('Hub') }}"
+    {% else %}
+    set psk {{ project.psk|default('S3cr3t!') }}
+    {% endif %}
+    set peertype any
+    set mode-cfg enable
+    set proposal aes256-sha256
+    set auto-discovery-sender enable
+    set add-route disable
+    set network-overlay enable
+    set network-id {{ project.hubs[hostname].overlays[i.ol_type].network_id }}
+    set ipv4-start-ip {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr(2)|ipaddr('address') }}
+    set ipv4-end-ip {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr(-3)|ipaddr('address') }}
+    set ipv4-netmask {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr('netmask') }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-demand
+  next
+end
+config vpn ipsec phase2-interface
+  edit "EDGE_{{ i.ol_type }}"
+    set phase1name "EDGE_{{ i.ol_type }}"
+    set proposal aes256-sha256
+    set keepalive enable
+  next
+end
+config system interface
+  edit "EDGE_{{ i.ol_type }}"
+    set vdom "root"
+    set ip {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr(1)|ipaddr('address') }} 255.255.255.255
+    set allowaccess ping
+    set type tunnel
+    set remote-ip {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr(-2) }}
+    set interface "{{ i.name }}"
+  next
+end
+{% endfor %}
