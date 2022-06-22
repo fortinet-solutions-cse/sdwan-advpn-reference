@@ -38,7 +38,7 @@
 {% set multireg_advpn = false %}
 {% set hub_hc_server = '10.200.99.1' %}
 #}
-{% set cert_auth = false %}
+
 {#  Mandatory Global Definitions #}
 {% set tunnel_summary = '10.200.0.0/14' %}
 {% set lan_summary = '10.0.0.0/8' %}
