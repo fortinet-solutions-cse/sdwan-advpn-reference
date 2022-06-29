@@ -11,7 +11,7 @@ config vpn ipsec phase1-interface
     set authmethod signature
     set certificate "{{ project.edge_cert_template|default('Edge') }}"
     {% else %}
-    set psk {{ project.psk|default('S3cr3t!') }}
+    set psksecret {{ project.psk|default('S3cr3t!') }}
     {% endif %}
     set keylife 28800
     set peertype any
