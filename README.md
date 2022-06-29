@@ -161,7 +161,8 @@ The template contains the following sections:
 
 - **Hubs** describe all the Hubs in your project, mainly the overlays that they create (and how Edges can connect to them)
 
-We recommend that you start from the pre-configured examples and adjust them as necessary!
+We recommend that you start from the pre-configured examples and adjust them as necessary!  
+A complete up-to-date reference listing all the currently supported parameters in the Project template is available in [this](./Project_Template_Reference.md) file.
 
 For more details, please refer to our Deployment Guide or consult your Fortinet representatives.
 
