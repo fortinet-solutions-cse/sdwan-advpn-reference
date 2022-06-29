@@ -40,7 +40,7 @@ config router bgp
       set prefix {{ project.lo_summary }}
       set route-map "LOCAL_REGION"
     next
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan' %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.advertise|default(true) %}
     edit {{ loop.index + 1 }}
       set prefix {{ i.ip|ipaddr(0) }}
     next

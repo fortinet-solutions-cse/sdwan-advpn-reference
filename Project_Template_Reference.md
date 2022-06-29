@@ -1,4 +1,4 @@
-# Project Template Reference 
+# Project Template Reference
 
 ## Mandatory Parameters
 
@@ -113,6 +113,15 @@ each device interface:
 | dia             |  true   | Interface used for Direct Internet Access _(optional)_ |                |
 
 \* - The overlay types referenced here must correspond to those defined in the Hub dictionary [below](#hubs)
+
+
+#### Additional parameters for LAN-facing interfaces
+
+| Parameter | Values | Description                                 | Example |
+|:----------|:------:|:--------------------------------------------|:-------:|
+| advertise | false  | Advertise the prefix into BGP _(optional)*_ |         |
+
+\* - By default, all the LAN-facing prefixes are advertised into BGP.
 
 
 ## Hubs
