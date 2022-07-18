@@ -98,7 +98,7 @@ each device interface:
 | name      |           \<str\>           | Interface name                                                     |        'port1'         |
 | role      | 'wan' / 'lan' / 'sd_branch' | Interface role (respectively: WAN-facing / LAN-facing / Fortilink) |                        |
 | ip        |    \<ip/mask\> / 'dhcp'     | Interface IP address (with mask) / Enable DHCP client              | '10.0.1.1/24' / 'dhcp' |
-| vlan_id   |           \<int\>           | VLAN ID (for VLAN interfaces, _optional_)                          |          '10'          |
+| vlanid    |           \<int\>           | VLAN ID (for VLAN interfaces, _optional_)                          |          '10'          |
 | interface |           \<str\>           | Parent interface (for VLAN interfaces, _when vlan_id is set_)      |        'port1'         |
 
 
