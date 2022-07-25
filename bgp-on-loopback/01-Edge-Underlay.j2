@@ -3,14 +3,16 @@
 config system interface
   {% for i in project.profiles[profile].interfaces %}
   edit "{{i.name}}"
-    {% if i.ip == 'dhcp' %}
-    set mode dhcp
-    {%  elif i.ip %}
-    set mode static
-    set ip {{ i.ip }}
+    {% if i.ip is defined %}
+      {% if i.ip == 'dhcp' %}
+      set mode dhcp
+      {%  else %}
+      set mode static
+      set ip {{ i.ip }}
+      {% endif %}
     {% endif %}
     {# Support VLAN interfaces #}
-    {% if i.vlanid and i.interface %}
+    {% if i.vlanid is defined and i.interface is defined %}
     set vdom "root"
     set type vlan
     set vlanid {{ i.vlanid }}
