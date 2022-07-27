@@ -1,0 +1,159 @@
+{% import 'Project' as project with context %}
+
+{% set pe_vrf = project.regions[region].pe_vrf|default("32") %}
+
+{# ADVPN mandatory setting #}
+config system settings
+  set tcp-session-without-syn enable
+end
+
+{# Set global settings #}
+config system settings
+  set location-id {{ loopback }}
+  set allow-subnet-overlap enable
+end
+
+config system global
+    set hostname {{ hostname }}
+end
+
+  {% for i in project.profiles[profile].interfaces %}
+    config system interface
+      edit "{{i.name}}"
+        {# Set DHCP/Static mode and addressing #}
+        {% if i.ip == 'dhcp' %}
+        set mode dhcp
+        {%  elif i.ip %}
+        set mode static
+        set ip {{ i.ip }}
+        {% endif %}
+        set allowaccess ping
+        {# Set vrf #}
+        {% if i.vrf is defined %}
+        set vrf {{ i.vrf }}
+        {% else %}
+        set vrf {{ pe_vrf }}
+        {% endif %}
+      next
+    end
+
+  {# Configure vrf leak #}
+  {% if i.vrf is defined and i.allow_dia is true %}
+    {% if i.leak_npu_link == '' %}
+      config system vdom-link
+        edit "vrf{{ i.vrf }}_leak"
+      end
+      config system interface
+        edit "vrf{{ i.vrf }}_leak0"
+          set type vdom-link
+          set vrf {{ pe_vrf }}
+          set vdom 'root'
+          set mode static
+          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
+          set allowaccess ping
+        next
+        edit "vrf{{ i.vrf }}_leak1"
+          set type vdom-link
+          set vrf {{ i.vrf }}
+          set vdom 'root'
+          set mode static
+          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
+          set allowaccess ping
+        next
+      end
+    {% else %}
+    config system interface
+        edit "vrf{{ i.vrf }}_leak0"
+          set type vlan
+          set vlanid {{ 4000 + i.vrf }}
+          set interface "{{i.leak_npu_link}}0"
+          set vrf {{ pe_vrf }}
+          set vdom 'root'
+          set mode static
+          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
+          set allowaccess ping
+        next
+        edit "vrf{{ i.vrf }}_leak1"
+          set type vlan
+          set vlanid {{ 4000 + i.vrf }}
+          set interface "{{i.leak_npu_link}}1"
+          set vrf {{ i.vrf }}
+          set vdom 'root'
+          set mode static
+          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
+          set allowaccess ping
+        next
+      end
+    {% endif %}
+
+    {# Add a default route to vrf0 for each vrf #}
+    config router static
+      edit {{ 10000 + i.vrf }}
+        set device vrf{{ i.vrf }}_leak1
+        set gateway {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}
+      end
+
+    {# Configure a zone for easier policy management of vrf leaking #}
+    {% if project.create_vrf_leak_zone is true and i.role == 'lan' and i.allow_dia is true %}
+    config system zone
+      edit "{{ project.vrf_leak_zone|default('vrf0_leak_zone') }}"
+        append interface "vrf{{ i.vrf }}_leak0"
+      next
+      edit "{{ project.vrf_leak_zone|default('vrfs_leak_zone') }}"
+        append interface "vrf{{ i.vrf }}_leak1"
+    end
+  {% endif %}
+{% endif %}
+
+  {% endfor %}
+
+{# Loopback for incoming health-check probes #}
+config system interface
+  edit "Lo-HC"
+    set vdom "root"
+    set type loopback
+    set vrf {{ pe_vrf }}
+    set ip {{ project.hub_hc_server|default('10.200.99.1') }}/32
+    set allowaccess ping
+  next
+  {# Main Loopback #}
+  edit "Lo"
+    set vdom "root"
+    set type loopback
+    set vrf {{ pe_vrf }}
+    set ip {{ loopback }}/32
+    set allowaccess ping
+  next
+end
+
+{% set lan_intf = [] %}
+{% if project.create_lan_zone|default(true) %}
+config system zone
+  edit "{{ project.lan_zone|default('lan_zone') }}"
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan'  %}
+    {{  lan_intf.append(i.name) or "" }}
+    {% endfor %}
+    set interface {{ lan_intf|join(' ') }}
+  next
+end
+{% endif %}
+
+config system dhcp server
+  {% for i in project.profiles[profile].interfaces if i.role == 'lan'  %}
+  {% if i.dhcp_server|default(true) %}
+  edit {{ 10 + loop.index0 }}
+    set dns-service default
+    set default-gateway {{ i.ip|ipaddr('address') }}
+    set netmask {{ i.ip|ipaddr('netmask') }}
+    set interface {{ i.name }}
+    config ip-range
+      edit 1
+        set start-ip {{ i.ip|ipaddr(4)|ipaddr('address') }}
+        set end-ip {{ i.ip|ipaddr(-5)|ipaddr('address') }}
+      next
+    end
+  next
+  {% endif %}
+  {% endfor %}
+end
+
