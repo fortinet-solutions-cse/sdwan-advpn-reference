@@ -1,6 +1,6 @@
 {% import 'Project' as project with context %}
 
-{% set pe_vrf = project.regions[region].pe_vrf|default("32") %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
 
 {# Set global settings #}
 config system settings
@@ -114,7 +114,7 @@ config system interface
       end
 
     {# Configure a zone for easier policy management of vrf leaking #}
-    {% if project.create_vrf_leak_zone is true and i.role == 'lan' and i.allow_dia is true %}
+    {% if project.create_vrf_leak_zone is defined and  project.create_vrf_leak_zone is true and i.role == 'lan' and i.allow_dia is true %}
     config system zone
       edit "{{ project.vrf_leak_zone|default('vrf0_leak_zone') }}"
         append interface "vrf{{ i.vrf }}_leak0"

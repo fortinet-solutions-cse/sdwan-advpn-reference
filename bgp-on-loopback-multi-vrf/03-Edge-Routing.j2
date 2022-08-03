@@ -1,6 +1,6 @@
 {% import 'Project' as project with context %}
 
-{% set pe_vrf = project.regions[region].pe_vrf|default("32") %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
 
 config router route-map
   {% for i in range(1,3) %}
@@ -38,12 +38,19 @@ config router bgp
     {% endfor %}
   end
   config network
+    {% set network_to_advertise = [] %}
     {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.advertise|default(true) %}
-    edit {{ loop.index }}
-      set prefix {{ i.ip|ipaddr(0) }}
-    next
+      {% if not i.ip in network_to_advertise %}
+        {{ network_to_advertise.append(i.ip) or "" }}
+      {% endif %}
     {% endfor %}
-  end
+
+    {% for i in network_to_advertise if i|length %}
+      edit {{ loop.index }}
+        set prefix {{ i|ipaddr(0) }}
+      next
+    {% endfor %}
+    end
   config vrf
     edit "{{ pe_vrf }}"
       set role pe

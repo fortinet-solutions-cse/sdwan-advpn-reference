@@ -45,9 +45,15 @@ The following table lists all the parameters that must be configured for each re
 | lo_summary  | \<ip/mask\>  | Subnet summarizing all SD-WAN device loopbacks in the region _("BGP on Loopback" only)_ |      '10.200.1.0/24'       |
 | hubs        | \<str list\> | List of Hubs serving the region*                                                        | [ 'site1-H1', 'site1-H2' ] |
 
-
 \* - The Hub names referenced here must correspond to the Hubs defined [below](#hubs)
 
+#### Additional parameters for the Multi-vrf flavor
+
+| Parameter        |    Values      | Description                                                                                   |     Example       |
+|:------------     |:--------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
+| pe_vrf           |     \<int\>    | ID of the vrf that will be used as the PE (transport) vrf, default for underlays and overlays |        32         |
+| vrfs             |  \<int list\>  | List of all the vrf IDs that will be used in that region                                      |        [ ]        |
+| vrf_leak_summary |     \<ip\>     | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)            | '10.255.255.0/24' |
 
 ## Profiles
 
@@ -123,6 +129,16 @@ each device interface:
 
 \* - By default, all the LAN-facing prefixes are advertised into BGP.
 
+#### Additional parameters for the Multi-vrf flavor
+
+| Parameter        |    Values      | Description                                                                                   |     Example       |
+|:------------     |:--------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
+| vrf              |     \<int\>    | ID of the vrf of this interface (for lan type only) _(optional)_                              |        1          |
+| allow_dia        |      true      | Allow direct internet access from this vrf* (for lan type only) _(optional)_                  |                   |
+| leak_npu_link    |     \<str\>    | Name of the npu_link interface to create vrf leaking interfaces** _(optional)_                |   'npu_link'      |
+
+\* - By default all underlays are placed into the PE vrf. To allow direct internet access from another vrf, we 'leak' the traffic the PE vrf using vdom-link interfaces and a default route.
+\*\* - Leave empty for VM and non-ASIC models in order to use software vdom links.
 
 ## Hubs
 
@@ -208,7 +224,7 @@ they are not configured explicitly):
 | psk                 |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                    |     'S3cr3t!'     |
 | multireg_advpn      | true / false | Extend ADVPN across the regions                                                               |       false       |
 | hub_hc_server       |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)            |   '10.200.99.1'   |
-
+| create_vrf_leak_zone| true / false | Create zones for vrf leaking interfaces for easier management of vrf dia                      |        true       |
 
 ## Setting Per-Device Context
 

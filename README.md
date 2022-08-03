@@ -29,6 +29,12 @@ Currently we provide two main routing design flavors - each under its own direct
   recursively resolved via all available overlays. For each LAN prefix, a single BGP route
   is generated and propagated across the network.
 
+- **"BGP on Loopback Multi VRF"** builds up from the previous flavor but also add the capabilities to deploy 'End to end segmentation' using
+  'vpn-id-ipip' encapsulation type and the vpnv4 BGP family. As in the 'BGP on Loopback flavor, a single IBGP session is established between an Edge device and a Hub.
+  That IBGP session will then carry all the routes with extended communities, allowing the neighbor to associate the routes with a specific VRF upon receiving them.
+  Traffic is segmented from and into a specific VRF by using a specific encapsultation in the IPSec tunnels.
+  
+
 Please refer to our Deployment Guide or consult your Fortinet representatives, in order to select
 a design flavor which is the most suitable for your project.
 

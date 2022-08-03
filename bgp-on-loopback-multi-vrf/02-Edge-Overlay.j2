@@ -1,6 +1,6 @@
 {% import 'Project' as project with context %}
 
-{% set pe_vrf = project.regions[region].pe_vrf|default("32") %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
 
 {% for h in project.regions[region].hubs %}
 {% set hubloop = loop %}
