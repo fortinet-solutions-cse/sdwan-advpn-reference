@@ -1,8 +1,8 @@
 {% import 'Project' as project with context %}
 
+{% set hub2hub_ol = [] %}
 {% if project.regions|reject("==", region)|list|count  %}
 
-{% set hub2hub_ol = [] %}
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
   {% for r in project.regions if r != region %}
     {% for h in project.regions[r].hubs %}
