@@ -9,7 +9,7 @@ simply as follows:
 {% set <parameter> = <value> %}
 ```
 
-The following table lists all the mandatory parameter:
+The following table lists all the mandatory parameters:
 
 | Parameter      |   Values    | Description                                                                              |     Example     |
 |:---------------|:-----------:|:-----------------------------------------------------------------------------------------|:---------------:|
@@ -47,13 +47,13 @@ The following table lists all the parameters that must be configured for each re
 
 \* - The Hub names referenced here must correspond to the Hubs defined [below](#hubs)
 
-#### Additional parameters for the Multi-vrf flavor
+#### Additional parameters for the Multi-VRF flavor
 
-| Parameter        |    Values      | Description                                                                                   |     Example       |
+| Parameter        |    Values      | Description                                                                                   |     Default       |
 |:------------     |:--------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
-| pe_vrf           |     \<int\>    | ID of the vrf that will be used as the PE (transport) vrf, default for underlays and overlays |        32         |
-| vrfs             |  \<int list\>  | List of all the vrf IDs that will be used in that region                                      |        [ ]        |
-| vrf_leak_summary |     \<ip\>     | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)            | '10.255.255.0/24' |
+| pe_vrf           |     \<int\>    | ID of the VRF that will be used as the PE (transport) VRF, default for underlays and overlays |        32         |
+| vrfs             |  \<int list\>  | List of all the VRF IDs that will be used as CE (customer) VRFs in that region                |        [ ]        |
+
 
 ## Profiles
 
@@ -129,16 +129,17 @@ each device interface:
 
 \* - By default, all the LAN-facing prefixes are advertised into BGP.
 
-#### Additional parameters for the Multi-vrf flavor
 
-| Parameter        |    Values      | Description                                                                                   |     Example       |
-|:------------     |:--------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
-| vrf              |     \<int\>    | ID of the vrf of this interface (for lan type only) _(optional)_                              |        1          |
-| allow_dia        |      true      | Allow direct internet access from this vrf* (for lan type only) _(optional)_                  |                   |
-| leak_npu_link    |     \<str\>    | Name of the npu_link interface to create vrf leaking interfaces** _(optional)_                |   'npu_link'      |
+#### Additional parameters for the Multi-VRF flavor
 
-\* - By default all underlays are placed into the PE vrf. To allow direct internet access from another vrf, we 'leak' the traffic the PE vrf using vdom-link interfaces and a default route.
-\*\* - Leave empty for VM and non-ASIC models in order to use software vdom links.
+| Parameter     | Values  | Description                                                                    |  Example   |
+|:--------------|:-------:|:-------------------------------------------------------------------------------|:----------:|
+| vrf           | \<int\> | VRF ID for this interface (CE VRF, for LAN-facing only) _(optional)_           |     1      |
+| allow_dia     |  true   | Allow Internet access from this CE VRF* (for LAN-facing only) _(optional)_     |            |
+| leak_npu_link | \<str\> | Name of the npu_link interface to create VRF leaking interfaces** _(optional)_ | 'npu_link' |
+
+\* - We provide Internet access for CE VRFs by configuring VRF leaking into the PE VRF (where all underlays and overlays are located).
+\*\* - Leave empty for VM and non-ASIC models in order to use software VDOM links.
 
 ## Hubs
 
@@ -212,37 +213,40 @@ Each parameter can be configured simply as follows:
 The following table lists all the supported parameters, as well as their default values (applied when
 they are not configured explicitly):
 
-| Parameter           |    Values    | Description                                                                                   |      Default      |
-|:--------------------|:------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
-| create_hub2hub_zone | true / false | Create System Zone for inter-regional Hub-to-Hub tunnels                                      |       true        |
-| hub2hub_zone        |   \<str\>    | Name of System Zone for inter-regional Hub-to-Hub tunnels _(when create_hub2hub_zone = true)_ | 'hub2hub_overlay' |
-| create_lan_zone     | true / false | Create System Zone for LAN interfaces (with 'role' = 'lan' in the profile)                    |       true        |
-| lan_zone            |   \<str\>    | Name of System Zone for LAN interfaces _(when create_lan_zone = true)_                        |    'lan_zone'     |
-| cert_auth           | true / false | Certificate-based auth for IKE/IPSEC                                                          |       true        |
-| hub_cert_template   |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                            |       'Hub'       |
-| edge_cert_template  |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                            |      'Edge'       |
-| psk                 |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                    |     'S3cr3t!'     |
-| multireg_advpn      | true / false | Extend ADVPN across the regions                                                               |       false       |
-| hub_hc_server       |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)            |   '10.200.99.1'   |
-| create_vrf_leak_zone| true / false | Create zones for vrf leaking interfaces for easier management of vrf dia                      |        true       |
+| Parameter            |    Values    | Description                                                                                            |      Default      |
+|:---------------------|:------------:|:-------------------------------------------------------------------------------------------------------|:-----------------:|
+| create_hub2hub_zone  | true / false | Create System Zone for inter-regional Hub-to-Hub tunnels                                               |       true        |
+| hub2hub_zone         |   \<str\>    | Name of System Zone for inter-regional Hub-to-Hub tunnels _(when create_hub2hub_zone = true)_          | 'hub2hub_overlay' |
+| create_lan_zone      | true / false | Create System Zone for LAN interfaces (with 'role' = 'lan' in the profile)                             |       true        |
+| lan_zone             |   \<str\>    | Name of System Zone for LAN interfaces _(when create_lan_zone = true)_                                 |    'lan_zone'     |
+| cert_auth            | true / false | Certificate-based auth for IKE/IPSEC                                                                   |       true        |
+| hub_cert_template    |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                                     |       'Hub'       |
+| edge_cert_template   |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                                     |      'Edge'       |
+| psk                  |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                             |     'S3cr3t!'     |
+| multireg_advpn       | true / false | Extend ADVPN across the regions                                                                        |       false       |
+| hub_hc_server        |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)                     |   '10.200.99.1'   |
+| create_vrf_leak_zone | true / false | Create System Zones for VRF leaking interfaces for easier management of Internet access                |       true        |
+| vrf_leak_zone        |   \<str\>    | Name of System Zone for all CE VRF ends of the leaking interfaces _(when create_vrf_leak_zone = true)_ | 'vrfs_leak_zone'  |
+| pevrf_leak_zone      |   \<str\>    | Name of System Zone for all PE VRF ends of the leaking interfaces _(when create_vrf_leak_zone = true)_ | 'pevrf_leak_zone' |
+| vrf_leak_summary     |    \<ip\>    | Subnet used for VRF leaking interfaces, with local significance only                                   | '10.200.255.0/24' |
 
 ## Setting Per-Device Context
 
 On the most important tasks when onboarding a new device will be to assign it to the
 right region and the device profile, selecting one of the objects described in the Project template.
 
-This assignment can be done using FortiManager device meta fields `region` and `profile` respectively.
+This assignment can be done using FortiManager ADOM variables `region` and `profile` respectively.
 
 Apart from these two variables, several other per-device variables are used inside the provided
-templates set, and hence it is important to create the respective meta fields and set their per-device values.
+templates set, and hence it is important to set their values.
 
 Finally, several parameters described in this reference will typically have different values for different sites.
 Consider, for example, the IP address parameter under the device profile.
 Each device will have its own IP address, while the Project template remains the same.
 
-FortiManager meta fields can also be used to solve this problem. Any per-device value should be defined
-as a meta field, which can be then referred in the Project template. For example,
-the following snippet will use the meta field `lan_ip` to statically define different IP address
+FortiManager ADOM variables can also be used to solve this problem. Any per-device value should be defined
+as a variable, which can be then referred in the Project template. For example,
+the following snippet will use the variable `lan_ip` to statically define different IP address
 for each rendered device:
 
 ```
@@ -261,15 +265,15 @@ for each rendered device:
 %}
 ```
 
-To summarize, when onboarding a new device, the following three types of meta fields must be set:
+To summarize, when onboarding a new device, the following three types of variables must be set:
 
-1. The meta fields `region` and `profile`, correctly classifying the device in the project
+1. The variables `region` and `profile`, correctly classifying the device in the project
 
-1. The meta fields implicitly used by the provided templates
+1. The variables implicitly used by the provided templates
 
-1. The meta fields explicitly used in your Project template
+1. The variables explicitly used in your Project template
 
-The following table summarizes all the required per-device meta fields:
+The following table summarizes all the required per-device variables:
 
 | Parameter        | Values      | Description                                                            | Example        |
 |------------------|-------------|------------------------------------------------------------------------|----------------|
