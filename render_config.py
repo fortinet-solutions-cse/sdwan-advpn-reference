@@ -1,8 +1,8 @@
 #!/usr/local/bin/python
 
-import argparse, json, textwrap, jinja2
+import argparse, json, textwrap, jinja2, shutil
 from ansible_collections.ansible.utils.plugins.filter.ipaddr import ipaddr
-from os import listdir, chdir, path, makedirs
+from os import listdir, chdir, path, makedirs, remove
 
 #############################################
 
@@ -27,6 +27,12 @@ parser.add_argument('-i', '--inventory', metavar='file', required=True,
 parser.add_argument('-o', '--outdir', metavar='dir', default='out',
                     help='output directory (default="out")')
 
+parser.add_argument('-p', '--project', metavar='file',
+                    help='project template (default="projects/Project.j2" in the flavor directory)')
+
+parser.add_argument('--skip-optional', action='store_true',
+                    help="skip optional templates")
+
 args = parser.parse_args()
 
 #############################################
@@ -35,8 +41,15 @@ outdir = path.abspath(args.outdir)
 makedirs(outdir, exist_ok=True)
 
 flavor = args.flavor
+project = args.project or flavor + '/projects/Project.j2'
 
-env = jinja2.Environment(loader=jinja2.FileSystemLoader(flavor))
+print("Project Template: " + path.relpath(project))
+shutil.copyfile(project, flavor + '/Project')
+
+env = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(flavor),
+    undefined=jinja2.StrictUndefined
+)
 env.filters['ipaddr'] = ipaddr
 
 with open(args.inventory, 'r') as inventoryFile:
@@ -47,7 +60,7 @@ for devgroup, devlist in devices.items():
 
     list_of_templates = sorted(filter(lambda f: devgroup in f,
         listdir(flavor) +
-        [ 'optional/' + j2 for j2 in listdir(flavor + '/optional') ]
+        [ 'optional/' + j2 for j2 in listdir(flavor + '/optional') if not args.skip_optional ]
     ))
     print(list_of_templates)
 
@@ -66,3 +79,4 @@ for devgroup, devlist in devices.items():
                 print('', file=outfile)
 
 print("Rendering complete.")
+remove(flavor + '/Project')

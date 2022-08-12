@@ -33,7 +33,7 @@ Currently we provide two main routing design flavors - each under its own direct
   'vpn-id-ipip' encapsulation type and the vpnv4 BGP family. As in the 'BGP on Loopback flavor, a single IBGP session is established between an Edge device and a Hub.
   That IBGP session will then carry all the routes with extended communities, allowing the neighbor to associate the routes with a specific VRF upon receiving them.
   Traffic is segmented from and into a specific VRF by using a specific encapsultation in the IPSec tunnels.
-  
+
 
 Please refer to our Deployment Guide or consult your Fortinet representatives, in order to select
 a design flavor which is the most suitable for your project.
@@ -46,17 +46,15 @@ Once you make your choice, simply use only the templates from the respective dir
 
 The file structure for all the design flavors is identical, as follows:
 
-- **Project** - the most crucial file from the users' perspective.
+- **projects** - examples of Project Templates. Those are the most crucial files from the users' perspective.
   This is where you "tune" the templates to your project(s).
+  We recommend starting from one of the provided Project Templates and modifying it to match your requirements.
   Normally, this will be the only file that you must modify per project.
+  When configuring your solution with FortiManager, import the final Project Template (exactly one) calling it "Project".
 
 - **??-Edge-\*.j2, ??-Hub-\*.j2** - the templates configuring Underlay, Overlay and Routing pillars.
   Normally, there will be no need to edit these files, as they are already designed to generate our
   best-practice configuration.
-
-- **pre-run** - sub-directory that contains the Pre-Run CLI Templates for different
-  FortiGate models. [Pre-Run CLI Templates](https://docs.fortinet.com/document/fortimanager/7.0.0/new-features/195747/pre-run-cli-template-runs-once-on-model-device-to-preconfigure-it-with-required-settings-7-0-2) are not mandatory, but you may need to use
-  them depending on your environment.
 
 - **optional** - additional templates configuring Security and SD-WAN pillars.
   Normally, they are not used when configuring your solution with FortiManager.
@@ -69,7 +67,7 @@ Additionally, in the root directory you will find the following files:
 - **render_config.py** is the Python renderer.
 
 - **inventory.json** is an example inventory file for the Python renderer.
-  When deploying the solution with FortiManager, per device meta fields are used instead of this file.
+  When deploying the solution with FortiManager, per-device mapping of ADOM variables is used instead of this file.
   Hence, it is only needed when using the Python renderer.
 
 
@@ -85,15 +83,13 @@ Follow these steps:
    There is no need to edit any other files.
 
 1. Import the edited `Project` template into your FortiManager.
-   Remember to set its type to "Jinja Script".
-   Create the missing meta fields, when prompted.
+   Remember to set its type to "Jinja Script" and call it "Project".
+   Create the missing variables, when prompted.
 
 1. Import the rest of the templates from the set ("as is"), setting their type to "Jinja Script" as well.
-   Create the missing meta fields, when prompted.  
+   Create the missing variables, when prompted.  
 
-   You DO NOT need to import the "optional" templates, but you MAY need to use one of the "pre-run" templates.
-   For example, when deploying your solution on FortiGate-VM devices, use the "pre-run/FGTVM-initial.j2" template.
-   Remember to specify that it is a "Pre-Run" template, in addition to setting its type to "Jinja Script".
+   You DO NOT need to import the "optional" templates.
 
 1. Create CLI Template Groups for your Hubs and Edges, as follows:
 
@@ -108,7 +104,7 @@ Follow these steps:
      - 03-Hub-Routing
      - 04-Hub-MultiRegion
 
-1. Deploy your devices, filling in per-device meta fields and assigning the above CLI Template Groups to them.
+1. Deploy your devices, assigning the above CLI Template Groups to them and filling in per-device values of the ADOM variables.
 
 
 ## How-To: Use the Python Renderer

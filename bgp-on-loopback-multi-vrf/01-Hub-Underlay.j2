@@ -1,6 +1,7 @@
 {% import 'Project' as project with context %}
 
 {% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set vrf_leak_summary = project.vrf_leak_summary|default('10.200.255.0/24') %}
 
 {# ADVPN mandatory setting #}
 config system settings
@@ -17,38 +18,40 @@ config system global
     set hostname {{ hostname }}
 end
 
-  {% for i in project.profiles[profile].interfaces %}
-    config system interface
-      edit "{{i.name}}"
-        {# Set DHCP/Static mode and addressing #}
-        {% if i.ip == 'dhcp' %}
-        set mode dhcp
-        {%  elif i.ip %}
-        set mode static
-        set ip {{ i.ip }}
-        {% endif %}
-        set allowaccess ping
-        {# Set vrf #}
-        {% if i.vrf is defined %}
-        set vrf {{ i.vrf }}
-        {% else %}
-        set vrf {{ pe_vrf }}
-        {% endif %}
-        {# Support VLAN interfaces #}
-        {% if i.vlanid is defined and i.interface is defined %}
-        set vdom "root"
-        set type vlan
-        set vlanid {{ i.vlanid }}
-        set interface {{ i.interface }}
-        {% endif %}
-      next
-    end
+{% for i in project.profiles[profile].interfaces %}
+  config system interface
+    edit "{{i.name}}"
+      {# Set DHCP/Static mode and addressing #}
+      {% if i.ip == 'dhcp' %}
+      set mode dhcp
+      {%  elif i.ip %}
+      set mode static
+      set ip {{ i.ip }}
+      {% endif %}
+      {# Set vrf #}
+      {% if i.vrf is defined %}
+      set vrf {{ i.vrf }}
+      {% else %}
+      set vrf {{ pe_vrf }}
+      {% endif %}
+      {# Support VLAN interfaces #}
+      {% if i.vlanid is defined and i.interface is defined %}
+      set vdom "root"
+      set type vlan
+      set vlanid {{ i.vlanid }}
+      set interface {{ i.interface }}
+      {% endif %}
+      set allowaccess ping
+    next
+  end
 
   {# Configure vrf leak #}
-  {% if i.vrf is defined and i.allow_dia is true %}
-    {% if i.leak_npu_link == '' %}
+  {% if i.vrf is defined and i.allow_dia|default(false) %}
+    {# Configure software vdom-link interface if model is VM #}
+    {% if i.leak_npu_link|default('') == '' %}
       config system vdom-link
         edit "vrf{{ i.vrf }}_leak"
+        next
       end
       config system interface
         edit "vrf{{ i.vrf }}_leak0"
@@ -56,7 +59,7 @@ end
           set vrf {{ pe_vrf }}
           set vdom 'root'
           set mode static
-          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
+          set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
           set allowaccess ping
         next
         edit "vrf{{ i.vrf }}_leak1"
@@ -64,55 +67,56 @@ end
           set vrf {{ i.vrf }}
           set vdom 'root'
           set mode static
-          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
+          set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
           set allowaccess ping
         next
       end
+    {# Configure vlan interfaces on top of npu link if model is HW #}
     {% else %}
-    config system interface
-        edit "vrf{{ i.vrf }}_leak0"
-          set type vlan
-          set vlanid {{ 4000 + i.vrf }}
-          set interface "{{i.leak_npu_link}}0"
-          set vrf {{ pe_vrf }}
-          set vdom 'root'
-          set mode static
-          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
-          set allowaccess ping
-        next
-        edit "vrf{{ i.vrf }}_leak1"
-          set type vlan
-          set vlanid {{ 4000 + i.vrf }}
-          set interface "{{i.leak_npu_link}}1"
-          set vrf {{ i.vrf }}
-          set vdom 'root'
-          set mode static
-          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
-          set allowaccess ping
-        next
-      end
+      config system interface
+          edit "vrf{{ i.vrf }}_leak0"
+            set type vlan
+            set vlanid {{ 4000 + i.vrf }}
+            set interface "{{i.leak_npu_link}}0"
+            set vrf {{ pe_vrf }}
+            set vdom 'root'
+            set mode static
+            set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
+            set allowaccess ping
+          next
+          edit "vrf{{ i.vrf }}_leak1"
+            set type vlan
+            set vlanid {{ 4000 + i.vrf }}
+            set interface "{{i.leak_npu_link}}1"
+            set vrf {{ i.vrf }}
+            set vdom 'root'
+            set mode static
+            set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
+            set allowaccess ping
+          next
+        end
     {% endif %}
-
-    {# Add a default route to vrf0 for each vrf #}
+    {# Add a default route to pe_vrf for each vrf #}
     config router static
       edit {{ 10000 + i.vrf }}
         set device vrf{{ i.vrf }}_leak1
-        set gateway {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}
-      end
+      next
+    end
 
     {# Configure a zone for easier policy management of vrf leaking #}
-    {% if project.create_vrf_leak_zone is defined and  project.create_vrf_leak_zone is true and i.role == 'lan' and i.allow_dia is true %}
+    {% if project.create_vrf_leak_zone|default(true) and i.role == 'lan' %}
     config system zone
-      edit "{{ project.vrf_leak_zone|default('vrf0_leak_zone') }}"
+      edit "{{ project.pevrf_leak_zone|default('pevrf_leak_zone') }}"
         append interface "vrf{{ i.vrf }}_leak0"
       next
       edit "{{ project.vrf_leak_zone|default('vrfs_leak_zone') }}"
         append interface "vrf{{ i.vrf }}_leak1"
+      next
     end
+    {% endif %}
   {% endif %}
-{% endif %}
 
-  {% endfor %}
+{% endfor %}
 
 {# Loopback for incoming health-check probes #}
 config system interface
@@ -163,4 +167,3 @@ config system dhcp server
   {% endif %}
   {% endfor %}
 end
-

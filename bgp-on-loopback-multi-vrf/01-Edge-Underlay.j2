@@ -1,6 +1,7 @@
 {% import 'Project' as project with context %}
 
 {% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set vrf_leak_summary = project.vrf_leak_summary|default('10.200.255.0/24') %}
 
 {# Set global settings #}
 config system settings
@@ -26,9 +27,9 @@ config system interface
       {% endif %}
       {# Set vrf #}
       {% if i.vrf is defined %}
-        set vrf {{ i.vrf }}
+      set vrf {{ i.vrf }}
       {% else %}
-        set vrf {{ pe_vrf }}
+      set vrf {{ pe_vrf }}
       {% endif %}
       {# Support VLAN interfaces #}
       {% if i.vlanid is defined and i.interface is defined %}
@@ -57,11 +58,12 @@ config system interface
   end
 
   {# Configure vrf leak #}
-  {% if i.vrf is defined and i.allow_dia is true %}
+  {% if i.vrf is defined and i.allow_dia|default(false) %}
     {# Configure software vdom-link interface if model is VM #}
-    {% if i.leak_npu_link == '' %}
+    {% if i.leak_npu_link|default('') == '' %}
       config system vdom-link
         edit "vrf{{ i.vrf }}_leak"
+        next
       end
       config system interface
         edit "vrf{{ i.vrf }}_leak0"
@@ -69,7 +71,7 @@ config system interface
           set vrf {{ pe_vrf }}
           set vdom 'root'
           set mode static
-          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
+          set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
           set allowaccess ping
         next
         edit "vrf{{ i.vrf }}_leak1"
@@ -77,7 +79,7 @@ config system interface
           set vrf {{ i.vrf }}
           set vdom 'root'
           set mode static
-          set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
+          set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
           set allowaccess ping
         next
       end
@@ -91,7 +93,7 @@ config system interface
             set vrf {{ pe_vrf }}
             set vdom 'root'
             set mode static
-            set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
+            set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
             set allowaccess ping
           next
           edit "vrf{{ i.vrf }}_leak1"
@@ -101,29 +103,30 @@ config system interface
             set vrf {{ i.vrf }}
             set vdom 'root'
             set mode static
-            set ip {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
+            set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
             set allowaccess ping
           next
         end
     {% endif %}
-    {# Add a default route to vrf0 for each vrf #}
+    {# Add a default route to pe_vrf for each vrf #}
     config router static
       edit {{ 10000 + i.vrf }}
         set device vrf{{ i.vrf }}_leak1
-        set gateway {{ project.regions[region].vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}
-      end
+      next
+    end
 
     {# Configure a zone for easier policy management of vrf leaking #}
-    {% if project.create_vrf_leak_zone is defined and  project.create_vrf_leak_zone is true and i.role == 'lan' and i.allow_dia is true %}
+    {% if project.create_vrf_leak_zone|default(true) and i.role == 'lan' %}
     config system zone
-      edit "{{ project.vrf_leak_zone|default('vrf0_leak_zone') }}"
+      edit "{{ project.pevrf_leak_zone|default('pevrf_leak_zone') }}"
         append interface "vrf{{ i.vrf }}_leak0"
       next
       edit "{{ project.vrf_leak_zone|default('vrfs_leak_zone') }}"
         append interface "vrf{{ i.vrf }}_leak1"
+      next
     end
+    {% endif %}
   {% endif %}
-{% endif %}
 
 {% endfor %}
 
