@@ -53,7 +53,8 @@ config system interface
               set ingress-shaping-profile {{ i.shaping_profile }}
           {% endif %}
       {% endif %}
-      set allowaccess ping
+      {% set allowaccess = 'ping' if not i.mgmt|default(false) else 'ping fgfm' %}
+      set allowaccess {{ allowaccess }}
     next
   end
 

@@ -106,6 +106,7 @@ each device interface:
 | ip        |    \<ip/mask\> / 'dhcp'     | Interface IP address (with mask) / Enable DHCP client              | '10.0.1.1/24' / 'dhcp' |
 | vlanid    |           \<int\>           | VLAN ID (for VLAN interfaces, _optional_)                          |          '10'          |
 | interface |           \<str\>           | Parent interface (for VLAN interfaces, _when vlan_id is set_)      |        'port1'         |
+| mgmt      |            true             | Use this interface to access FortiManager (allow FGFM)             |                        |
 
 
 #### Additional parameters for WAN-facing interfaces
