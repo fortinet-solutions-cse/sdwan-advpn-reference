@@ -23,16 +23,17 @@ Currently we provide two main routing design flavors - each under its own direct
   multiple BGP routes are generated (one route per overlay), and all these routes
   are propagated across the network.
 
-- **"BGP on Loopback"** is a new alternative supported for our SD-WAN/ADVPN deployments starting from FOS 7.0.4.
+- **"BGP on Loopback"** is a new alternative supported for our SD-WAN/ADVPN deployments.
   With this routing design, a single IBGP session is established between an Edge device and a Hub.
   This IBGP session is terminated on the loopback interface on both sides, but the routes are
   recursively resolved via all available overlays. For each LAN prefix, a single BGP route
   is generated and propagated across the network.
 
-- **"BGP on Loopback Multi VRF"** builds up from the previous flavor but also add the capabilities to deploy 'End to end segmentation' using
-  'vpn-id-ipip' encapsulation type and the vpnv4 BGP family. As in the 'BGP on Loopback flavor, a single IBGP session is established between an Edge device and a Hub.
+- **"BGP on Loopback Multi VRF"** builds up on the previous flavor, adding Multi-VRF support
+  with the new "SD-WAN Segmentation over a Single Overlay" feature (`vpn-id-ipip` encapsulation with VPNv4 BGP address family).
+  As in the "BGP on Loopback" flavor, a single IBGP session is established between an Edge device and a Hub.
   That IBGP session will then carry all the routes with extended communities, allowing the neighbor to associate the routes with a specific VRF upon receiving them.
-  Traffic is segmented from and into a specific VRF by using a specific encapsultation in the IPSec tunnels.
+  Traffic is segmented from and into a specific VRF by using a specific encapsulation in the IPSec tunnels.
 
 
 Please refer to our Deployment Guide or consult your Fortinet representatives, in order to select
@@ -46,15 +47,20 @@ Once you make your choice, simply use only the templates from the respective dir
 
 The file structure for all the design flavors is identical, as follows:
 
-- **projects** - examples of Project Templates. Those are the most crucial files from the users' perspective.
-  This is where you "tune" the templates to your project(s).
-  We recommend starting from one of the provided Project Templates and modifying it to match your requirements.
-  Normally, this will be the only file that you must modify per project.
-  When configuring your solution with FortiManager, import the final Project Template (exactly one) calling it "Project".
-
 - **??-Edge-\*.j2, ??-Hub-\*.j2** - the templates configuring Underlay, Overlay and Routing pillars.
   Normally, there will be no need to edit these files, as they are already designed to generate our
   best-practice configuration.
+
+- **projects** - this sub-directory contains:
+
+  - Examples of Project Templates (**Project.\*.j2**). Those are the most crucial files from the users' perspective.
+    This is where you "tune" the templates to your project(s).
+    We recommend starting from one of the provided Project Templates and modifying it to match your requirements.
+    Normally, this will be the only file that you must modify per project.
+
+  - Example of inventory file in JSON format, listing the devices and their respective per-device variables.
+    This file is used by the provided Python renderer.
+    When using FortiManager, this file is not needed (but it will show you what per-device variables to set).
 
 - **optional** - additional templates configuring Security and SD-WAN pillars.
   Normally, they are not used when configuring your solution with FortiManager.
@@ -62,9 +68,7 @@ The file structure for all the design flavors is identical, as follows:
 
 - **rendered** - sub-directory that contains a fully rendered FOS configuration, as an example.
 
-Additionally, in the root directory you will find the following files:
-
-- **render_config.py** is the Python renderer.
+Additionally, in the root directory you will find the Python renderer (**render_config.py**).
 
 - **inventory.json** is an example inventory file for the Python renderer.
   When deploying the solution with FortiManager, per-device mapping of ADOM variables is used instead of this file.
@@ -118,10 +122,11 @@ Follow these steps:
 1. Render the desired design flavor, as follows:
 
     ```
-    ./render_config.py -f <flavor_dir> -i <inventory_file>
+    ./render_config.py -f <flavor_dir> -i <inventory_file> -p <project_template>
     ```
 
 By default, the rendered configuration will be saved under "out" sub-directory.
+Also by default, example Project and inventory files will be used under the selected flavor directory ("projects/Project.j2" and "projects/inventory.json" respectively).
 
 Rendering example:
 

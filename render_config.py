@@ -21,8 +21,8 @@ parser = argparse.ArgumentParser(description='FOS Reference SD-WAN/ADVPN Config 
 parser.add_argument('-f', '--flavor', metavar='dir', required=True,
                     help='design flavor (specify directory name)')
 
-parser.add_argument('-i', '--inventory', metavar='file', required=True,
-                    help='device inventory file (in json format)')
+parser.add_argument('-i', '--inventory', metavar='file',
+                    help='device inventory file in json format (default="projects/inventory.json" in the flavor directory)')
 
 parser.add_argument('-o', '--outdir', metavar='dir', default='out',
                     help='output directory (default="out")')
@@ -42,6 +42,7 @@ makedirs(outdir, exist_ok=True)
 
 flavor = args.flavor
 project = args.project or flavor + '/projects/Project.j2'
+inventory = args.inventory or flavor + '/projects/inventory.json'
 
 print("Project Template: " + path.relpath(project))
 shutil.copyfile(project, flavor + '/Project')
@@ -52,7 +53,7 @@ env = jinja2.Environment(
 )
 env.filters['ipaddr'] = ipaddr
 
-with open(args.inventory, 'r') as inventoryFile:
+with open(inventory, 'r') as inventoryFile:
     devices = json.load(inventoryFile)
 
 for devgroup, devlist in devices.items():

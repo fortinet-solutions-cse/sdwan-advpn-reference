@@ -1,6 +1,8 @@
 {% import 'Project' as project with context %}
 
 {% set hub2hub_ol = [] %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+
 {% if project.regions|reject("==", region)|list|count  %}
 
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
@@ -124,7 +126,7 @@ config router static
   edit 103
     set dst {{ project.regions[region].lo_summary }}
     set blackhole enable
-    set vrf "{{ project.regions[region].pe_vrf }}"
+    set vrf "{{ pe_vrf }}"
     set comment "Regional loopback summary"
   next
 end
