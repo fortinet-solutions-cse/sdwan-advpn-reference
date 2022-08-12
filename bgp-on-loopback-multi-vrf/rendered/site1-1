@@ -1,31 +1,91 @@
 ######################################
 # 01-Edge-Underlay.j2
 ######################################
+config system settings
+  set location-id 10.200.1.1
+  set allow-subnet-overlap enable
+end
+config system global
+    set hostname site1-1
+end
 config system interface
-  edit "port1"
-    set mode dhcp
-    set allowaccess ping
-  next
-  edit "port4"
-    set mode static
-    set ip 172.16.0.1/29
-    set allowaccess ping
-  next
-  edit "port5"
-    set mode static
-    set ip 10.0.1.1/24
-    set allowaccess ping
-  next
+    edit "port1"
+        set mode dhcp
+      set vrf 32
+      set allowaccess ping
+    next
+  end
+config system interface
+    edit "port4"
+        set mode static
+        set ip 172.16.0.1/29
+      set vrf 32
+      set allowaccess ping
+    next
+  end
+config system interface
+    edit "port5"
+        set mode static
+        set ip 10.0.1.1/24
+      set vrf 1
+      set allowaccess ping
+    next
+  end
+      config system vdom-link
+        edit "vrf1_leak"
+        next
+      end
+      config system interface
+        edit "vrf1_leak0"
+          set type vdom-link
+          set vrf 32
+          set vdom 'root'
+          set mode static
+          set ip 10.200.255.3/31
+          set allowaccess ping
+        next
+        edit "vrf1_leak1"
+          set type vdom-link
+          set vrf 1
+          set vdom 'root'
+          set mode static
+          set ip 10.200.255.2/31
+          set allowaccess ping
+        next
+      end
+    config router static
+      edit 10001
+        set device vrf1_leak1
+      next
+    end
+    config system zone
+      edit "pevrf_leak_zone"
+        append interface "vrf1_leak0"
+      next
+      edit "vrfs_leak_zone"
+        append interface "vrf1_leak1"
+      next
+    end
+config system interface
+    edit "port6"
+        set mode static
+        set ip 10.0.101.1/24
+      set vrf 2
+      set allowaccess ping
+    next
+  end
+config system interface
   edit "Lo"
     set vdom "root"
     set type loopback
+    set vrf 32
     set ip 10.200.1.1/32
     set allowaccess ping
   next
 end
 config system zone
   edit "lan_zone"
-    set interface port5
+    set interface port5 port6
   next
 end
 config system dhcp server
@@ -41,12 +101,18 @@ config system dhcp server
       next
     end
   next
-end
-config system settings
-  set location-id 10.200.1.1
-end
-config system global
-    set hostname site1-1
+  edit 11
+    set dns-service default
+    set default-gateway 10.0.101.1
+    set netmask 255.255.255.0
+    set interface port6
+    config ip-range
+      edit 1
+        set start-ip 10.0.101.4
+        set end-ip 10.0.101.251
+      next
+    end
+  next
 end
 
 ######################################
@@ -64,6 +130,7 @@ config vpn ipsec phase1-interface
     set proposal aes256-sha256
     set idle-timeout enable
     set auto-discovery-receiver enable
+    set encapsulation vpn-id-ipip
     set exchange-ip-addr4 10.200.1.1
     set add-route disable
     set network-overlay enable
@@ -82,6 +149,11 @@ config vpn ipsec phase2-interface
     set keylifeseconds 3600
   next
 end
+config system interface
+  edit "H1_ISP1"
+    set vrf 32
+  next
+end
 config vpn ipsec phase1-interface
   edit "H1_MPLS"
     set interface "port4"
@@ -94,6 +166,7 @@ config vpn ipsec phase1-interface
     set proposal aes256-sha256
     set idle-timeout enable
     set auto-discovery-receiver enable
+    set encapsulation vpn-id-ipip
     set exchange-ip-addr4 10.200.1.1
     set add-route disable
     set network-overlay enable
@@ -112,6 +185,11 @@ config vpn ipsec phase2-interface
     set keylifeseconds 3600
   next
 end
+config system interface
+  edit "H1_MPLS"
+    set vrf 32
+  next
+end
 config vpn ipsec phase1-interface
   edit "H2_ISP1"
     set interface "port1"
@@ -124,6 +202,7 @@ config vpn ipsec phase1-interface
     set proposal aes256-sha256
     set idle-timeout enable
     set auto-discovery-receiver enable
+    set encapsulation vpn-id-ipip
     set exchange-ip-addr4 10.200.1.1
     set add-route disable
     set network-overlay enable
@@ -142,6 +221,11 @@ config vpn ipsec phase2-interface
     set keylifeseconds 3600
   next
 end
+config system interface
+  edit "H2_ISP1"
+    set vrf 32
+  next
+end
 config vpn ipsec phase1-interface
   edit "H2_MPLS"
     set interface "port4"
@@ -154,6 +238,7 @@ config vpn ipsec phase1-interface
     set proposal aes256-sha256
     set idle-timeout enable
     set auto-discovery-receiver enable
+    set encapsulation vpn-id-ipip
     set exchange-ip-addr4 10.200.1.1
     set add-route disable
     set network-overlay enable
@@ -170,6 +255,11 @@ config vpn ipsec phase2-interface
     set proposal aes256-sha256
     set keepalive enable
     set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "H2_MPLS"
+    set vrf 32
   next
 end
 
@@ -203,26 +293,50 @@ config router bgp
   config neighbor
     edit 10.200.1.253
       set soft-reconfiguration enable
+      set soft-reconfiguration-vpnv4 enable
       set advertisement-interval 1
       set interface "Lo"
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
       set route-map-in "H1_TAG"
+      set route-map-in-vpnv4 "H1_TAG"
     next
     edit 10.200.1.254
       set soft-reconfiguration enable
+      set soft-reconfiguration-vpnv4 enable
       set advertisement-interval 1
       set interface "Lo"
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
       set route-map-in "H2_TAG"
+      set route-map-in-vpnv4 "H2_TAG"
     next
   end
   config network
-    edit 1
-      set prefix 10.0.1.0/24
+      edit 1
+        set prefix 10.0.1.0/24
+      next
+      edit 2
+        set prefix 10.0.101.0/24
+      next
+    end
+  config vrf
+    edit "32"
+      set role pe
+    next
+    edit "1"
+      set role "ce"
+      set rd "65001:1"
+      set import-rt "65001:1"
+      set export-rt "65001:1"
+    next
+    edit "2"
+      set role "ce"
+      set rd "65001:2"
+      set import-rt "65001:2"
+      set export-rt "65001:2"
     next
   end
 end
