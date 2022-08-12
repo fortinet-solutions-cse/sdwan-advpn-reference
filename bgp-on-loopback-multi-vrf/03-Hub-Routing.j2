@@ -50,7 +50,7 @@ config router bgp
     {% endfor %}
 
     {% for i in network_to_advertise if i|length %}
-      edit {{ loop.index }}
+      edit {{ loop.index + 1 }}
         set prefix {{ i|ipaddr(0) }}
       next
     {% endfor %}

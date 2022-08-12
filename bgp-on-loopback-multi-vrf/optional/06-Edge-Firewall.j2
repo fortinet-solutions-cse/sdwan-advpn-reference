@@ -5,6 +5,12 @@ config firewall address
     set subnet {{ project.lan_summary }}
   next
 end
+config firewall ippool
+  edit "Lo"
+    set startip {{ loopback }}
+    set endip {{ loopback }}
+  next
+end
 config firewall policy
   edit 1
     set name "Corporate"
@@ -21,9 +27,9 @@ config firewall policy
     set logtraffic all
   next
   edit 2
-    set name "Internet (DIA)"
+    set name "Internet (to PE)"
     set srcintf {{ project.lan_zone|default('lan_zone') }}
-    set dstintf "underlay"
+    set dstintf {{ project.vrf_leak_zone|default('vrfs_leak_zone') }}
     set srcaddr "all"
     set dstaddr "all"
     set action accept
@@ -36,8 +42,23 @@ config firewall policy
     set nat enable
   next
   edit 3
+    set name "Internet (DIA)"
+    set srcintf {{ project.pevrf_leak_zone|default('pevrf_leak_zone') }}
+    set dstintf "underlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+    set nat enable
+  next
+  edit 4
     set name "Internet (RIA)"
-    set srcintf {{ project.lan_zone|default('lan_zone') }}
+    set srcintf {{ project.pevrf_leak_zone|default('pevrf_leak_zone') }}
     set dstintf "overlay"
     set srcaddr "all"
     set dstaddr "all"
@@ -48,8 +69,11 @@ config firewall policy
     set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
+    set nat enable
+    set ippool enable
+    set poolname "Lo"
   next
-  edit 4
+  edit 5
     set name "Health-Check"
     set srcintf "overlay"
     set dstintf "Lo"
