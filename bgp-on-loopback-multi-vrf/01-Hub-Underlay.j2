@@ -59,7 +59,6 @@ end
           set type vdom-link
           set vrf {{ pe_vrf }}
           set vdom 'root'
-          set mode static
           set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
           set allowaccess ping
         next
@@ -67,7 +66,6 @@ end
           set type vdom-link
           set vrf {{ i.vrf }}
           set vdom 'root'
-          set mode static
           set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
           set allowaccess ping
         next
