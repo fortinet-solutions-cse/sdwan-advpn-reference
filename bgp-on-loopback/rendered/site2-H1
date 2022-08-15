@@ -66,8 +66,7 @@ config vpn ipsec phase1-interface
     set type dynamic
     set interface "port1"
     set ike-version 2
-    set authmethod signature
-    set certificate "Hub"
+    set psksecret S3cr3t!
     set peertype any
     set proposal aes256-sha256
     set auto-discovery-sender enable
@@ -92,8 +91,7 @@ config vpn ipsec phase1-interface
     set type dynamic
     set interface "port4"
     set ike-version 2
-    set authmethod signature
-    set certificate "Hub"
+    set psksecret S3cr3t!
     set peertype any
     set proposal aes256-sha256
     set auto-discovery-sender enable
@@ -117,6 +115,16 @@ end
 ######################################
 # 03-Hub-Routing.j2
 ######################################
+config router community-list
+  edit "SLA_OK"
+    config rule
+      edit 1
+        set action permit
+        set match "65002:99"
+      next
+    end
+  next
+end
 config router route-map
   edit "LOCAL_REGION"
     config rule
@@ -134,6 +142,7 @@ config router bgp
   set ibgp-multipath enable
   set ebgp-multipath enable
   set recursive-next-hop enable
+  set recursive-inherit-priority enable
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration enable
@@ -193,8 +202,7 @@ end
         edit "WEST_H1_ISP1"
           set interface "port1"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -233,8 +241,7 @@ end
         edit "WEST_H2_ISP1"
           set interface "port1"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -273,8 +280,7 @@ end
         edit "WEST_H1_MPLS"
           set interface "port4"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -313,8 +319,7 @@ end
         edit "WEST_H2_MPLS"
           set interface "port4"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -459,6 +464,21 @@ config system sdwan
     edit 3
       set interface "EDGE_MPLS"
       set zone "overlay"
+    next
+  end
+  config health-check
+    edit "EDGE"
+      set detect-mode remote
+      set members 2 3
+      set sla-id-redistribute 1
+      config sla
+        edit 1
+          set link-cost-factor latency
+          set latency-threshold 100
+          set priority-in-sla 5
+          set priority-out-sla 8
+        next
+      end
     next
   end
 end

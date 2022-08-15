@@ -1,5 +1,15 @@
 {% import 'Project' as project with context %}
 
+config router community-list
+  edit "SLA_OK"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ project.regions[region].as }}:99"
+      next
+    end
+  next
+end
 config router route-map
   edit "LOCAL_REGION"
     config rule
@@ -18,6 +28,7 @@ config router bgp
   set ibgp-multipath enable
   set ebgp-multipath enable
   set recursive-next-hop enable
+  set recursive-inherit-priority enable
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration enable

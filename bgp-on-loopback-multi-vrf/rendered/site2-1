@@ -205,6 +205,13 @@ config router route-map
       next
     end
   next
+  edit "SLA_OK"
+    config rule
+      edit 1
+        set set-community "65002:99"
+      next
+    end
+  next
 end
 config router bgp
   set as 65002
@@ -225,6 +232,7 @@ config router bgp
       set remote-as 65002
       set route-map-in "H1_TAG"
       set route-map-in-vpnv4 "H1_TAG"
+      set route-map-out-vpnv4-preferable "SLA_OK"
     next
   end
   config network
@@ -295,6 +303,7 @@ config system sdwan
       set server 10.200.99.1
       set sla-fail-log-period 10
       set sla-pass-log-period 10
+      set embed-measured-health enable
       set members 2 3
       config sla
         edit 1
@@ -308,6 +317,14 @@ config system sdwan
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set members 1
+    next
+  end
+  config neighbor
+    edit 10.200.2.253
+      set member 2 3
+      set health-check "HUB"
+      set sla-id 1
+      set minimum-sla-meet-members 1
     next
   end
   config service

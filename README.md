@@ -179,3 +179,5 @@ For more details, please refer to our Deployment Guide or consult your Fortinet 
 All the provided examples and the rendered configuration refer to the following project:
 
 ![](example_project.png)
+
+**NOTE:** For the Multi-VRF flavor, there are two Customer VRFs used in our examples. The second VRF is not shown on the above diagram.

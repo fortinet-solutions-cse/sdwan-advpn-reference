@@ -50,6 +50,7 @@ config system sdwan
       set server {{ project.hub_hc_server|default('10.200.99.1') }}
       set sla-fail-log-period 10
       set sla-pass-log-period 10
+      set embed-measured-health enable
       set members {{ hub_sla_members|join(' ') }}
       config sla
         edit 1
@@ -64,6 +65,16 @@ config system sdwan
       set sla-pass-log-period 10
       set members {{ dia_members|join(' ') }}
     next
+  end
+  config neighbor
+  {% for h in project.regions[region].hubs %}
+    edit {{ project.hubs[h].lo_bgp }}
+      set member {{ hub_rule_members[loop.index0]|join(' ') }}
+      set health-check "HUB"
+      set sla-id 1
+      set minimum-sla-meet-members 1
+    next
+  {% endfor %}
   end
   config service
   {% for h in project.regions[region].hubs %}

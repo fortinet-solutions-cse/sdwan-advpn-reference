@@ -1,4 +1,6 @@
 {% import 'Project' as project with context %}
+
+{% set hub_sla_members = [ ] %}
 config system sdwan
   set status enable
   config zone
@@ -22,8 +24,24 @@ config system sdwan
       set interface "EDGE_{{ i.ol_type }}"
       set zone "overlay"
     next
+    {{ hub_sla_members.append(ns.mbr_i) or "" }}
     {% set ns.mbr_i = ns.mbr_i + 1 %}
     {% endfor %}
+  end
+  config health-check
+    edit "EDGE"
+      set detect-mode remote
+      set members {{ hub_sla_members|join(' ') }}
+      set sla-id-redistribute 1
+      config sla
+        edit 1
+          set link-cost-factor latency
+          set latency-threshold 100
+          set priority-in-sla 5
+          set priority-out-sla 8
+        next
+      end
+    next
   end
 end
 config router static

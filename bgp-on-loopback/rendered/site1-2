@@ -3,21 +3,21 @@
 ######################################
 config system interface
   edit "port1"
-    set mode dhcp
+      set mode dhcp
     set allowaccess ping
   next
   edit "port2"
-    set mode dhcp
+      set mode dhcp
     set allowaccess ping
   next
   edit "port4"
-    set mode static
-    set ip 172.16.0.9/29
+      set mode static
+      set ip 172.16.0.9/29
     set allowaccess ping
   next
   edit "port5"
-    set mode static
-    set ip 10.0.2.1/24
+      set mode static
+      set ip 10.0.2.1/24
     set allowaccess ping
   next
   edit "Lo"
@@ -60,8 +60,7 @@ config vpn ipsec phase1-interface
   edit "H1_ISP1"
     set interface "port1"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -90,8 +89,7 @@ config vpn ipsec phase1-interface
   edit "H1_ISP2"
     set interface "port2"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -120,8 +118,7 @@ config vpn ipsec phase1-interface
   edit "H1_MPLS"
     set interface "port4"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -150,8 +147,7 @@ config vpn ipsec phase1-interface
   edit "H2_ISP1"
     set interface "port1"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -180,8 +176,7 @@ config vpn ipsec phase1-interface
   edit "H2_ISP2"
     set interface "port2"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -210,8 +205,7 @@ config vpn ipsec phase1-interface
   edit "H2_MPLS"
     set interface "port4"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -255,6 +249,13 @@ config router route-map
       next
     end
   next
+  edit "SLA_OK"
+    config rule
+      edit 1
+        set set-community "65001:99"
+      next
+    end
+  next
 end
 config router bgp
   set as 65001
@@ -273,6 +274,7 @@ config router bgp
       set connect-timer 1
       set remote-as 65001
       set route-map-in "H1_TAG"
+      set route-map-out-preferable "SLA_OK" 
     next
     edit 10.200.1.254
       set soft-reconfiguration enable
@@ -282,6 +284,7 @@ config router bgp
       set connect-timer 1
       set remote-as 65001
       set route-map-in "H2_TAG"
+      set route-map-out-preferable "SLA_OK" 
     next
   end
   config network
@@ -362,6 +365,7 @@ config system sdwan
       set server 10.200.99.1
       set sla-fail-log-period 10
       set sla-pass-log-period 10
+      set embed-measured-health enable
       set members 3 4 5 6 7 8
       config sla
         edit 1
@@ -375,6 +379,20 @@ config system sdwan
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set members 1 2
+    next
+  end
+  config neighbor
+    edit 10.200.1.253
+      set member 3 4 5
+      set health-check "HUB"
+      set sla-id 1
+      set minimum-sla-meet-members 1
+    next
+    edit 10.200.1.254
+      set member 6 7 8
+      set health-check "HUB"
+      set sla-id 1
+      set minimum-sla-meet-members 1
     next
   end
   config service

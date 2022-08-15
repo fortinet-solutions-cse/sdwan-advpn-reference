@@ -12,6 +12,13 @@ config router route-map
     end
   next
   {% endfor %}
+  edit "SLA_OK"
+    config rule
+      edit 1
+        set set-community "{{ project.regions[region].as }}:99"
+      next
+    end
+  next
 end
 
 config router bgp
@@ -34,6 +41,7 @@ config router bgp
       set remote-as {{ project.regions[region].as }}
       set route-map-in "H{{loop.index}}_TAG"
       set route-map-in-vpnv4 "H{{loop.index}}_TAG"
+      set route-map-out-vpnv4-preferable "SLA_OK"
     next
     {% endfor %}
   end

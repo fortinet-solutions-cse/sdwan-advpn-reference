@@ -230,6 +230,16 @@ end
 ######################################
 # 03-Hub-Routing.j2
 ######################################
+config router community-list
+  edit "SLA_OK"
+    config rule
+      edit 1
+        set action permit
+        set match "65001:99"
+      next
+    end
+  next
+end
 config router route-map
   edit "LOCAL_REGION"
     config rule
@@ -247,6 +257,7 @@ config router bgp
   set ibgp-multipath enable
   set ebgp-multipath enable
   set recursive-next-hop enable
+  set recursive-inherit-priority enable
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration-vpnv4 enable
@@ -515,6 +526,21 @@ config system sdwan
     edit 5
       set interface "EDGE_MPLS"
       set zone "overlay"
+    next
+  end
+  config health-check
+    edit "EDGE"
+      set detect-mode remote
+      set members 3 4 5
+      set sla-id-redistribute 1
+      config sla
+        edit 1
+          set link-cost-factor latency
+          set latency-threshold 100
+          set priority-in-sla 5
+          set priority-out-sla 8
+        next
+      end
     next
   end
 end
