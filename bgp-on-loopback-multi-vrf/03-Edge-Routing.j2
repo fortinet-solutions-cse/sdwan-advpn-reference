@@ -1,6 +1,7 @@
 {% import 'Project' as project with context %}
 
 {% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set vrf_rt_as = project.vrf_rt_as|default('65000') %}
 
 config router route-map
   {% for i in range(1,3) %}
@@ -66,9 +67,9 @@ config router bgp
     {% for i in project.profiles[profile].interfaces if i.vrf is defined %}
     edit "{{ i.vrf }}"
       set role "ce"
-      set rd "{{ project.regions[region].as }}:{{ i.vrf }}"
-      set import-rt "{{ project.regions[region].as }}:{{ i.vrf }}"
-      set export-rt "{{ project.regions[region].as }}:{{ i.vrf }}"
+      set rd "{{ vrf_rt_as }}:{{ i.vrf }}"
+      set import-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
+      set export-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
     next
     {% endfor %}
   end

@@ -20,7 +20,7 @@
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
-          {% if project.multireg_advpn %}
+          {% if project.multireg_advpn|default(false) %}
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -69,7 +69,7 @@ config system zone
 end
 {% endif %}
 
-{% if project.multireg_advpn %}
+{% if project.multireg_advpn|default(false) %}
 {# Advertise loopback summaries between the regions #}
 config router access-list
   {# Regional loopback summary #}
@@ -173,7 +173,7 @@ config router bgp
       set interface "Lo"
       set update-source "Lo"
       set route-map-out "HUB2HUB_OUT"
-      {% if project.multireg_advpn %}
+      {% if project.multireg_advpn|default(false) %}
       set attribute-unchanged next-hop
       {% endif %}
       set connect-timer 1

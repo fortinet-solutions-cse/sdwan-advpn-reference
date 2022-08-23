@@ -38,21 +38,29 @@ The `regions` dictionary describes all the regions in the project:
 
 The following table lists all the parameters that must be configured for each region:
 
-| Parameter   |    Values    | Description                                                                             |          Example           |
-|:------------|:------------:|:----------------------------------------------------------------------------------------|:--------------------------:|
-| as          |   \<asn\>    | Autonomous System number for the region                                                 |          '65001'           |
-| lan_summary | \<ip/mask\>  | Subnet summarizing all corporate (internal) prefixes in the region                      |       '10.0.0.0/14'        |
-| lo_summary  | \<ip/mask\>  | Subnet summarizing all SD-WAN device loopbacks in the region _("BGP on Loopback" only)_ |      '10.200.1.0/24'       |
-| hubs        | \<str list\> | List of Hubs serving the region*                                                        | [ 'site1-H1', 'site1-H2' ] |
+| Parameter   |    Values    | Description                                                                                                               |          Example           |
+|:------------|:------------:|:--------------------------------------------------------------------------------------------------------------------------|:--------------------------:|
+| as          |   \<asn\>    | Autonomous System number for the region                                                                                   |          '65001'           |
+| lan_summary | \<ip/mask\>  | Subnet summarizing all corporate prefixes in the region _(not for Multi-VRF flavor and only when multireg_advpn = false)_ |       '10.0.0.0/14'        |
+| lo_summary  | \<ip/mask\>  | Subnet summarizing all SD-WAN device loopbacks in the region _("BGP on Loopback" only)_                                   |      '10.200.1.0/24'       |
+| hubs        | \<str list\> | List of Hubs serving the region*                                                                                          | [ 'site1-H1', 'site1-H2' ] |
 
 \* - The Hub names referenced here must correspond to the Hubs defined [below](#hubs)
 
+
 #### Additional parameters for the Multi-VRF flavor
 
-| Parameter        |    Values      | Description                                                                                   |     Default       |
-|:------------     |:--------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
-| pe_vrf           |     \<int\>    | ID of the VRF that will be used as the PE (transport) VRF, default for underlays and overlays |        32         |
-| vrfs             |  \<int list\>  | List of all the VRF IDs that will be used as CE (customer) VRFs in that region                |        [ ]        |
+| Parameter |    Values     | Description                                                                                   | Default |
+|:----------|:-------------:|:----------------------------------------------------------------------------------------------|:-------:|
+| pe_vrf    |    \<int\>    | ID of the VRF that will be used as the PE (transport) VRF, default for underlays and overlays |   32    |
+| vrfs      | \<dict list\> | List of all the VRFs that will be used as CE (customer) VRFs in that region*                  |   [ ]   |
+
+\* Each VRF is described by a dict with the following parameters:
+
+| Parameter   |   Values    | Description                                                                                               |    Example    |
+|:------------|:-----------:|:----------------------------------------------------------------------------------------------------------|:-------------:|
+| id          |   \<int\>   | VRF ID                                                                                                    |       1       |
+| lan_summary | \<ip/mask\> | Subnet summarizing all corporate prefixes in the region for this VRF _(only when multireg_advpn = false)_ | '10.0.0.0/14' |
 
 
 ## Profiles
@@ -214,22 +222,29 @@ Each parameter can be configured simply as follows:
 The following table lists all the supported parameters, as well as their default values (applied when
 they are not configured explicitly):
 
+| Parameter           |    Values    | Description                                                                                   |      Default      |
+|:--------------------|:------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
+| create_hub2hub_zone | true / false | Create System Zone for inter-regional Hub-to-Hub tunnels                                      |       true        |
+| hub2hub_zone        |   \<str\>    | Name of System Zone for inter-regional Hub-to-Hub tunnels _(when create_hub2hub_zone = true)_ | 'hub2hub_overlay' |
+| create_lan_zone     | true / false | Create System Zone for LAN interfaces (with 'role' = 'lan' in the profile)                    |       true        |
+| lan_zone            |   \<str\>    | Name of System Zone for LAN interfaces _(when create_lan_zone = true)_                        |    'lan_zone'     |
+| cert_auth           | true / false | Certificate-based auth for IKE/IPSEC                                                          |       true        |
+| hub_cert_template   |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                            |       'Hub'       |
+| edge_cert_template  |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                            |      'Edge'       |
+| psk                 |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                    |     'S3cr3t!'     |
+| multireg_advpn      | true / false | Extend ADVPN across the regions                                                               |       false       |
+| hub_hc_server       |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)            |   '10.200.99.1'   |
+
+
+#### Additional parameters for the Multi-VRF flavor
+
 | Parameter            |    Values    | Description                                                                                            |      Default      |
 |:---------------------|:------------:|:-------------------------------------------------------------------------------------------------------|:-----------------:|
-| create_hub2hub_zone  | true / false | Create System Zone for inter-regional Hub-to-Hub tunnels                                               |       true        |
-| hub2hub_zone         |   \<str\>    | Name of System Zone for inter-regional Hub-to-Hub tunnels _(when create_hub2hub_zone = true)_          | 'hub2hub_overlay' |
-| create_lan_zone      | true / false | Create System Zone for LAN interfaces (with 'role' = 'lan' in the profile)                             |       true        |
-| lan_zone             |   \<str\>    | Name of System Zone for LAN interfaces _(when create_lan_zone = true)_                                 |    'lan_zone'     |
-| cert_auth            | true / false | Certificate-based auth for IKE/IPSEC                                                                   |       true        |
-| hub_cert_template    |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                                     |       'Hub'       |
-| edge_cert_template   |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                                     |      'Edge'       |
-| psk                  |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                             |     'S3cr3t!'     |
-| multireg_advpn       | true / false | Extend ADVPN across the regions                                                                        |       false       |
-| hub_hc_server        |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)                     |   '10.200.99.1'   |
 | create_vrf_leak_zone | true / false | Create System Zones for VRF leaking interfaces for easier management of Internet access                |       true        |
 | vrf_leak_zone        |   \<str\>    | Name of System Zone for all CE VRF ends of the leaking interfaces _(when create_vrf_leak_zone = true)_ | 'vrfs_leak_zone'  |
 | pevrf_leak_zone      |   \<str\>    | Name of System Zone for all PE VRF ends of the leaking interfaces _(when create_vrf_leak_zone = true)_ | 'pevrf_leak_zone' |
 | vrf_leak_summary     |    \<ip\>    | Subnet used for VRF leaking interfaces, with local significance only                                   | '10.200.255.0/24' |
+| vrf_rt_as            |   \<asn\>    | Fictitious Autonomous System number used in MP-BGP RD/RT values (_has local significance only_)        |      '65000'      |
 
 ## Setting Per-Device Context
 

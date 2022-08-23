@@ -22,7 +22,7 @@
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
-          {% if project.multireg_advpn %}
+          {% if project.multireg_advpn|default(false) %}
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -31,6 +31,7 @@
           set exchange-interface-ip enable
           {% endif %}
           set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
+          set encapsulation vpn-id-ipip
           set exchange-ip-addr4 {{ loopback }}
           set dpd-retrycount 3
           set dpd-retryinterval 5
@@ -43,6 +44,11 @@
           set proposal aes256-sha256
           set keepalive enable
           set keylifeseconds 3600
+        next
+      end
+      config system interface
+        edit "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
+          set vrf {{ pe_vrf }}
         next
       end
       config router policy
@@ -71,7 +77,7 @@ config system zone
 end
 {% endif %}
 
-{% if project.multireg_advpn %}
+{% if project.multireg_advpn|default(false) %}
 {# Advertise loopback summaries between the regions #}
 config router access-list
   {# Regional loopback summary #}
@@ -113,7 +119,7 @@ config router bgp
     edit "EDGE"
       set route-map-out EDGE_OUT
       {# Preserve next-hop of prefixes coming from remote regions #}
-      unset next-hop-self
+      set attribute-unchanged-vpnv4 next-hop
     next
   end
   config network
@@ -132,20 +138,25 @@ config router static
 end
 {% else %}
 {# Advertise regional LAN summaries between the regions #}
-config router bgp
-  config aggregate-address
-    edit 1
-      set prefix {{ project.regions[region].lan_summary }}
-    next
-  end
+config router static
+  {% for v in project.regions[region].vrfs %}
+  edit {{ 110 + v.id }}
+    set dst {{ v.lan_summary }}
+    set blackhole enable
+    set vrf "{{ v.id }}"
+    set comment "Regional LAN summary (VRF={{ v.id }})"
+  next
+  {% endfor %}
 end
 config router access-list
   edit "LAN_REGIONAL_SUMMARY"
     config rule
-      edit 1
-        set prefix {{ project.regions[region].lan_summary }}
+      {% for v in project.regions[region].vrfs %}
+      edit {{ v.id }}
+        set prefix {{ v.lan_summary }}
         set exact-match enable
       next
+      {% endfor %}
     end
   next
 end
@@ -156,11 +167,17 @@ config router route-map
         set match-ip-address "LAN_REGIONAL_SUMMARY"
         unset set-community
       next
-      edit 100
+      edit 1000
         set action deny
       next
     end
   next
+end
+config router bgp
+  config redistribute "static"
+    set status enable
+    set route-map "HUB2HUB_OUT"
+  end
 end
 {% endif %}
 
@@ -175,9 +192,11 @@ config router bgp
       set link-down-failover enable
       set interface "Lo"
       set update-source "Lo"
+      {% if project.multireg_advpn|default(false) %}
+      set attribute-unchanged-vpnv4 next-hop
       set route-map-out "HUB2HUB_OUT"
-      {% if project.multireg_advpn %}
-      set attribute-unchanged next-hop
+      {% else %}
+      set route-map-out-vpnv4 "HUB2HUB_OUT"
       {% endif %}
       set connect-timer 1
       set remote-as {{ project.regions[r].as }}

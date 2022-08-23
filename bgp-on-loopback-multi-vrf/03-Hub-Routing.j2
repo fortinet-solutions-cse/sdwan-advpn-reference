@@ -1,6 +1,7 @@
 {% import 'Project' as project with context %}
 
 {% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set vrf_rt_as = project.vrf_rt_as|default('65000') %}
 
 config router community-list
   edit "SLA_OK"
@@ -70,12 +71,12 @@ config router bgp
     edit "{{ pe_vrf }}"
       set role pe
     next
-    {% for i in project.profiles[profile].interfaces if i.vrf is defined %}
-    edit "{{ i.vrf }}"
+    {% for v in project.regions[region].vrfs %}
+    edit "{{ v.id }}"
       set role "ce"
-      set rd "{{ project.regions[region].as }}:{{ i.vrf }}"
-      set import-rt "{{ project.regions[region].as }}:{{ i.vrf }}"
-      set export-rt "{{ project.regions[region].as }}:{{ i.vrf }}"
+      set rd "{{ vrf_rt_as }}:{{ v.id }}"
+      set import-rt "{{ vrf_rt_as }}:{{ v.id }}"
+      set export-rt "{{ vrf_rt_as }}:{{ v.id }}"
     next
     {% endfor %}
   end
@@ -102,6 +103,5 @@ config router static
     set dst {{ project.lo_summary }}
     set blackhole enable
     set vrf "{{ pe_vrf }}"
-    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
 end

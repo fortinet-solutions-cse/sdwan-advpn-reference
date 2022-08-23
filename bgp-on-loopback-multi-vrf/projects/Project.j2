@@ -35,6 +35,7 @@
 {% set vrf_leak_zone = 'vrfs_leak_zone' %}
 {% set pevrf_leak_zone = 'pevrf_leak_zone' %}
 {% set vrf_leak_summary = 10.200.255.0/24 %}
+{% set vrf_rt_as = '65000' %}
 
 {% set cert_auth = true %}
 {% set hub_cert_template = 'Hub' %}
@@ -54,17 +55,33 @@
 {% set regions = {
     'West': {
       'as': '65001',
-      'lan_summary': '10.0.0.0/14',
       'lo_summary': '10.200.1.0/24',
-      'vrfs': [ 1, 2 ],
-      'hubs': [ 'site1-H1', 'site1-H2' ]
+      'hubs': [ 'site1-H1', 'site1-H2' ],
+      'vrfs': [
+        {
+          'id': 1,
+          'lan_summary': '10.0.0.0/14'
+        },
+        {
+          'id': 2,
+          'lan_summary': '10.0.0.0/14'
+        }
+      ]
     },
     'East': {
       'as': '65002',
-      'lan_summary': '10.4.0.0/14',
       'lo_summary': '10.200.2.0/24',
-      'vrfs': [ 1, 2 ],
-      'hubs': [ 'site2-H1' ]
+      'hubs': [ 'site2-H1' ],
+      'vrfs': [
+        {
+          'id': 1,
+          'lan_summary': '10.4.0.0/14'
+        },
+        {
+          'id': 2,
+          'lan_summary': '10.4.0.0/14'
+        }
+      ]
     }
   }
 %}
