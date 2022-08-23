@@ -70,10 +70,6 @@ The file structure for all the design flavors is identical, as follows:
 
 Additionally, in the root directory you will find the Python renderer (**render_config.py**).
 
-- **inventory.json** is an example inventory file for the Python renderer.
-  When deploying the solution with FortiManager, per-device mapping of ADOM variables is used instead of this file.
-  Hence, it is only needed when using the Python renderer.
-
 
 ## How-To: Deploy with FortiManager
 
@@ -131,7 +127,7 @@ Also by default, example Project and inventory files will be used under the sele
 Rendering example:
 
 ```
-% ./render_config.py -f bgp-on-loopback -i inventory.json
+% ./render_config.py -f bgp-on-loopback
 Rendering group 'Hub'...
 ['01-Hub-Underlay.j2', '02-Hub-Overlay.j2', '03-Hub-Routing.j2', '04-Hub-MultiRegion.j2', 'optional/05-Hub-SDWAN.j2', 'optional/06-Hub-Firewall.j2']
 Rendering device site1-H1...

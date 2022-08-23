@@ -255,15 +255,15 @@ config router bgp
     next
     edit "1"
       set role "ce"
-      set rd "65002:1"
-      set import-rt "65002:1"
-      set export-rt "65002:1"
+      set rd "65000:1"
+      set import-rt "65000:1"
+      set export-rt "65000:1"
     next
     edit "2"
       set role "ce"
-      set rd "65002:2"
-      set import-rt "65002:2"
-      set export-rt "65002:2"
+      set rd "65000:2"
+      set import-rt "65000:2"
+      set export-rt "65000:2"
     next
   end
 end
@@ -290,7 +290,6 @@ config router static
     set dst 10.200.0.0/14
     set blackhole enable
     set vrf "32"
-    set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
 end
 
@@ -310,6 +309,7 @@ end
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 100.64.1.1
+          set encapsulation vpn-id-ipip
           set exchange-ip-addr4 10.200.2.253
           set dpd-retrycount 3
           set dpd-retryinterval 5
@@ -322,6 +322,11 @@ end
           set proposal aes256-sha256
           set keepalive enable
           set keylifeseconds 3600
+        next
+      end
+      config system interface
+        edit "WEST_H1_ISP1"
+          set vrf 32
         next
       end
       config router policy
@@ -349,6 +354,7 @@ end
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 100.64.2.1
+          set encapsulation vpn-id-ipip
           set exchange-ip-addr4 10.200.2.253
           set dpd-retrycount 3
           set dpd-retryinterval 5
@@ -361,6 +367,11 @@ end
           set proposal aes256-sha256
           set keepalive enable
           set keylifeseconds 3600
+        next
+      end
+      config system interface
+        edit "WEST_H2_ISP1"
+          set vrf 32
         next
       end
       config router policy
@@ -388,6 +399,7 @@ end
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 172.16.1.5
+          set encapsulation vpn-id-ipip
           set exchange-ip-addr4 10.200.2.253
           set dpd-retrycount 3
           set dpd-retryinterval 5
@@ -400,6 +412,11 @@ end
           set proposal aes256-sha256
           set keepalive enable
           set keylifeseconds 3600
+        next
+      end
+      config system interface
+        edit "WEST_H1_MPLS"
+          set vrf 32
         next
       end
       config router policy
@@ -427,6 +444,7 @@ end
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 172.16.2.5
+          set encapsulation vpn-id-ipip
           set exchange-ip-addr4 10.200.2.253
           set dpd-retrycount 3
           set dpd-retryinterval 5
@@ -439,6 +457,11 @@ end
           set proposal aes256-sha256
           set keepalive enable
           set keylifeseconds 3600
+        next
+      end
+      config system interface
+        edit "WEST_H2_MPLS"
+          set vrf 32
         next
       end
       config router policy
@@ -494,7 +517,7 @@ config router bgp
   config neighbor-group
     edit "EDGE"
       set route-map-out EDGE_OUT
-      unset next-hop-self
+      set attribute-unchanged-vpnv4 next-hop
     next
   end
   config network
@@ -520,8 +543,8 @@ config router bgp
       set link-down-failover enable
       set interface "Lo"
       set update-source "Lo"
+      set attribute-unchanged-vpnv4 next-hop
       set route-map-out "HUB2HUB_OUT"
-      set attribute-unchanged next-hop
       set connect-timer 1
       set remote-as 65001
     next
@@ -532,8 +555,8 @@ config router bgp
       set link-down-failover enable
       set interface "Lo"
       set update-source "Lo"
+      set attribute-unchanged-vpnv4 next-hop
       set route-map-out "HUB2HUB_OUT"
-      set attribute-unchanged next-hop
       set connect-timer 1
       set remote-as 65001
     next

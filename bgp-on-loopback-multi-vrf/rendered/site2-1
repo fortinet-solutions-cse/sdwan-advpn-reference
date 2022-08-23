@@ -249,15 +249,15 @@ config router bgp
     next
     edit "1"
       set role "ce"
-      set rd "65002:1"
-      set import-rt "65002:1"
-      set export-rt "65002:1"
+      set rd "65000:1"
+      set import-rt "65000:1"
+      set export-rt "65000:1"
     next
     edit "2"
       set role "ce"
-      set rd "65002:2"
-      set import-rt "65002:2"
-      set export-rt "65002:2"
+      set rd "65000:2"
+      set import-rt "65000:2"
+      set export-rt "65000:2"
     next
   end
 end
