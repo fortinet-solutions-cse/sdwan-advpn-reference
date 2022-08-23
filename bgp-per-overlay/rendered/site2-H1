@@ -66,7 +66,7 @@ config vpn ipsec phase1-interface
     set type dynamic
     set interface "port1"
     set ike-version 2
-    set psk S3cr3t!
+    set psksecret S3cr3t!
     set peertype any
     set mode-cfg enable
     set proposal aes256-sha256
@@ -104,7 +104,7 @@ config vpn ipsec phase1-interface
     set type dynamic
     set interface "port4"
     set ike-version 2
-    set psk S3cr3t!
+    set psksecret S3cr3t!
     set peertype any
     set mode-cfg enable
     set proposal aes256-sha256
@@ -220,7 +220,7 @@ end
         edit "WEST_H1_ISP1"
           set interface "port1"
           set ike-version 2
-          set psk S3cr3t!
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -256,7 +256,7 @@ end
         edit "WEST_H2_ISP1"
           set interface "port1"
           set ike-version 2
-          set psk S3cr3t!
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -292,7 +292,7 @@ end
         edit "WEST_H1_MPLS"
           set interface "port4"
           set ike-version 2
-          set psk S3cr3t!
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -328,7 +328,7 @@ end
         edit "WEST_H2_MPLS"
           set interface "port4"
           set ike-version 2
-          set psk S3cr3t!
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256

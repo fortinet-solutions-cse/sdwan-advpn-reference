@@ -56,7 +56,7 @@ config vpn ipsec phase1-interface
   edit "H1_ISP1"
     set interface "port1"
     set ike-version 2
-    set psk S3cr3t!
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -93,7 +93,7 @@ config vpn ipsec phase1-interface
   edit "H1_MPLS"
     set interface "port4"
     set ike-version 2
-    set psk S3cr3t!
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable

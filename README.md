@@ -40,31 +40,32 @@ Once you make your choice, simply use only the templates from the respective dir
 
 The file structure for all the design flavors is identical, as follows:
 
-- **Project** - the most crucial file from the users' perspective.
-  This is where you "tune" the templates to your project(s).
-  Normally, this will be the only file that you must modify per project.
-
 - **??-Edge-\*.j2, ??-Hub-\*.j2** - the templates configuring Underlay, Overlay and Routing pillars.
   Normally, there will be no need to edit these files, as they are already designed to generate our
   best-practice configuration.
 
-- **pre-run** - sub-directory that contains the Pre-Run CLI Templates for different
-  FortiGate models. [Pre-Run CLI Templates](https://docs.fortinet.com/document/fortimanager/7.0.0/new-features/195747/pre-run-cli-template-runs-once-on-model-device-to-preconfigure-it-with-required-settings-7-0-2) are not mandatory, but you may need to use
-  them depending on your environment.
+- **projects** - this sub-directory contains:
+
+  - Examples of Project Templates (**Project.\*.j2**). Those are the most crucial files from the users' perspective.
+    This is where you "tune" the templates to your project(s).
+    We recommend starting from one of the provided Project Templates and modifying it to match your requirements.
+    Normally, this will be the only file that you must modify per project.
+
+  - Example of inventory file in JSON format, listing the devices and their respective per-device variables.
+    This file is used by the provided Python renderer.
+    When using FortiManager, this file is not needed (but it will show you what per-device variables to set).
 
 - **optional** - additional templates configuring Security and SD-WAN pillars.
   Normally, they are not used when configuring your solution with FortiManager.
   But they are used by the provided Python renderer, so that the generated FOS configuration is complete.
 
+- **pre-run** - sub-directory that contains the Pre-Run CLI Templates for different
+  FortiGate models. [Pre-Run CLI Templates](https://docs.fortinet.com/document/fortimanager/7.0.0/new-features/195747/pre-run-cli-template-runs-once-on-model-device-to-preconfigure-it-with-required-settings-7-0-2) are not mandatory, but you may need to use
+  them depending on your environment.
+
 - **rendered** - sub-directory that contains a fully rendered FOS configuration, as an example.
 
-Additionally, in the root directory you will find the following files:
-
-- **render_config.py** is the Python renderer.
-
-- **inventory.json** is an example inventory file for the Python renderer.
-  When deploying the solution with FortiManager, per device meta fields are used instead of this file.
-  Hence, it is only needed when using the Python renderer.
+Additionally, in the root directory you will find the Python renderer (**render_config.py**).
 
 
 ## How-To: Deploy with FortiManager
@@ -116,15 +117,16 @@ Follow these steps:
 1. Render the desired design flavor, as follows:
 
     ```
-    ./render_config.py -f <flavor_dir> -i <inventory_file>
+    ./render_config.py -f <flavor_dir> -i <inventory_file> -p <project_template>
     ```
 
 By default, the rendered configuration will be saved under "out" sub-directory.
+Also by default, example Project and inventory files will be used under the selected flavor directory ("projects/Project.j2" and "projects/inventory.json" respectively).
 
 Rendering example:
 
 ```
-% ./render_config.py -f bgp-on-loopback -i inventory.json
+% ./render_config.py -f bgp-on-loopback
 Rendering group 'Hub'...
 ['01-Hub-Underlay.j2', '02-Hub-Overlay.j2', '03-Hub-Routing.j2', '04-Hub-MultiRegion.j2', 'optional/05-Hub-SDWAN.j2', 'optional/06-Hub-Firewall.j2']
 Rendering device site1-H1...

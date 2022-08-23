@@ -7,17 +7,17 @@ end
 config system interface
   edit "port1"
     set mode dhcp
-    set allowaccess ping
+    set allowaccess ping 
   next
   edit "port4"
     set mode static
     set ip 172.16.4.5/24
-    set allowaccess ping
+    set allowaccess ping 
   next
   edit "port5"
     set mode static
     set ip 10.4.0.1/24
-    set allowaccess ping
+    set allowaccess ping 
   next
   edit "Lo-HC"
     set vdom "root"
@@ -66,8 +66,7 @@ config vpn ipsec phase1-interface
     set type dynamic
     set interface "port1"
     set ike-version 2
-    set authmethod signature
-    set certificate "Hub"
+    set psksecret S3cr3t!
     set peertype any
     set proposal aes256-sha256
     set auto-discovery-sender enable
@@ -92,8 +91,7 @@ config vpn ipsec phase1-interface
     set type dynamic
     set interface "port4"
     set ike-version 2
-    set authmethod signature
-    set certificate "Hub"
+    set psksecret S3cr3t!
     set peertype any
     set proposal aes256-sha256
     set auto-discovery-sender enable
@@ -193,8 +191,7 @@ end
         edit "WEST_H1_ISP1"
           set interface "port1"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -233,8 +230,7 @@ end
         edit "WEST_H2_ISP1"
           set interface "port1"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -273,8 +269,7 @@ end
         edit "WEST_H1_MPLS"
           set interface "port4"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256
@@ -313,8 +308,7 @@ end
         edit "WEST_H2_MPLS"
           set interface "port4"
           set ike-version 2
-          set authmethod signature
-          set certificate "Hub"
+          set psksecret S3cr3t!
           set keylife 28800
           set peertype any
           set proposal aes256-sha256

@@ -60,8 +60,7 @@ config vpn ipsec phase1-interface
   edit "H1_ISP1"
     set interface "port1"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -90,8 +89,7 @@ config vpn ipsec phase1-interface
   edit "H1_ISP2"
     set interface "port2"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -120,8 +118,7 @@ config vpn ipsec phase1-interface
   edit "H1_MPLS"
     set interface "port4"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -150,8 +147,7 @@ config vpn ipsec phase1-interface
   edit "H2_ISP1"
     set interface "port1"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -180,8 +176,7 @@ config vpn ipsec phase1-interface
   edit "H2_ISP2"
     set interface "port2"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable
@@ -210,8 +205,7 @@ config vpn ipsec phase1-interface
   edit "H2_MPLS"
     set interface "port4"
     set ike-version 2
-    set authmethod signature
-    set certificate "Edge"
+    set psksecret S3cr3t!
     set keylife 28800
     set peertype any
     set net-device enable

@@ -1,8 +1,8 @@
 #!/usr/local/bin/python
 
-import argparse, json, textwrap, jinja2
+import argparse, json, textwrap, jinja2, shutil
 from ansible_collections.ansible.utils.plugins.filter.ipaddr import ipaddr
-from os import listdir, chdir, path, makedirs
+from os import listdir, chdir, path, makedirs, remove
 
 #############################################
 
@@ -21,11 +21,17 @@ parser = argparse.ArgumentParser(description='FOS Reference SD-WAN/ADVPN Config 
 parser.add_argument('-f', '--flavor', metavar='dir', required=True,
                     help='design flavor (specify directory name)')
 
-parser.add_argument('-i', '--inventory', metavar='file', required=True,
-                    help='device inventory file (in json format)')
+parser.add_argument('-i', '--inventory', metavar='file',
+                    help='device inventory file in json format (default="projects/inventory.json" in the flavor directory)')
 
 parser.add_argument('-o', '--outdir', metavar='dir', default='out',
                     help='output directory (default="out")')
+
+parser.add_argument('-p', '--project', metavar='file',
+                    help='project template (default="projects/Project.j2" in the flavor directory)')
+
+parser.add_argument('--skip-optional', action='store_true',
+                    help="skip optional templates")
 
 args = parser.parse_args()
 
@@ -35,11 +41,18 @@ outdir = path.abspath(args.outdir)
 makedirs(outdir, exist_ok=True)
 
 flavor = args.flavor
+project = args.project or flavor + '/projects/Project.j2'
+inventory = args.inventory or flavor + '/projects/inventory.json'
 
-env = jinja2.Environment(loader=jinja2.FileSystemLoader(flavor))
+print("Project Template: " + path.relpath(project))
+shutil.copyfile(project, flavor + '/Project')
+
+env = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(flavor)
+)
 env.filters['ipaddr'] = ipaddr
 
-with open(args.inventory, 'r') as inventoryFile:
+with open(inventory, 'r') as inventoryFile:
     devices = json.load(inventoryFile)
 
 for devgroup, devlist in devices.items():
@@ -47,7 +60,7 @@ for devgroup, devlist in devices.items():
 
     list_of_templates = sorted(filter(lambda f: devgroup in f,
         listdir(flavor) +
-        [ 'optional/' + j2 for j2 in listdir(flavor + '/optional') ]
+        [ 'optional/' + j2 for j2 in listdir(flavor + '/optional') if not args.skip_optional ]
     ))
     print(list_of_templates)
 
@@ -66,3 +79,4 @@ for devgroup, devlist in devices.items():
                 print('', file=outfile)
 
 print("Rendering complete.")
+remove(flavor + '/Project')
