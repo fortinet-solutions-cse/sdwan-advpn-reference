@@ -73,7 +73,6 @@ config firewall policy
     set schedule "always"
     set service "PING"
   next
-  {% if project.regions|reject("==", region)|list|count %}
   edit 6
     set name "Peering"
     set srcintf {{ ol_zones|join(' ') }}
@@ -84,5 +83,4 @@ config firewall policy
     set schedule "always"
     set service "PING" "BGP"
   next
-  {% endif %}
 end
