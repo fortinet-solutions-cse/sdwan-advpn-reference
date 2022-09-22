@@ -4,7 +4,7 @@ FortiManager 7.0.1+ includes built-in Jinja engine that allows you to use Jinja 
 This repository contains generic, ready-to-use templates that generate our best-practice SD-WAN/ADVPN configuration.
 These templates are easily tunable for your projects, as will be briefly explained below.
 
-**[COMING SOON]** Our upcoming Secure SD-WAN Deployment Guide for Service Providers (Release 7.0) will contain more information
+Our [Secure SD-WAN Deployment Guide for Service Providers (Release 7.0)](https://docs.fortinet.com/document/fortigate/7.0.0/sd-wan-deployment-for-mssps/705134/introduction) contains more information
 about using these templates for your projects.
 
 Additionally, we provide a simple renderer written in Python, which you can use to render the templates without FortiManager.
