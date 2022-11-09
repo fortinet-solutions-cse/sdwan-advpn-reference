@@ -232,6 +232,7 @@ they are not configured explicitly):
 | hub_cert_template   |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                            |       'Hub'       |
 | edge_cert_template  |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                            |      'Edge'       |
 | psk                 |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                    |     'S3cr3t!'     |
+| overlay_stickiness  | true / false | Generate "overlay stickiness" policy routes on the Hubs _("BGP on Loopback" only)_            |       true        |
 | multireg_advpn      | true / false | Extend ADVPN across the regions                                                               |       false       |
 | hub_hc_server       |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)            |   '10.200.99.1'   |
 

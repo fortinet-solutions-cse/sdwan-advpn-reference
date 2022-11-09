@@ -59,6 +59,7 @@ config router bgp
   end
 end
 
+{% if project.overlay_stickiness|default(true) %}
 config router policy
   {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
   edit {{ loop.index }}
@@ -68,6 +69,7 @@ config router policy
   next
   {% endfor %}
 end
+{% endif %}
 
 config router static
   edit 101
