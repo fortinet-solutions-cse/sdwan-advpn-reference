@@ -75,11 +75,13 @@ config router static
   edit 101
     set dst {{ project.lan_summary }}
     set blackhole enable
+    set vrf 0
     set comment "Avoid potential leak of corporate traffic to underlay"
   next
   edit 102
     set dst {{ project.lo_summary }}
     set blackhole enable
+    set vrf 0
     set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
 end
