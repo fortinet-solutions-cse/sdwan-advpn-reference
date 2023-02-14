@@ -2,23 +2,37 @@
 # 01-Hub-Underlay.j2
 ######################################
 config system settings
+  set location-id 10.200.2.253
   set tcp-session-without-syn enable
+end
+config system global
+    set hostname site2-H1
 end
 config system interface
   edit "port1"
     set mode dhcp
+    set role wan
     set allowaccess ping
   next
+end
+config system interface
   edit "port4"
     set mode static
     set ip 172.16.4.5/24
+    set role wan
     set allowaccess ping
   next
+end
+config system interface
   edit "port5"
     set mode static
     set ip 10.4.0.1/24
+    set role lan
+    set device-identification enable
     set allowaccess ping
   next
+end
+config system interface
   edit "Lo-HC"
     set vdom "root"
     set type loopback
@@ -50,12 +64,6 @@ config system dhcp server
       next
     end
   next
-end
-config system settings
-  set location-id 10.200.2.253
-end
-config system global
-    set hostname site2-H1
 end
 
 ######################################
@@ -186,11 +194,13 @@ config router static
   edit 101
     set dst 10.0.0.0/8
     set blackhole enable
+    set vrf 0
     set comment "Avoid potential leak of corporate traffic to underlay"
   next
   edit 102
     set dst 10.200.0.0/14
     set blackhole enable
+    set vrf 0
     set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
 end
@@ -212,6 +222,8 @@ end
           set add-route disable
           set remote-gw 100.64.1.1
           set exchange-ip-addr4 10.200.2.253
+          set network-overlay enable
+          set network-id 11
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -251,6 +263,8 @@ end
           set add-route disable
           set remote-gw 100.64.2.1
           set exchange-ip-addr4 10.200.2.253
+          set network-overlay enable
+          set network-id 21
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -290,6 +304,8 @@ end
           set add-route disable
           set remote-gw 172.16.1.5
           set exchange-ip-addr4 10.200.2.253
+          set network-overlay enable
+          set network-id 13
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -329,6 +345,8 @@ end
           set add-route disable
           set remote-gw 172.16.2.5
           set exchange-ip-addr4 10.200.2.253
+          set network-overlay enable
+          set network-id 23
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle

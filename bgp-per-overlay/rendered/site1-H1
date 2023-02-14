@@ -2,27 +2,44 @@
 # 01-Hub-Underlay.j2
 ######################################
 config system settings
+  set location-id 10.200.1.253
   set tcp-session-without-syn enable
+end
+config system global
+    set hostname site1-H1
 end
 config system interface
   edit "port1"
     set mode dhcp
+    set role wan
     set allowaccess ping
   next
+end
+config system interface
   edit "port2"
     set mode dhcp
+    set role wan
     set allowaccess ping
   next
+end
+config system interface
   edit "port4"
     set mode static
     set ip 172.16.1.5/24
+    set role wan
     set allowaccess ping
   next
+end
+config system interface
   edit "port5"
     set mode static
     set ip 10.1.0.1/24
+    set role lan
+    set device-identification enable
     set allowaccess ping
   next
+end
+config system interface
   edit "Lo-HC"
     set vdom "root"
     set type loopback
@@ -54,12 +71,6 @@ config system dhcp server
       next
     end
   next
-end
-config system settings
-  set location-id 10.200.1.253
-end
-config system global
-    set hostname site1-H1
 end
 
 ######################################
