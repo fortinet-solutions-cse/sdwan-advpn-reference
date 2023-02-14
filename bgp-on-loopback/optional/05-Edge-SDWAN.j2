@@ -35,7 +35,7 @@ config system sdwan
     edit {{ ns.mbr_i }}
       set interface "H{{ hubloop.index }}_{{ i.ol_type }}"
       set priority 10
-      set source {{ loopback }}
+      set source {{ loopback|ipaddr('address') }}
       set zone "overlay"
     next
     {{ hub_sla_members.append(ns.mbr_i) or "" }}

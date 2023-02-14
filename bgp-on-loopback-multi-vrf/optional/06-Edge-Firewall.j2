@@ -7,8 +7,8 @@ config firewall address
 end
 config firewall ippool
   edit "Lo"
-    set startip {{ loopback }}
-    set endip {{ loopback }}
+    set startip {{ loopback|ipaddr('address') }}
+    set endip {{ loopback|ipaddr('address') }}
   next
 end
 config firewall policy

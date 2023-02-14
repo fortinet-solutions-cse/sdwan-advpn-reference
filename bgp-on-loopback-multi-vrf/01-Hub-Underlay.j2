@@ -5,7 +5,7 @@
 
 {# General settings #}
 config system settings
-  set location-id {{ loopback }}
+  set location-id {{ loopback|ipaddr('address') }}
   set tcp-session-without-syn enable  
   set allow-subnet-overlap enable
 end
@@ -140,7 +140,7 @@ config system interface
     set vdom "root"
     set type loopback
     set vrf {{ pe_vrf }}
-    set ip {{ loopback }}/32
+    set ip {{ loopback|ipaddr('address') }}/32
     set allowaccess ping
   next
 end

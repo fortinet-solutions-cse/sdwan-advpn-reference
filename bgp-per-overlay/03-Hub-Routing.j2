@@ -12,7 +12,7 @@ config router route-map
 end
 config router bgp
   set as {{ project.regions[region].as }}
-  set router-id {{ loopback }}
+  set router-id {{ loopback|ipaddr('address') }}
   set keepalive-timer 5
   set holdtime-timer 15
   set ibgp-multipath enable

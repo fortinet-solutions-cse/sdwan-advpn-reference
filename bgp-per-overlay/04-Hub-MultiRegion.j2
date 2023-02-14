@@ -29,7 +29,7 @@
           set exchange-interface-ip enable
           {% endif %}
           set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
-          set exchange-ip-addr4 {{ loopback }}
+          set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle

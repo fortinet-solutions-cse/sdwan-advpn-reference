@@ -22,7 +22,7 @@ config vpn ipsec phase1-interface
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
-    set exchange-ip-addr4 {{ loopback }}
+    set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
     set add-route disable
     set network-overlay enable
     set network-id {{ project.hubs[h].overlays[i.ol_type].network_id }}
