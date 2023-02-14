@@ -41,6 +41,11 @@ config system interface
     set interface {{ i.parent }}
     {% endif %}
 
+    {# FEX #}
+    {% if i.fex|default(false) %}
+    set type fext-wan
+    {% endif %}       
+
     {# QoS: Add shaping profile and in/outbandwidth only if interface is of type wan and meta fields are both defined #}
     {% if i.role == 'wan' and i.outbandwidth is defined %}
     set estimated-upstream-bandwidth {{ i.outbandwidth }}
@@ -68,6 +73,19 @@ config system interface
     set allowaccess {{ 'ping' if not i.access|default(false) else i.access }}
   next
 end
+
+{# Configure FEX parent interface #}
+{% if i.fex|default(false) %}
+config system interface
+  edit {{ i.parent }}
+    set mode dhcp
+    set allowaccess ping fabric
+    set monitor-bandwidth enable
+    set role wan
+    unset lldp-reception      
+  next
+end
+{% endif %}
 
 {# VRF Leak #}
 {% if i.vrf is defined and i.allow_dia|default(false) %}
