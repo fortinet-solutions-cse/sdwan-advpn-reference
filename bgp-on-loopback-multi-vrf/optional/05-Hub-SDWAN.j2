@@ -11,7 +11,7 @@ config system sdwan
   end
   config members
     {% set ns = namespace(mbr_i = 1) %}
-    {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.dia|default(false) %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined and i.dia|default(false) %}
     edit {{ ns.mbr_i }}
       set interface "{{ i.name }}"
       set zone "underlay"
@@ -19,7 +19,7 @@ config system sdwan
     next
     {% set ns.mbr_i = ns.mbr_i + 1 %}
     {% endfor %}
-    {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
     edit {{ ns.mbr_i }}
       set interface "EDGE_{{ i.ol_type }}"
       set zone "overlay"
