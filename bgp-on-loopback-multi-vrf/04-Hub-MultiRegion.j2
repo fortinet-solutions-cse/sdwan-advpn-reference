@@ -5,7 +5,7 @@
 
 {% if project.regions|reject("==", region)|list|count  %}
 
-{% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+{% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
   {% for r in project.regions if r != region %}
     {% for h in project.regions[r].hubs %}
       {% if i.ol_type in project.hubs[h].overlays %}

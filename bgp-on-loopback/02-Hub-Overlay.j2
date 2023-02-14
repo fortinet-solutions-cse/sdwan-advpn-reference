@@ -1,6 +1,6 @@
 {% import 'Project' as project with context %}
 
-{% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+{% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
 config vpn ipsec phase1-interface
   edit "EDGE_{{ i.ol_type }}"
     set type dynamic

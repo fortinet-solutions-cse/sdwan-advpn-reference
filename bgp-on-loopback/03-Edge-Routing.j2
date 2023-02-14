@@ -42,7 +42,7 @@ config router bgp
     {% endfor %}
   end
   config network
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.advertise|default(true) %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
     edit {{ loop.index }}
       set prefix {{ i.ip|ipaddr(0) }}
     next

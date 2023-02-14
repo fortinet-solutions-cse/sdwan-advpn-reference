@@ -1,43 +1,68 @@
 {% import 'Project' as project with context %}
 
+{# General settings #}
+config system settings
+  set location-id {{ loopback }}
+end
+config system global
+    set hostname {{ hostname }}
+end
+
+{# Loop: Configure underlay interfaces #}
+{% for i in project.profiles[profile].interfaces if i.name is defined %}
 config system interface
-  {% for i in project.profiles[profile].interfaces %}
   edit "{{i.name}}"
+    {# IP #}
     {% if i.ip is defined %}
-      {% if i.ip == 'dhcp' %}
-      set mode dhcp
-      {%  else %}
-      set mode static
-      set ip {{ i.ip }}
-      {% endif %}
+    {% if i.ip == 'dhcp' %}
+    set mode dhcp
+    {%  else %}
+    set mode static
+    set ip {{ i.ip }}
     {% endif %}
-    {# Support VLAN interfaces #}
-    {% if i.vlanid is defined and i.interface is defined %}
+    {% endif %}
+
+    {# VLAN #}
+    {% if i.vlanid is defined and i.parent is defined %}
     set vdom "root"
     set type vlan
     set vlanid {{ i.vlanid }}
-    set interface {{ i.interface }}
+    set interface {{ i.parent }}
     {% endif %}
-    {# Add shaping profile and in/outbandwidth only if interface is of type wan and meta fields are both defined #}
+
+    {# QoS: Add shaping profile and in/outbandwidth only if interface is of type wan and meta fields are both defined #}
     {% if i.role == 'wan' and i.outbandwidth is defined %}
     set estimated-upstream-bandwidth {{ i.outbandwidth }}
-        {% if i.shaping_profile is defined %}
-             set outbandwidth {{ i.outbandwidth }}
-            set egress-shaping-profile {{ i.shaping_profile }}
-        {% endif %}
+      {% if i.shaping_profile is defined %}
+      set outbandwidth {{ i.outbandwidth }}
+      set egress-shaping-profile {{ i.shaping_profile }}
+      {% endif %}
     {% endif %}
     {% if i.role == 'wan' and i.inbandwidth is defined %}
     set estimated-downstream-bandwidth {{ i.inbandwidth }}
-        {% if i.shaping_profile is defined %}
-            set inbandwidth {{ i.inbandwidth }}
-            set ingress-shaping-profile {{ i.shaping_profile }}
-        {% endif %}
+      {% if i.shaping_profile is defined %}
+      set inbandwidth {{ i.inbandwidth }}
+      set ingress-shaping-profile {{ i.shaping_profile }}
+      {% endif %}
     {% endif %}
-    {% set allowaccess = 'ping' if not i.access|default(false) else i.access %}
-    set allowaccess {{ allowaccess }}
+
+    {# Other settings #}
+    {% if i.role == 'wan' %}
+    set role wan
+    {% endif %}
+    {% if i.role == 'lan' %}
+    set role lan
+    set device-identification enable
+    {% endif %}
+    set allowaccess {{ 'ping' if not i.access|default(false) else i.access }}
   next
-  {% endfor %}
-  {# Main Loopback #}
+end
+
+{# End Loop: Configure underlay interfaces #}
+{% endfor %}
+
+{# Main Loopback #}
+config system interface
   edit "Lo"
     set vdom "root"
     set type loopback
@@ -46,11 +71,12 @@ config system interface
   next
 end
 
+{# Create LAN Zone #}
 {% set lan_intf = [] %}
 {% if project.create_lan_zone|default(true) %}
 config system zone
   edit "{{ project.lan_zone|default('lan_zone') }}"
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan'  %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined %}
     {{  lan_intf.append(i.name) or "" }}
     {% endfor %}
     set interface {{ lan_intf|join(' ') }}
@@ -60,7 +86,7 @@ end
 
 {# Support SD-Branch (Fortilink interface) #}
 {% set fortilink_intf = [] %}
-{% for i in project.profiles[profile].interfaces if i.role == 'sd_branch'  %}
+{% for i in project.profiles[profile].interfaces if i.role == 'sd_branch' and i.name is defined %}
 {{  fortilink_intf.append(i.name) or "" }}
 {% endfor %}
 {% if fortilink_intf %}
@@ -74,8 +100,9 @@ config system interface
 end
 {% endif %}
 
+{# Enable DHCP Server on LAN interfaces #}
 config system dhcp server
-  {% for i in project.profiles[profile].interfaces if i.role == 'lan'  %}
+  {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined %}
   {% if i.dhcp_server|default(true) %}
   edit {{ 10 + loop.index0 }}
     set dns-service default
@@ -91,12 +118,4 @@ config system dhcp server
   next
   {% endif %}
   {% endfor %}
-end
-
-config system settings
-  set location-id {{ loopback }}
-end
-
-config system global
-    set hostname {{ hostname }}
 end

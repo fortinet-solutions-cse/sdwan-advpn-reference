@@ -4,7 +4,7 @@
 
 {% for h in project.regions[region].hubs %}
 {% set hubloop = loop %}
-{% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+{% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
 config vpn ipsec phase1-interface
   edit "H{{ hubloop.index }}_{{ i.ol_type }}"
     set interface "{{ i.name }}"

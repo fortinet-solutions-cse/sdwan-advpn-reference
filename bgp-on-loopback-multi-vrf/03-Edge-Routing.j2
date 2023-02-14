@@ -48,7 +48,7 @@ config router bgp
   end
   config network
     {% set network_to_advertise = [] %}
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.advertise|default(true) %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
       {% if not i.ip in network_to_advertise %}
         {{ network_to_advertise.append(i.ip) or "" }}
       {% endif %}
@@ -64,7 +64,7 @@ config router bgp
     edit "{{ pe_vrf }}"
       set role pe
     next
-    {% for i in project.profiles[profile].interfaces if i.vrf is defined %}
+    {% for i in project.profiles[profile].interfaces if i.vrf is defined and i.name is defined %}
     edit "{{ i.vrf }}"
       set role "ce"
       set rd "{{ vrf_rt_as }}:{{ i.vrf }}"

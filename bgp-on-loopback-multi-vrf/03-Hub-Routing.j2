@@ -55,7 +55,7 @@ config router bgp
       set route-map "LOCAL_REGION"
     next
     {% set network_to_advertise = [] %}
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.advertise|default(true) %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
       {% if not i.ip in network_to_advertise %}
         {{ network_to_advertise.append(i.ip) or "" }}
       {% endif %}
@@ -84,7 +84,7 @@ end
 
 {% if project.overlay_stickiness|default(true) %}
 config router policy
-  {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+  {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
   edit {{ loop.index }}
     set input-device "EDGE_{{ i.ol_type }}"
     set output-device "EDGE_{{ i.ol_type }}"

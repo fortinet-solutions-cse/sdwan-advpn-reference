@@ -12,7 +12,7 @@ config router bgp
   config neighbor
     {% for h in project.regions[region].hubs %}
     {% set hubloop = loop %}
-    {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
     edit {{ project.hubs[h].overlays[i.ol_type].tunnel_net|ipaddr(1)|ipaddr('address') }}
       set soft-reconfiguration enable
       set advertisement-interval 1
@@ -26,7 +26,7 @@ config router bgp
     {% endfor %}
   end
   config network
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.advertise|default(true) %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
     edit {{ loop.index }}
       set prefix {{ i.ip|ipaddr(0) }}
     next

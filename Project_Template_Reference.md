@@ -113,7 +113,7 @@ each device interface:
 | role      | 'wan' / 'lan' / 'sd_branch' | Interface role (respectively: WAN-facing / LAN-facing / Fortilink) |                        |
 | ip        |    \<ip/mask\> / 'dhcp'     | Interface IP address (with mask) / Enable DHCP client              | '10.0.1.1/24' / 'dhcp' |
 | vlanid    |           \<int\>           | VLAN ID (for VLAN interfaces, _optional_)                          |          '10'          |
-| interface |           \<str\>           | Parent interface (for VLAN interfaces, _when vlan_id is set_)      |        'port1'         |
+| parent    |           \<str\>           | Parent interface (for VLAN interfaces, _when vlan_id is set_)      |        'port1'         |
 | access    |           \<str\>           | Custom list of services to allow access (such as FGFM, _optional_) |   'ping fgfm https'    |
 
 

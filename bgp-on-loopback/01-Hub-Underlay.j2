@@ -1,23 +1,53 @@
 {% import 'Project' as project with context %}
 
+{# General settings #}
 config system settings
+  set location-id {{ loopback }}
   set tcp-session-without-syn enable
 end
+config system global
+    set hostname {{ hostname }}
+end
 
+{# Loop: Configure underlay interfaces #}
+{% for i in project.profiles[profile].interfaces if i.name is defined %}
 config system interface
-  {% for i in project.profiles[profile].interfaces %}
   edit "{{i.name}}"
+    {# IP #}
+    {% if i.ip is defined %}
     {% if i.ip == 'dhcp' %}
     set mode dhcp
-    {%  elif i.ip %}
+    {%  else %}
     set mode static
     set ip {{ i.ip }}
     {% endif %}
-    {% set allowaccess = 'ping' if not i.access|default(false) else i.access %}
-    set allowaccess {{ allowaccess }}
+    {% endif %}
+
+    {# VLAN #}
+    {% if i.vlanid is defined and i.parent is defined %}
+    set vdom "root"
+    set type vlan
+    set vlanid {{ i.vlanid }}
+    set interface {{ i.parent }}
+    {% endif %}
+
+    {# Other settings #}
+    {% if i.role == 'wan' %}
+    set role wan
+    {% endif %}
+    {% if i.role == 'lan' %}
+    set role lan
+    set device-identification enable
+    {% endif %}
+    set allowaccess {{ 'ping' if not i.access|default(false) else i.access }}
   next
-  {% endfor %}
-  {# Loopback for incoming health-check probes #}
+end
+
+{# End Loop: Configure underlay interfaces #}
+{% endfor %}
+
+{# Loopback for incoming health-check probes #}
+config system interface
   edit "Lo-HC"
     set vdom "root"
     set type loopback
@@ -33,11 +63,12 @@ config system interface
   next
 end
 
+{# Create LAN Zone #}
 {% set lan_intf = [] %}
 {% if project.create_lan_zone|default(true) %}
 config system zone
   edit "{{ project.lan_zone|default('lan_zone') }}"
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan'  %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined %}
     {{  lan_intf.append(i.name) or "" }}
     {% endfor %}
     set interface {{ lan_intf|join(' ') }}
@@ -45,8 +76,9 @@ config system zone
 end
 {% endif %}
 
+{# Enable DHCP Server on LAN interfaces #}
 config system dhcp server
-  {% for i in project.profiles[profile].interfaces if i.role == 'lan'  %}
+  {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined %}
   {% if i.dhcp_server|default(true) %}
   edit {{ 10 + loop.index0 }}
     set dns-service default
@@ -62,12 +94,4 @@ config system dhcp server
   next
   {% endif %}
   {% endfor %}
-end
-
-config system settings
-  set location-id {{ loopback }}
-end
-
-config system global
-    set hostname {{ hostname }}
 end
