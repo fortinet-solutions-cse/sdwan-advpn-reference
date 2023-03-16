@@ -106,6 +106,7 @@ end
   {# Add a default route to pe_vrf for each vrf #}
   config router static
     edit {{ 10000 + i.vrf }}
+      set gateway {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}    
       set device vrf{{ i.vrf }}_leak1
     next
   end
