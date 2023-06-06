@@ -12,10 +12,14 @@ It will generate a set of plain-text files with FOS configuration for each devic
 FortiGate devices (or use the [Configuration Scripts](https://docs.fortinet.com/document/fortigate/7.0.6/administration-guide/780930/configuration-scripts) feature).
 This method is handy to build a quick and simple lab or to quickly validate the changes made to your Jinja templates.
 
+Please also check the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki) page of this repository for some useful tips and examples.
+
+Finally, feel free to report issues and provide your suggestions ([right here](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/issues)).
+
 
 ## Routing Design Flavors
 
-Currently we provide two main routing design flavors - each under its own directory:
+Currently we provide three main design flavors - each under its own directory:
 
 - **"BGP per Overlay"** is the traditional routing design for our SD-WAN/ADVPN deployments,
   in which a separate IBGP session is established over each overlay between an Edge device and a Hub.
@@ -35,8 +39,7 @@ Currently we provide two main routing design flavors - each under its own direct
   That IBGP session will then carry all the routes with extended communities, allowing the neighbor to associate the routes with a specific VRF upon receiving them.
   Traffic is segmented from and into a specific VRF by using a specific encapsulation in the IPSec tunnels.
 
-
-Please refer to our Deployment Guide or consult your Fortinet representatives, in order to select
+Please refer to our Reference Architecture and Deployment Guides or consult your Fortinet representatives, in order to select
 a design flavor which is the most suitable for your project.
 
 
@@ -167,7 +170,7 @@ The template contains the following sections:
 We recommend that you start from the pre-configured examples and adjust them as necessary!  
 A complete up-to-date reference listing all the currently supported parameters in the Project template is available in [this](./Project_Template_Reference.md) file.
 
-For more details, please refer to our Deployment Guide or consult your Fortinet representatives.
+For more details, please refer to the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki) page, check our Deployment Guide or consult your Fortinet representatives.
 
 
 ## Example Project
