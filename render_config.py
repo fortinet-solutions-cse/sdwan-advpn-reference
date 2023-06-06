@@ -4,31 +4,47 @@ import argparse, json, textwrap, jinja2, shutil
 from ansible_collections.ansible.utils.plugins.filter.ipaddr import ipaddr
 from os import listdir, chdir, path, makedirs, remove
 
+print("==============================================")
+print("FOS Reference SD-WAN/ADVPN Config Renderer 7.2")
+print("==============================================")
+
 #############################################
 
-parser = argparse.ArgumentParser(description='FOS Reference SD-WAN/ADVPN Config Renderer',
-                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 usage=textwrap.dedent("""\
+                                 Minimum required arguments are -f <flavor_dir> and -p <project_template>
+                                 NOTE: To avoid confusion, we NO LONGER have the default choice for the Project Template and the inventory!
+                                 Try --help for more details.
+                                 """),
                                  epilog=textwrap.dedent("""\
+                                 
+                                 NOTE: Unlike in previous versions, we NO LONGER have the default choice for the Project Template and the inventory!
+                                 You have to specify them explicitly! If the inventory file is not specified using '-i', it will be read from stdin.
+
                                  Examples:
 
                                  - Render the entire topology config with "BGP on Loopback" design flavor:
-                                    ./render_config.py -f bgp-on-loopback -i inventory.json
+                                    ./render_config.py -f bgp-on-loopback -i inventory.json -p Project.j2
 
                                  - Render the entire topology config with "BGP per Overlay" design flavor:
-                                    ./render_config.py -f bgp-per-overlay -i inventory.json
+                                    ./render_config.py -f bgp-per-overlay -i inventory.json -p Project.j2
+
+                                 - Render the entire topology config with "BGP on Loopback" design flavor, using CSV inventory file:
+                                    ./inventory_from_csv.py --hub inventory.Hub.csv --edge inventory.Edge.csv | ./render_config.py -f bgp-on-loopback -p Project.j2
+
                                  """))
 
 parser.add_argument('-f', '--flavor', metavar='dir', required=True,
                     help='design flavor (specify directory name)')
 
+parser.add_argument('-p', '--project', metavar='file', required=True,
+                    help='Project Template')
+
 parser.add_argument('-i', '--inventory', metavar='file',
-                    help='device inventory file in json format (default="projects/inventory.json" in the flavor directory)')
+                    help='device inventory file in json format (default = read from stdin)')
 
 parser.add_argument('-o', '--outdir', metavar='dir', default='out',
                     help='output directory (default="out")')
-
-parser.add_argument('-p', '--project', metavar='file',
-                    help='project template (default="projects/Project.j2" in the flavor directory)')
 
 parser.add_argument('--skip-optional', action='store_true',
                     help="skip optional templates")
@@ -41,10 +57,11 @@ outdir = path.abspath(args.outdir)
 makedirs(outdir, exist_ok=True)
 
 flavor = args.flavor
-project = args.project or flavor + '/projects/Project.j2'
-inventory = args.inventory or flavor + '/projects/inventory.json'
+project = args.project
+inventory = args.inventory or 0
 
 print("Project Template: " + path.relpath(project))
+print("Inventory: " + (path.relpath(inventory) if inventory else "reading from stdin..."))
 shutil.copyfile(project, flavor + '/Project')
 
 env = jinja2.Environment(
@@ -57,6 +74,7 @@ with open(inventory, 'r') as inventoryFile:
     devices = json.load(inventoryFile)
 
 for devgroup, devlist in devices.items():
+    print()
     print("Rendering group '" + devgroup + "'...")
 
     list_of_templates = sorted(filter(lambda f: devgroup in f,
@@ -79,5 +97,6 @@ for devgroup, devlist in devices.items():
                 print(rendered_stripped, file=outfile)
                 print('', file=outfile)
 
+print()
 print("Rendering complete.")
 remove(flavor + '/Project')

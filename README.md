@@ -120,27 +120,67 @@ Follow these steps:
 
 1. Render the desired design flavor, as follows:
 
-    ```
+    ```shell
     ./render_config.py -f <flavor_dir> -i <inventory_file> -p <project_template>
     ```
 
 By default, the rendered configuration will be saved under "out" sub-directory.
-Also by default, example Project and inventory files will be used under the selected flavor directory ("projects/Project.j2" and "projects/inventory.json" respectively).
+
+You can find an example of an inventory file under each flavor directory ("projects/inventory.json"). As you can see, the expected format is JSON, and it 
+must list the Hubs and the Edges separately, as follows:
+
+```json
+{
+  "Hub": {
+    "hub1": {
+      // ...
+    },
+    "hub2": {
+      // ...
+    }
+    // ...
+  },
+
+  "Edge": {
+    "edge1": {
+      // ...
+    },
+    "edge2": {
+      // ...
+    }
+    // ...
+  }
+}
+```
+
+Alternatively, you can use your inventory file in CSV format, as accepted by the [Import Model Devices from CSV](https://docs.fortinet.com/document/fortimanager/7.2.2/administration-guide/277097/import-model-devices-from-a-csv-file) feature in FortiManager 7.2+. You must still provide two separate CSV files: one for the Hubs and one for the Edges. Use the provided converter to generate a JSON inventory from your CSVs and simply chain its output to the renderer, as follows:
+
+```shell
+inventory_from_csv.py --hubs inventory.Hubs.csv --edge inventory.Edge.csv | ./render_config.py -f bgp-on-loopback -p Project.j2
+```
 
 Rendering example:
 
-```
-% ./render_config.py -f bgp-on-loopback
+```shell
+% ./render_config.py -f bgp-on-loopback -p Project.j2 -i inventory.json
+==============================================
+FOS Reference SD-WAN/ADVPN Config Renderer 7.2
+==============================================
+Project Template: Project.j2
+Inventory: inventory.json
+
 Rendering group 'Hub'...
 ['01-Hub-Underlay.j2', '02-Hub-Overlay.j2', '03-Hub-Routing.j2', '04-Hub-MultiRegion.j2', 'optional/05-Hub-SDWAN.j2', 'optional/06-Hub-Firewall.j2']
 Rendering device site1-H1...
 Rendering device site1-H2...
 Rendering device site2-H1...
+
 Rendering group 'Edge'...
 ['01-Edge-Underlay.j2', '02-Edge-Overlay.j2', '03-Edge-Routing.j2', 'optional/05-Edge-SDWAN.j2', 'optional/06-Edge-Firewall.j2']
 Rendering device site1-1...
 Rendering device site1-2...
 Rendering device site2-1...
+
 Rendering complete.
 
 % ls out
