@@ -121,7 +121,7 @@ Follow these steps:
 1. Render the desired design flavor, as follows:
 
     ```console
-    ./render_config.py -f <flavor_dir> -i <inventory_file> -p <project_template>
+    % ./render_config.py -f <flavor_dir> -i <inventory_file> -p <project_template>
     ```
 
 By default, the rendered configuration will be saved under "out" sub-directory.
@@ -165,7 +165,7 @@ inventory_from_csv.py --hubs inventory.Hubs.csv --edge inventory.Edge.csv | ./re
 
 Rendering example:
 
-```console
+```bash
 % ./render_config.py -f bgp-on-loopback -p Project.j2 -i inventory.json
 ==============================================
 FOS Reference SD-WAN/ADVPN Config Renderer 7.2
