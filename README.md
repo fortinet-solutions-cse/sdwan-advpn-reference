@@ -120,7 +120,7 @@ Follow these steps:
 
 1. Render the desired design flavor, as follows:
 
-    ```shell
+    ```console
     ./render_config.py -f <flavor_dir> -i <inventory_file> -p <project_template>
     ```
 
@@ -133,35 +133,39 @@ must list the Hubs and the Edges separately, as follows:
 {
   "Hub": {
     "hub1": {
-      // ...
+      "var1": "val1",
+      "var2": "val2"
     },
     "hub2": {
-      // ...
+      "var1": "val1",
+      "var2": "val2"
     }
-    // ...
+    
   },
 
   "Edge": {
     "edge1": {
-      // ...
+      "var1": "val1",
+      "var2": "val2"
     },
     "edge2": {
-      // ...
+      "var1": "val1",
+      "var2": "val2"
     }
-    // ...
+    
   }
 }
 ```
 
 Alternatively, you can use your inventory file in CSV format, as accepted by the [Import Model Devices from CSV](https://docs.fortinet.com/document/fortimanager/7.2.2/administration-guide/277097/import-model-devices-from-a-csv-file) feature in FortiManager 7.2+. You must still provide two separate CSV files: one for the Hubs and one for the Edges. Use the provided converter to generate a JSON inventory from your CSVs and simply chain its output to the renderer, as follows:
 
-```shell
+```console
 inventory_from_csv.py --hubs inventory.Hubs.csv --edge inventory.Edge.csv | ./render_config.py -f bgp-on-loopback -p Project.j2
 ```
 
 Rendering example:
 
-```shell
+```console
 % ./render_config.py -f bgp-on-loopback -p Project.j2 -i inventory.json
 ==============================================
 FOS Reference SD-WAN/ADVPN Config Renderer 7.2
