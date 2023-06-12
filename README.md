@@ -106,6 +106,7 @@ Follow these steps:
      - 02-Hub-Overlay
      - 03-Hub-Routing
      - 04-Hub-MultiRegion
+     - 05-Hub-IntraRegion
 
 1. Deploy your devices, assigning the above CLI Template Groups to them and filling in per-device values of the ADOM variables.
 
