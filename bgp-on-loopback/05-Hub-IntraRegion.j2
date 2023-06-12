@@ -1,0 +1,102 @@
+{% import 'Project' as project with context %}
+
+{# Hub2Hub tunnels within the region (for DC-to-DC traffic) #}
+{% if project.intrareg_hub2hub|default(false) %}
+
+{% set my_index = project.regions[region].hubs.index(hostname) + 1 %}
+{% for h in project.regions[region].hubs if h != hostname %}
+  {% set peer_index = project.regions[region].hubs.index(h) + 1 %}
+  {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined and i.ol_type in project.hubs[h].overlays %}
+  config vpn ipsec phase1-interface
+    edit "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
+      set interface "{{ i.name }}"
+      set ike-version 2
+      {% if project.cert_auth|default(true) %}
+      set authmethod signature
+      set certificate "{{ project.edge_cert_template|default('Hub') }}"
+      {% else %}
+      set psksecret {{ project.psk|default('S3cr3t!') }}
+      {% endif %}
+      set keylife 28800
+      set peertype any
+      set proposal aes256-sha256
+      set exchange-interface-ip enable
+      set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
+      set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
+      set network-overlay disable
+      set dpd-retrycount 3
+      set dpd-retryinterval 5
+      set dpd on-idle
+    next
+  end
+  config vpn ipsec phase2-interface
+    edit "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
+      set phase1name "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
+      set proposal aes256-sha256
+      set keepalive enable
+      set keylifeseconds 3600    
+    next
+  end
+  {% if project.create_hub2hub_zone|default(true) %}
+  config system zone
+    edit "{{project.hub2hub_zone|default('hub2hub_overlay')}}"
+      append interface "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
+    next
+  end
+  {% endif %}
+  {% endfor %}
+{% endfor %}
+
+config router community-list
+ {# Mark prefixes originated behind the Hub #}
+  edit "HUB_IN"
+    config rule
+      edit 1
+        set action permit
+        set match "{{ project.regions[region].as }}:95"
+      next
+    end    
+  next
+end
+config router route-map
+  edit "HUB_IN"
+    config rule
+      edit 1
+        set set-community "{{ project.regions[region].as }}:95"
+      next
+    end
+  next
+  edit "LOCAL_HUB2HUB_OUT"
+    config rule
+      edit 1
+        set match-community "HUB_IN"
+        set set-community no-advertise
+        set set-community-additive enable
+      next
+    end
+  next
+end
+config router bgp
+  config neighbor
+  {% for h in project.regions[region].hubs if h != hostname %}
+  edit {{ project.hubs[h].lo_bgp }}
+    set soft-reconfiguration enable
+    set advertisement-interval 1
+    set remote-as {{ project.regions[region].as }}
+    set interface "Lo"
+    set update-source "Lo"
+    set route-map-out "LOCAL_HUB2HUB_OUT"
+  next
+  {% endfor %}
+  end
+  config network
+  {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
+  edit {{ loop.index + 1 }}
+   {# Mark prefixes originated behind the Hub #}
+    set route-map "HUB_IN"
+  next
+  {% endfor %}  
+  end
+end
+
+{% endif %}
