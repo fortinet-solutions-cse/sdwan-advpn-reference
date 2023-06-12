@@ -1,7 +1,7 @@
 {% import 'Project' as project with context %}
 
 {% set hub2hub_ol = [] %}
-{% if project.regions|reject("==", region)|list|count  %}
+{% if project.regions|count > 1  %}
 
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
   {% for r in project.regions if r != region %}
@@ -30,8 +30,7 @@
           {% endif %}
           set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
           set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
-          set network-overlay enable
-          set network-id {{ project.hubs[h].overlays[i.ol_type].network_id }}
+          set network-overlay disable
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -45,6 +44,7 @@
           set keylifeseconds 3600
         next
       end
+      {% if project.overlay_stickiness|default(true) %}
       config router policy
         edit {{ hub2hub_ol|length * 2 + 11 }}
           set input-device "EDGE_{{ i.ol_type }}"
@@ -57,6 +57,7 @@
           set dst {{ project.lan_summary }}
         next
       end
+      {% endif %}
       {{ hub2hub_ol.append(r|upper~'_H'~loop.index~'_'~i.ol_type) or "" }}
       {% endif %}
     {% endfor %}
@@ -66,7 +67,7 @@
 {% if project.create_hub2hub_zone|default(true) %}
 config system zone
   edit "{{project.hub2hub_zone|default('hub2hub_overlay')}}"
-    set interface {{ hub2hub_ol|join(' ') }}
+    append interface {{ hub2hub_ol|join(' ') }}
   next
 end
 {% endif %}
