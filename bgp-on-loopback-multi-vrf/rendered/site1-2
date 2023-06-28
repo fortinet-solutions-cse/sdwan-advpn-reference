@@ -65,6 +65,7 @@ end
   end
   config router static
     edit 10001
+      set gateway 10.200.255.3
       set device vrf1_leak1
     next
   end
@@ -138,7 +139,7 @@ config vpn ipsec phase1-interface
     set keylife 28800
     set peertype any
     set net-device enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
@@ -155,7 +156,7 @@ end
 config vpn ipsec phase2-interface
   edit "H1_ISP1"
     set phase1name "H1_ISP1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -173,7 +174,7 @@ config vpn ipsec phase1-interface
     set keylife 28800
     set peertype any
     set net-device enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
@@ -190,7 +191,7 @@ end
 config vpn ipsec phase2-interface
   edit "H1_ISP2"
     set phase1name "H1_ISP2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -208,7 +209,7 @@ config vpn ipsec phase1-interface
     set keylife 28800
     set peertype any
     set net-device enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
@@ -225,7 +226,7 @@ end
 config vpn ipsec phase2-interface
   edit "H1_MPLS"
     set phase1name "H1_MPLS"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -243,7 +244,7 @@ config vpn ipsec phase1-interface
     set keylife 28800
     set peertype any
     set net-device enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
@@ -260,7 +261,7 @@ end
 config vpn ipsec phase2-interface
   edit "H2_ISP1"
     set phase1name "H2_ISP1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -278,7 +279,7 @@ config vpn ipsec phase1-interface
     set keylife 28800
     set peertype any
     set net-device enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
@@ -295,7 +296,7 @@ end
 config vpn ipsec phase2-interface
   edit "H2_ISP2"
     set phase1name "H2_ISP2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -313,7 +314,7 @@ config vpn ipsec phase1-interface
     set keylife 28800
     set peertype any
     set net-device enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
@@ -330,7 +331,7 @@ end
 config vpn ipsec phase2-interface
   edit "H2_MPLS"
     set phase1name "H2_MPLS"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next

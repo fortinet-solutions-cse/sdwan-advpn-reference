@@ -25,7 +25,7 @@ config vpn ipsec phase1-interface
     set keylife 28800
     set peertype any
     set net-device enable
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set idle-timeout enable
     set auto-discovery-receiver enable
     set encapsulation vpn-id-ipip
@@ -42,7 +42,7 @@ end
 config vpn ipsec phase2-interface
   edit "{{ ol_tun_name }}"
     set phase1name "{{ ol_tun_name }}"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
     set keylifeseconds 3600
   next

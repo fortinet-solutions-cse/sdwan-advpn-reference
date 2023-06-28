@@ -76,7 +76,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set auto-discovery-sender enable
     set exchange-ip-addr4 10.200.2.253
     set add-route disable
@@ -90,7 +90,7 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_ISP1"
     set phase1name "EDGE_ISP1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -101,7 +101,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set auto-discovery-sender enable
     set exchange-ip-addr4 10.200.2.253
     set add-route disable
@@ -115,7 +115,7 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_MPLS"
     set phase1name "EDGE_MPLS"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -215,15 +215,14 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set proposal aes256-sha256
+          set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 100.64.1.1
           set exchange-ip-addr4 10.200.2.253
-          set network-overlay enable
-          set network-id 11
+          set network-overlay disable
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -232,7 +231,7 @@ end
       config vpn ipsec phase2-interface
         edit "WEST_H1_ISP1"
           set phase1name "WEST_H1_ISP1"
-          set proposal aes256-sha256
+          set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -256,15 +255,14 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set proposal aes256-sha256
+          set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 100.64.2.1
           set exchange-ip-addr4 10.200.2.253
-          set network-overlay enable
-          set network-id 21
+          set network-overlay disable
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -273,7 +271,7 @@ end
       config vpn ipsec phase2-interface
         edit "WEST_H2_ISP1"
           set phase1name "WEST_H2_ISP1"
-          set proposal aes256-sha256
+          set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -297,15 +295,14 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set proposal aes256-sha256
+          set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 172.16.1.5
           set exchange-ip-addr4 10.200.2.253
-          set network-overlay enable
-          set network-id 13
+          set network-overlay disable
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -314,7 +311,7 @@ end
       config vpn ipsec phase2-interface
         edit "WEST_H1_MPLS"
           set phase1name "WEST_H1_MPLS"
-          set proposal aes256-sha256
+          set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -338,15 +335,14 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set proposal aes256-sha256
+          set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 172.16.2.5
           set exchange-ip-addr4 10.200.2.253
-          set network-overlay enable
-          set network-id 23
+          set network-overlay disable
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -355,7 +351,7 @@ end
       config vpn ipsec phase2-interface
         edit "WEST_H2_MPLS"
           set phase1name "WEST_H2_MPLS"
-          set proposal aes256-sha256
+          set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -374,7 +370,7 @@ end
       end
 config system zone
   edit "hub2hub_overlay"
-    set interface WEST_H1_ISP1 WEST_H2_ISP1 WEST_H1_MPLS WEST_H2_MPLS
+    append interface WEST_H1_ISP1 WEST_H2_ISP1 WEST_H1_MPLS WEST_H2_MPLS
   next
 end
 config router access-list
@@ -457,6 +453,11 @@ config router bgp
     next
   end
 end
+
+######################################
+# 05-Hub-IntraRegion.j2
+######################################
+
 
 ######################################
 # optional/05-Hub-SDWAN.j2

@@ -19,7 +19,7 @@
       {% endif %}
       set keylife 28800
       set peertype any
-      set proposal aes256-sha256
+      set proposal aes256gcm-prfsha256
       set exchange-interface-ip enable
       set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
       set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
@@ -32,7 +32,7 @@
   config vpn ipsec phase2-interface
     edit "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
       set phase1name "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
-      set proposal aes256-sha256
+      set proposal aes256gcm
       set keepalive enable
       set keylifeseconds 3600    
     next

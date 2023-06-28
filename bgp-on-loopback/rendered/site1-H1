@@ -83,7 +83,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set auto-discovery-sender enable
     set exchange-ip-addr4 10.200.1.253
     set add-route disable
@@ -97,7 +97,7 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_ISP1"
     set phase1name "EDGE_ISP1"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -108,7 +108,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set auto-discovery-sender enable
     set exchange-ip-addr4 10.200.1.253
     set add-route disable
@@ -122,7 +122,7 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_ISP2"
     set phase1name "EDGE_ISP2"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -133,7 +133,7 @@ config vpn ipsec phase1-interface
     set ike-version 2
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256-sha256
+    set proposal aes256gcm-prfsha256
     set auto-discovery-sender enable
     set exchange-ip-addr4 10.200.1.253
     set add-route disable
@@ -147,7 +147,7 @@ end
 config vpn ipsec phase2-interface
   edit "EDGE_MPLS"
     set phase1name "EDGE_MPLS"
-    set proposal aes256-sha256
+    set proposal aes256gcm
     set keepalive enable
   next
 end
@@ -252,15 +252,14 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set proposal aes256-sha256
+          set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 100.64.4.1
           set exchange-ip-addr4 10.200.1.253
-          set network-overlay enable
-          set network-id 41
+          set network-overlay disable
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -269,7 +268,7 @@ end
       config vpn ipsec phase2-interface
         edit "EAST_H1_ISP1"
           set phase1name "EAST_H1_ISP1"
-          set proposal aes256-sha256
+          set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -293,15 +292,14 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set proposal aes256-sha256
+          set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
           set remote-gw 172.16.4.5
           set exchange-ip-addr4 10.200.1.253
-          set network-overlay enable
-          set network-id 43
+          set network-overlay disable
           set dpd-retrycount 3
           set dpd-retryinterval 5
           set dpd on-idle
@@ -310,7 +308,7 @@ end
       config vpn ipsec phase2-interface
         edit "EAST_H1_MPLS"
           set phase1name "EAST_H1_MPLS"
-          set proposal aes256-sha256
+          set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -329,7 +327,7 @@ end
       end
 config system zone
   edit "hub2hub_overlay"
-    set interface EAST_H1_ISP1 EAST_H1_MPLS
+    append interface EAST_H1_ISP1 EAST_H1_MPLS
   next
 end
 config router access-list
@@ -400,6 +398,11 @@ config router bgp
     next
   end
 end
+
+######################################
+# 05-Hub-IntraRegion.j2
+######################################
+
 
 ######################################
 # optional/05-Hub-SDWAN.j2
