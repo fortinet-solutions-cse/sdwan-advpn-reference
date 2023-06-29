@@ -1,9 +1,9 @@
 {% import 'Project' as project with context %}
 
 {# Hub2Hub tunnels within the region (for DC-to-DC traffic) #}
+{% set my_index = project.regions[region].hubs.index(hostname) + 1 %}
 {% if project.intrareg_hub2hub|default(false) %}
 
-{% set my_index = project.regions[region].hubs.index(hostname) + 1 %}
 {% for h in project.regions[region].hubs if h != hostname %}
   {% set peer_index = project.regions[region].hubs.index(h) + 1 %}
   {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined and i.ol_type in project.hubs[h].overlays %}
