@@ -1,0 +1,102 @@
+{#                            Project Template                                #}
+{# -------------------------------------------------------------------------- #}
+{# This file describes the project: its Regions, Hubs and Device Profiles     #}
+{# Normally, this is the only file that needs to be edited between            #}
+{# different projects                                                         #}
+{# -------------------------------------------------------------------------- #}
+{# Design flavor: "BGP per Overlay"                                           #}
+{# Please contact your Fortinet representatives for more details              #}
+
+{#
+  Per-device variables used:
+  - Required:
+    - hostname
+    - loopback
+    - profile
+    - region
+    - lan_ip
+#}
+
+{# Optional Settings #}
+{% set cert_auth = false %}
+
+{#  Mandatory Global Definitions #}
+{% set tunnel_summary = '10.200.0.0/14' %}
+{% set lan_summary = '10.0.0.0/8' %}
+
+{# Regions #}
+{% set regions = {
+    'SuperWAN': {
+      'as': '65001',
+      'hubs': [ 'site1-H1', 'site1-H2' ]
+    }
+  }
+%}
+
+{# Device Profiles #}
+{% set profiles = {
+
+    'DualISP': {
+      'interfaces': [
+        {
+          'name': 'port1',
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp',
+          'dia': true
+        },
+        {
+          'name': 'port2',
+          'role': 'wan',
+          'ol_type': 'ISP2',
+          'ip': 'dhcp',
+          'dia': true
+        },
+        {
+          'name': 'port5',
+          'role': 'lan',
+          'ip': lan_ip
+        }
+      ]
+    } 
+
+  }
+%}
+
+{# Hubs #}
+{% set hubs = {
+
+    'site1-H1': {
+      'lo_bgp': '10.200.1.253',
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.1.1',
+          'tunnel_net': '10.201.1.0/24',
+          'network_id': '11'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.1.9',
+          'tunnel_net': '10.202.1.0/24',
+          'network_id': '12'
+        }
+      }
+    },
+
+    'site1-H2': {
+      'lo_bgp': '10.200.1.254',      
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.2.1',
+          'tunnel_net': '10.201.2.0/24',
+          'network_id': '21'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.2.9',
+          'tunnel_net': '10.202.2.0/24',
+          'network_id': '22'
+        }
+      }
+    }
+
+  }
+%}

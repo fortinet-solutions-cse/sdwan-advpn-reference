@@ -1,0 +1,41 @@
+{
+  "Hub": {
+
+    "site1-H1": {
+      "hostname": "site1-H1",
+      "loopback": "10.200.1.253",
+      "profile": "DualISP",
+      "region": "SuperWAN",
+      "lan_ip": "10.1.0.1/24"
+    },
+
+    "site1-H2": {
+      "hostname": "site1-H2",
+      "loopback": "10.200.1.254",
+      "profile": "DualISP",
+      "region": "SuperWAN",
+      "lan_ip": "10.2.0.1/24"
+    }    
+
+  },
+
+  "Edge": {
+
+    "site1-1": {
+      "hostname": "site1-1",
+      "loopback": "10.200.1.1",
+      "profile": "DualISP",
+      "region": "SuperWAN",
+      "lan_ip": "10.0.1.1/24"
+    },
+
+    "site1-2": {
+      "hostname": "site1-2",
+      "loopback": "10.200.1.2",
+      "profile": "DualISP",
+      "region": "SuperWAN",
+      "lan_ip": "10.0.2.1/24"
+    }
+
+  }
+}

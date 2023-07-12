@@ -14,7 +14,8 @@
     - loopback
     - profile
     - region
-    - lan_ip
+    - lan_ip_edu
+    - lan_ip_fin
     - mpls_wan_ip (whenever the profile includes MPLS link)
     - mpls_wan_gateway (whenever the profile includes MPLS link)
   - Optional:
@@ -23,24 +24,7 @@
     - shaping_profile
 #}
 
-{# Optional Settings (showing default values) #}
-{#
-{% set create_hub2hub_zone = true %}
-{% set hub2hub_zone = 'hub2hub_overlay' %}
-{% set create_lan_zone = true %}
-{% set lan_zone = 'lan_zone' %}
-{% set create_lan_dhcp_server = true %}
-
-{% set cert_auth = true %}
-{% set hub_cert_template = 'Hub' %}
-{% set edge_cert_template = 'Edge' %}
-{% set psk = 'S3cr3t!' %}
-
-{% set overlay_stickiness = true %}
-{% set intrareg_hub2hub = false %}
-{% set multireg_advpn = false %}
-{% set hub_hc_server = '10.200.99.1' %}
-#}
+{# Optional Settings #}
 {% set cert_auth = false %}
 {% set multireg_advpn = true %}
 
@@ -67,41 +51,6 @@
 
 {# Device Profiles #}
 {% set profiles = {
-
-    'SDB-Silver': {
-      'interfaces': [
-        {
-          'name': 'port1',
-          'role': 'wan',
-          'ol_type': 'ISP1',
-          'ip': 'dhcp',
-          'outbandwidth': outbandwidth,
-          'inbandwidth': inbandwidth,
-          'shaping_profile': shaping_profile,
-          'dia': true
-        },
-        {
-          'name': 'port4',
-          'role': 'wan',
-          'ol_type': 'MPLS',
-          'ip': mpls_wan_ip,
-          'outbandwidth': outbandwidth,
-          'inbandwidth': inbandwidth,
-          'shaping_profile': shaping_profile
-        },
-        {
-          'name': 'port8',
-          'role': 'sd_branch'
-        },
-        {
-          'name': 'vl_users',
-          'role': 'lan',
-          'ip': lan_ip,
-          'vlanid': 10,
-          'parent': 'fortilink'
-        }
-      ]
-    },
 
     'Silver': {
       'interfaces': [
