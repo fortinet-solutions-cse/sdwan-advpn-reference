@@ -16,7 +16,12 @@ config vpn ipsec phase1-interface
     {% endif %}
     set peertype any
     set proposal aes256gcm-prfsha256
+    {% if project.intrareg_advpn|default(true) %}
     set auto-discovery-sender enable
+    {% else %}
+    set auto-discovery-sender disable
+    set exchange-interface-ip enable
+    {% endif %}    
     set encapsulation vpn-id-ipip
     set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
     set add-route disable
