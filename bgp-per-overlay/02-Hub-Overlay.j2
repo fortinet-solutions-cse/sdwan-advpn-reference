@@ -15,7 +15,12 @@ config vpn ipsec phase1-interface
     set peertype any
     set mode-cfg enable
     set proposal aes256gcm-prfsha256
+    {% if project.intrareg_advpn|default(true) %}
     set auto-discovery-sender enable
+    {% else %}
+    set auto-discovery-sender disable
+    set exchange-interface-ip enable
+    {% endif %}       
     set add-route disable
     set network-overlay enable
     set network-id {{ project.hubs[hostname].overlays[i.ol_type].network_id }}

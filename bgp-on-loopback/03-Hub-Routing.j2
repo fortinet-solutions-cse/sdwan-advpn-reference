@@ -37,7 +37,11 @@ config router bgp
       set remote-as {{ project.regions[region].as }}
       set interface "Lo"
       set update-source "Lo"
+      {% if project.intrareg_advpn|default(true) %}
       set route-reflector-client enable
+      {% else %}
+      set route-reflector-client disable
+      {% endif %}
     next
   end
   config neighbor-range
