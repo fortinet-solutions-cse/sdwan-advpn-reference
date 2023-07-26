@@ -100,6 +100,29 @@ local topology and the connectivity options for each site:
 %}
 ```
 
+Apart from the list of interfaces, the profile can also specify that a device is in HA cluster mode:
+
+| Parameter | Values | Description                           | Example |
+|:----------|:------:|:--------------------------------------|:-------:|
+| ha        |  true  | Device is in HA cluster _(optional)*_ |         |
+
+\* - By default, the device is considered NOT in HA cluster. When in HA cluster, certain configuration 
+     will be skipped (mainly, the hostname will not be set, since the FortiManager forbids changing device hostname in HA mode).
+
+Example:
+
+```
+{# Device Profiles #}
+{% set profiles = {
+    'Profile1': {
+      'ha': true,
+      'interfaces': [
+        {# List of interfaces #}
+      ]
+    }
+%}
+```
+
 Each deployed SD-WAN site will be assigned a profile.
 
 The following tables lists all the supported parameters that can be configured for
