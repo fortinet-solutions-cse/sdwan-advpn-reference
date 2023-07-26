@@ -1,0 +1,122 @@
+{#                            Project Template                                #}
+{# -------------------------------------------------------------------------- #}
+{# This file describes the project: its Regions, Hubs and Device Profiles     #}
+{# Normally, this is the only file that needs to be edited between            #}
+{# different projects                                                         #}
+{# -------------------------------------------------------------------------- #}
+{# Design flavor: "BGP on Loopback" (Multi-VRF)                               #}
+{# Please contact your Fortinet representatives for more details              #}
+
+{# This is a quick reference listing supported parameters.                    #}
+{# See "Project_Template_Reference.md" for more information.                  #}
+
+{#
+  Per-device variables used:
+  - Required:
+    - hostname
+    - loopback
+    - profile
+    - region
+    - (+ other variables used explicitly in this file, e.g. in Regions, Profiles or Hubs)
+#}
+
+{# Optional Settings (showing default values) #}
+{#
+{% set create_hub2hub_zone = true %}
+{% set hub2hub_zone = 'hub2hub_overlay' %}
+{% set create_lan_zone = true %}
+{% set lan_zone = 'lan_zone' %}
+{% set create_lan_dhcp_server = true %}
+
+{% set create_vrf_leak_zone = true %}
+{% set vrf_leak_zone = 'vrfs_leak_zone' %}
+{% set pevrf_leak_zone = 'pevrf_leak_zone' %}
+{% set vrf_leak_summary = 10.200.255.0/24 %}
+{% set vrf_rt_as = '65000' %}
+
+{% set cert_auth = true %}
+{% set hub_cert_template = 'Hub' %}
+{% set edge_cert_template = 'Edge' %}
+{% set psk = 'S3cr3t!' %}
+
+{% set overlay_stickiness = true %}
+{% set intrareg_advpn = true %}
+{% set multireg_advpn = false %}
+{% set hub_hc_server = '10.200.99.1' %}
+#}
+
+{#  Mandatory Global Definitions #}
+{#
+{% set lo_summary =  %}
+{% set lan_summary =  %}
+#}
+
+{# Regions #}
+{#
+{% set regions = {
+    'RegionName': {
+      'as': ,
+      'lo_summary': ,
+      'pe_vrf': ,
+      'vrfs': [
+        {
+          'id': ,
+          'lan_summary'
+        },
+        ...
+      ],
+      'hubs': [  ]
+    },
+    ...
+  }
+%}
+#}
+
+{# Device Profiles #}
+{#
+{% set profiles = {
+    'ProfileName': {
+      'ha': false,
+      'interfaces': [
+        {
+          'name': ,
+          'role': ,
+          'ip': ,
+          'vlanid': ,
+          'parent': ,
+          'access': ,
+          'ol_type': ,
+          'outbandwidth': ,
+          'inbandwidth': ,
+          'shaping_profile': ,
+          'dia': ,
+          'advertise': ,
+          'vrf': ,
+          'allow_dia': ,
+          'leak_npu_link':
+        },
+        ...
+      ]
+    },
+    ...
+  }
+%}
+#}
+
+{# Hubs #}
+{#
+{% set hubs = {
+    'HubName': {
+      'lo_bgp': ,
+      'overlays': {
+        'OverlayName': {
+          'wan_ip': ,
+          'network_id': 
+        },
+        ...
+      }
+    },
+    ...
+  }
+%}
+#}

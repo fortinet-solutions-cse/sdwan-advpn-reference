@@ -23,23 +23,7 @@
     - shaping_profile
 #}
 
-{# Optional Settings (showing default values) #}
-{#
-{% set create_hub2hub_zone = true %}
-{% set hub2hub_zone = 'hub2hub_overlay' %}
-{% set create_lan_zone = true %}
-{% set lan_zone = 'lan_zone' %}
-{% set create_lan_dhcp_server = true %}
-
-{% set cert_auth = true %}
-{% set hub_cert_template = 'Hub' %}
-{% set edge_cert_template = 'Edge' %}
-{% set psk = 'S3cr3t!' %}
-
-{% set intrareg_advpn = true %}
-{% set multireg_advpn = false %}
-{% set hub_hc_server = '10.200.99.1' %}
-#}
+{# Optional Settings #}
 
 {#  Mandatory Global Definitions #}
 {% set tunnel_summary = '10.200.0.0/14' %}
