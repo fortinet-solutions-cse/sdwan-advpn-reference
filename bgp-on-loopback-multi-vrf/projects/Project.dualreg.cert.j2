@@ -4,7 +4,7 @@
 {# Normally, this is the only file that needs to be edited between            #}
 {# different projects                                                         #}
 {# -------------------------------------------------------------------------- #}
-{# Design flavor: "BGP on Loopback"                                           #}
+{# Design flavor: "BGP on Loopback" (Multi-VRF)                               #}
 {# Please contact your Fortinet representatives for more details              #}
 
 {#
@@ -14,7 +14,8 @@
     - loopback
     - profile
     - region
-    - lan_ip
+    - lan_ip_edu
+    - lan_ip_fin
     - mpls_wan_ip (whenever the profile includes MPLS link)
     - mpls_wan_gateway (whenever the profile includes MPLS link)
   - Optional:
@@ -23,25 +24,7 @@
     - shaping_profile
 #}
 
-{# Optional Settings (showing default values) #}
-{#
-{% set create_hub2hub_zone = true %}
-{% set hub2hub_zone = 'hub2hub_overlay' %}
-{% set create_lan_zone = true %}
-{% set lan_zone = 'lan_zone' %}
-{% set create_lan_dhcp_server = true %}
-
-{% set cert_auth = true %}
-{% set hub_cert_template = 'Hub' %}
-{% set edge_cert_template = 'Edge' %}
-{% set psk = 'S3cr3t!' %}
-
-{% set overlay_stickiness = true %}
-{% set intrareg_hub2hub = false %}
-{% set intrareg_advpn = true %}
-{% set multireg_advpn = false %}
-{% set hub_hc_server = '10.200.99.1' %}
-#}
+{# Optional Settings #}
 {% set multireg_advpn = true %}
 
 {#  Mandatory Global Definitions #}
@@ -52,56 +35,39 @@
 {% set regions = {
     'West': {
       'as': '65001',
-      'lan_summary': '10.0.0.0/14',
       'lo_summary': '10.200.1.0/24',
-      'hubs': [ 'site1-H1', 'site1-H2' ]
+      'hubs': [ 'site1-H1', 'site1-H2' ],
+      'vrfs': [
+        {
+          'id': 1,
+          'lan_summary': '10.0.0.0/14'
+        },
+        {
+          'id': 2,
+          'lan_summary': '10.0.0.0/14'
+        }
+      ]
     },
     'East': {
       'as': '65002',
-      'lan_summary': '10.4.0.0/14',
       'lo_summary': '10.200.2.0/24',
-      'hubs': [ 'site2-H1' ]
+      'hubs': [ 'site2-H1' ],
+      'vrfs': [
+        {
+          'id': 1,
+          'lan_summary': '10.4.0.0/14'
+        },
+        {
+          'id': 2,
+          'lan_summary': '10.4.0.0/14'
+        }
+      ]
     }
   }
 %}
 
 {# Device Profiles #}
 {% set profiles = {
-
-    'SDB-Silver': {
-      'interfaces': [
-        {
-          'name': 'port1',
-          'role': 'wan',
-          'ol_type': 'ISP1',
-          'ip': 'dhcp',
-          'outbandwidth': outbandwidth,
-          'inbandwidth': inbandwidth,
-          'shaping_profile': shaping_profile,
-          'dia': true
-        },
-        {
-          'name': 'port4',
-          'role': 'wan',
-          'ol_type': 'MPLS',
-          'ip': mpls_wan_ip,
-          'outbandwidth': outbandwidth,
-          'inbandwidth': inbandwidth,
-          'shaping_profile': shaping_profile
-        },
-        {
-          'name': 'port8',
-          'role': 'sd_branch'
-        },
-        {
-          'name': 'vl_users',
-          'role': 'lan',
-          'ip': lan_ip,
-          'vlanid': 10,
-          'parent': 'fortilink'
-        }
-      ]
-    },
 
     'Silver': {
       'interfaces': [
@@ -127,7 +93,15 @@
         {
           'name': 'port5',
           'role': 'lan',
-          'ip': lan_ip
+          'vrf': 1,
+          'allow_dia': true,
+          'ip': lan_ip_edu
+        },
+        {
+          'name': 'port6',
+          'role': 'lan',
+          'vrf': 2,
+          'ip': lan_ip_fin
         }
       ]
     },
@@ -163,7 +137,15 @@
         {
           'name': 'port5',
           'role': 'lan',
-          'ip': lan_ip
+          'vrf': 1,
+          'allow_dia': true,
+          'ip': lan_ip_edu
+        },
+        {
+          'name': 'port6',
+          'role': 'lan',
+          'vrf': 2,
+          'ip': lan_ip_fin
         }
       ]
     }

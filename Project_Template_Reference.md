@@ -316,7 +316,7 @@ To summarize, when onboarding a new device, the following three types of variabl
 
 1. The variables explicitly used in your Project template
 
-The following table summarizes all the required per-device variables:
+The following table summarizes the required per-device variables, except for the last category (which, of course, depends on your Project Template):
 
 | Parameter        | Values      | Description                                                            | Example        |
 |------------------|-------------|------------------------------------------------------------------------|----------------|
@@ -324,9 +324,15 @@ The following table summarizes all the required per-device variables:
 | profile          | \<str\>     | One of the profiles defined in Project template                        | 'Silver'       |
 | hostname         | \<str\>     | Device hostname                                                        | 'site1-1'      |
 | loopback         | \<ip\>      | Device main loopback IP                                                | '10.200.1.1'   |
-| lan_ip           | \<ip/mask\> | LAN interface IP (and mask) _(only in provided examples)_              | '10.0.1.1/24'  |
-| mpls_wan_ip      | \<ip/mask\> | MPLS interface IP (and mask) _(only in provided examples)_             | '172.16.0.1/2  |
-| mpls_wan_gateway | \<ip\>      | Next-hop gateway for MPLS transport _(only in provided examples)_      | '172.16.0.2'   |
-| outbandwidth     | \<int\      | Egress WAN bandwidth _(only in provided examples)_                     | '8000'         |
-| inbandwidth      | \<int\      | Ingress WAN bandwidth _(only in provided examples)_                    | '8000'         |
-| shaping_profile  | \<str\      | Shaping profile to apply to WAN underlay _(only in provided examples)_ | 'Edge_Shaping' |
+
+The following table summarizes the required per-device variables from the last category, using the most complex Project Template provided in the examples folder
+(`Project.dualreg.cert.j2`):
+
+| Parameter        | Values      | Description                                                                    | Example        |
+|------------------|-------------|--------------------------------------------------------------------------------|----------------|
+| lan_ip           | \<ip/mask\> | LAN interface IP (and mask) _(only in 'Project.dualreg.cert.j2')_              | '10.0.1.1/24'  |
+| mpls_wan_ip      | \<ip/mask\> | MPLS interface IP (and mask) _(only in 'Project.dualreg.cert.j2')_             | '172.16.0.1/2  |
+| mpls_wan_gateway | \<ip\>      | Next-hop gateway for MPLS transport _(only in 'Project.dualreg.cert.j2')_      | '172.16.0.2'   |
+| outbandwidth     | \<int\      | Egress WAN bandwidth _(only in 'Project.dualreg.cert.j2')_                     | '8000'         |
+| inbandwidth      | \<int\      | Ingress WAN bandwidth _(only in 'Project.dualreg.cert.j2')_                    | '8000'         |
+| shaping_profile  | \<str\      | Shaping profile to apply to WAN underlay _(only in 'Project.dualreg.cert.j2')_ | 'Edge_Shaping' |

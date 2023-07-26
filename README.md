@@ -220,8 +220,12 @@ For more details, please refer to the [Wiki](https://github.com/fortinet-solutio
 
 ## Example Project
 
-All the provided examples and the rendered configuration refer to the following project:
+You will find several examples of Project Templates and inventory files under the "projects" sub-directory of each design flavor. 
+The most complex example is in `Project.dualreg.cert.j2` with its corresponding inventory in `inventory.dualreg.json`.
+The rendered FOS configuration (under the "rendered" sub-directory) also corresponds to this project. 
+
+The following diagram describes this project:
 
 ![](example_project.png)
 
-**NOTE:** For the Multi-VRF flavor, there are two Customer VRFs used in our examples. The second VRF is not shown on the above diagram.
+**NOTE:** For the Multi-VRF flavor, there are two Customer VRFs in this project. The second VRF is not shown on the above diagram.
