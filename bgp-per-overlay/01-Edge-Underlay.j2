@@ -5,7 +5,9 @@ config system settings
   set location-id {{ loopback|ipaddr('address') }}
 end
 config system global
-    set hostname {{ hostname }}
+  {% if not project.profiles[profile].ha|default(false) and hostname is defined %}
+  set hostname {{ hostname }}
+  {% endif %}
 end
 
 {# Loop: Configure underlay interfaces #}

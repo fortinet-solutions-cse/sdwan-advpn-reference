@@ -9,7 +9,9 @@ config system settings
   set allow-subnet-overlap enable
 end
 config system global
-    set hostname {{ hostname }}
+  {% if not project.profiles[profile].ha|default(false) and hostname is defined %}
+  set hostname {{ hostname }}
+  {% endif %}
 end
 
 {# Loop: Configure underlay interfaces #}
