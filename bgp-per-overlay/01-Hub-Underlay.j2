@@ -6,7 +6,9 @@ config system settings
   set tcp-session-without-syn enable
 end
 config system global
-    set hostname {{ hostname }}
+  {% if not project.profiles[profile].ha|default(false) and hostname is defined %}
+  set hostname {{ hostname }}
+  {% endif %}
 end
 
 {# Loop: Configure underlay interfaces #}
