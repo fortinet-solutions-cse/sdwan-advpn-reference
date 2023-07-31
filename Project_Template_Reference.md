@@ -100,6 +100,8 @@ local topology and the connectivity options for each site:
 %}
 ```
 
+NOTE: All the Edge devices and the Hubs must be assigned a profile!
+
 Apart from the list of interfaces, the profile can also specify that a device is in HA cluster mode:
 
 | Parameter | Values | Description                           | Example |
@@ -145,6 +147,7 @@ each device interface:
 | Parameter       | Values  | Description                                            |    Example     |
 |:----------------|:-------:|:-------------------------------------------------------|:--------------:|
 | ol_type         | \<str\> | Overlay to connect to over this interface*             |     'ISP1'     |
+| ul_name         | \<str\> | Local underlay transport name _(optional)_             |     'ISP1'     |
 | outbandwidth    | \<int\> | Total egress bandwidth _(optional)_                    |     '8000'     |
 | inbandwidth     | \<int\> | Total ingress bandwidth _(optional)_                   |     '8000'     |
 | shaping_profile | \<str\> | Shaping profile to apply _(optional)_                  | 'Edge_Shaping' |
@@ -172,6 +175,31 @@ each device interface:
 
 \* - We provide Internet access for CE VRFs by configuring VRF leaking into the PE VRF (where all underlays and overlays are located).
 \*\* - Leave empty for VM and non-ASIC models in order to use software VDOM links.
+
+
+### Overlay tunnel naming convention
+
+An overlay tunnel will be generated from each WAN-facing interface in the Edge device profile to each Hub 
+serving the device region. The target overlay (to which the tunnel will connect) is defined by the 
+`ol_type` parameter. The default naming convention for the generated tunnels on the Edge device is:
+
+```
+H<hub_index>_<ol_type>
+```
+
+Optionally, a local underlay transport name can be added. This happens automatically, if the `ul_name` 
+parameter is defined. The naming convention then becomes:
+
+```
+<ul_name>-H<hub_index>_<ol_type>
+```
+
+On the Hub side, the Dial-Up overlays are generated with the following naming convention:
+
+```
+EDGE_<ol_type>
+```
+
 
 ## Hubs
 

@@ -5,7 +5,8 @@
 {% set ol_tunnels = [] %}
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
   {# Track generated tunnels, to handle duplicates by adding extra index as a suffix #}
-  {% set ol_tun = "H"~hubloop.index~"_"~i.ol_type %}
+  {% set ul_name = i.ul_name~"-" if i.ul_name is defined else "" %}
+  {% set ol_tun = ul_name~"H"~hubloop.index~"_"~i.ol_type %}
   {% set count = ol_tunnels|select("equalto", ol_tun)|list|count %}
   {# Tunnel name = 'H<hub_number>_<ol_type>' if no duplicates, otherwise 'H<hub_number>_<ol_type>_<index>' #}
   {% set ol_tun_name = ol_tun if not count else ol_tun~'_'~(count+1) %}
