@@ -13,7 +13,7 @@ config vpn ipsec phase1-interface
     set psksecret {{ project.psk|default('S3cr3t!') }}
     {% endif %}
     set peertype any
-    set proposal aes256gcm-prfsha256
+    set proposal aes256gcm-prfsha256 aes256-sha256
     {% if project.intrareg_advpn|default(true) %}
     set auto-discovery-sender enable
     {% else %}
