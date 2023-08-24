@@ -1,3 +1,10 @@
+{# 02-Hub-Overlay.j2                                                          #}
+{# Release: 7.0                                                               #}
+{# Design flavor: "BGP on Loopback"                                           #}
+{# -------------------------------------------------------------------------- #}
+{# Disclaimer: Normally, this file is not supposed to be edited by users.     #}
+{# -------------------------------------------------------------------------- #}
+
 {% import 'Project' as project with context %}
 
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' %}
