@@ -7,7 +7,7 @@
 
 {% import 'Project' as project with context %}
 
-{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(1) %}
 {% set vrf_rt_as = project.vrf_rt_as|default('65000') %}
 
 config router route-map

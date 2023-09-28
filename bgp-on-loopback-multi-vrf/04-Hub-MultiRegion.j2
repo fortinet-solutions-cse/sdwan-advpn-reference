@@ -8,7 +8,7 @@
 {% import 'Project' as project with context %}
 
 {% set hub2hub_ol = [] %}
-{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(1) %}
 
 {% if project.regions|count > 1  %}
 

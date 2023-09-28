@@ -7,7 +7,7 @@
 
 {% import 'Project' as project with context %}
 
-{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(1) %}
 {% set vrf_leak_summary = project.vrf_leak_summary|default('10.200.255.0/24') %}
 
 {# General settings #}

@@ -7,7 +7,7 @@
 
 {% import 'Project' as project with context %}
 
-{% set pe_vrf = project.regions[region].pe_vrf|default(32) %}
+{% set pe_vrf = project.regions[region].pe_vrf|default(1) %}
 
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
 config vpn ipsec phase1-interface
