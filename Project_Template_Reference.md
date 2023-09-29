@@ -52,7 +52,7 @@ The following table lists all the parameters that must be configured for each re
 
 | Parameter |    Values     | Description                                                                                   | Default |
 |:----------|:-------------:|:----------------------------------------------------------------------------------------------|:-------:|
-| pe_vrf    |    \<int\>    | ID of the VRF that will be used as the PE (transport) VRF, default for underlays and overlays |   32    |
+| pe_vrf    |    \<int\>    | ID of the VRF that will be used as the PE (transport) VRF, default for underlays and overlays |   1     |
 | vrfs      | \<dict list\> | List of all the VRFs that will be used as CE (customer) VRFs in that region*                  |   [ ]   |
 
 \* Each VRF is described by a dict with the following parameters:
