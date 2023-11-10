@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python3
 
 import argparse, json, textwrap, jinja2, shutil
 from ansible_collections.ansible.utils.plugins.filter.ipaddr import ipaddr
