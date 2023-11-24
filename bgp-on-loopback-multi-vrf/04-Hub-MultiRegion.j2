@@ -28,6 +28,9 @@
           {% endif %}
           set keylife 28800
           set peertype any
+          {% if project.monitoring_enhancements|default(false) %}
+          set exchange-fgt-device-id enable
+          {% endif %}          
           set proposal aes256gcm-prfsha256
           {% if project.multireg_advpn|default(false) %}
           set auto-discovery-sender enable

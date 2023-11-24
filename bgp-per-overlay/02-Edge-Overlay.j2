@@ -22,6 +22,9 @@ config vpn ipsec phase1-interface
     {% endif %}
     set keylife 28800
     set peertype any
+    {% if project.monitoring_enhancements|default(false) %}
+    set exchange-fgt-device-id enable
+    {% endif %}    
     set net-device enable
     set mode-cfg enable
     set proposal aes256gcm-prfsha256 aes256-sha256
