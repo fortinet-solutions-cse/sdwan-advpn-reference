@@ -26,6 +26,9 @@
       {% endif %}
       set keylife 28800
       set peertype any
+      {% if project.monitoring_enhancements|default(false) %}
+      set exchange-fgt-device-id enable
+      {% endif %}      
       set proposal aes256gcm-prfsha256
       set exchange-interface-ip enable
       set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
