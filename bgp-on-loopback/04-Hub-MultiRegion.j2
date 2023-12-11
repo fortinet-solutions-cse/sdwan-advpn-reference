@@ -103,8 +103,10 @@ config router route-map
         set match-ip-address "LO_REGIONAL_SUMMARY"
         set set-community no-advertise
       next
+      {% if project.multireg_advpn|default(false) %}
       edit 100
       next
+      {% endif %}
     end
   next
   edit "EDGE_OUT"
