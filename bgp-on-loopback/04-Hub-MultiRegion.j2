@@ -82,7 +82,7 @@ config system zone
 end
 {% endif %}
 
-{% if project.multireg_advpn|default(false) %}
+{% if project.multireg_advpn|default(false) or project.multireg_lo|default(false) %}
 {# Advertise loopback summaries between the regions #}
 config router access-list
   {# Regional loopback summary #}
@@ -103,8 +103,10 @@ config router route-map
         set match-ip-address "LO_REGIONAL_SUMMARY"
         set set-community no-advertise
       next
+      {% if project.multireg_advpn|default(false) %}
       edit 100
       next
+      {% endif %}
     end
   next
   edit "EDGE_OUT"
@@ -123,8 +125,10 @@ config router bgp
   config neighbor-group
     edit "EDGE"
       set route-map-out EDGE_OUT
+      {% if project.multireg_advpn|default(false) %}
       {# Preserve next-hop of prefixes coming from remote regions #}
       unset next-hop-self
+      {% endif %}
     next
   end
   config network
@@ -140,7 +144,8 @@ config router static
     set comment "Regional loopback summary"
   next
 end
-{% else %}
+{% endif %}
+{% if not project.multireg_advpn|default(false) %}
 {# Advertise regional LAN summaries between the regions #}
 config router bgp
   config aggregate-address
@@ -162,7 +167,7 @@ end
 config router route-map
   edit "HUB2HUB_OUT"
     config rule
-      edit 1
+      edit 2
         set match-ip-address "LAN_REGIONAL_SUMMARY"
         unset set-community
       next
