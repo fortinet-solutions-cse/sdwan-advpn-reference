@@ -16,12 +16,14 @@ config router bgp
   set additional-path enable
   set additional-path-select 255
   set recursive-next-hop enable
+  set graceful-restart enable
   config neighbor
     {% for h in project.regions[region].hubs %}
     {% set hubloop = loop %}
     {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
     edit {{ project.hubs[h].overlays[i.ol_type].tunnel_net|ipaddr(1)|ipaddr('address') }}
       set soft-reconfiguration enable
+      set capability-graceful-restart enable
       set advertisement-interval 1
       set link-down-failover enable
       set interface "H{{ hubloop.index }}_{{ i.ol_type }}"

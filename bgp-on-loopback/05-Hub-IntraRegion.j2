@@ -91,10 +91,12 @@ config router bgp
   {% for h in project.regions[region].hubs if h != hostname %}
   edit {{ project.hubs[h].lo_bgp }}
     set soft-reconfiguration enable
+    set capability-graceful-restart enable
     set advertisement-interval 1
     set remote-as {{ project.regions[region].as }}
     set interface "Lo"
     set update-source "Lo"
+    set connect-timer 1
     set route-map-out "LOCAL_HUB2HUB_OUT"
   next
   {% endfor %}

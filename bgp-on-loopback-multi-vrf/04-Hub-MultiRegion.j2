@@ -205,8 +205,10 @@ config router bgp
     edit {{ project.hubs[h].lo_bgp }}
       set ebgp-enforce-multihop enable
       set soft-reconfiguration enable
+      set capability-graceful-restart enable    
+      set soft-reconfiguration-vpnv4 enable
+      set capability-graceful-restart-vpnv4 enable      
       set advertisement-interval 1
-      set link-down-failover enable
       set interface "Lo"
       set update-source "Lo"
       {% if project.multireg_advpn|default(false) %}
