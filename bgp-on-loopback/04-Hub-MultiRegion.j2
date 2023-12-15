@@ -186,8 +186,8 @@ config router bgp
     edit {{ project.hubs[h].lo_bgp }}
       set ebgp-enforce-multihop enable
       set soft-reconfiguration enable
+      set capability-graceful-restart enable
       set advertisement-interval 1
-      set link-down-failover enable
       set interface "Lo"
       set update-source "Lo"
       set route-map-out "HUB2HUB_OUT"

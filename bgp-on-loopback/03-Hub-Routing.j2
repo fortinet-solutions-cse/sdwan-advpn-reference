@@ -36,9 +36,11 @@ config router bgp
   set ebgp-multipath enable
   set recursive-next-hop enable
   set recursive-inherit-priority enable
+  set graceful-restart enable
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration enable
+      set capability-graceful-restart enable
       set advertisement-interval 1
       set next-hop-self enable
       set remote-as {{ project.regions[region].as }}

@@ -34,10 +34,12 @@ config router bgp
   set ibgp-multipath enable
   set recursive-next-hop enable
   set tag-resolve-mode merge
+  set graceful-restart enable
   config neighbor
     {% for h in project.regions[region].hubs %}
     edit {{ project.hubs[h].lo_bgp }}
       set soft-reconfiguration enable
+      set capability-graceful-restart enable
       set advertisement-interval 1
       set interface "Lo"
       set update-source "Lo"

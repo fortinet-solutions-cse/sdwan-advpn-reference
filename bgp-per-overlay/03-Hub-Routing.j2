@@ -27,9 +27,11 @@ config router bgp
   set additional-path enable
   set additional-path-select 255
   set recursive-next-hop enable
+  set graceful-restart enable
   config neighbor-group
     edit "EDGE"
       set soft-reconfiguration enable
+      set capability-graceful-restart enable
       set advertisement-interval 1
       set link-down-failover enable
       set next-hop-self enable
