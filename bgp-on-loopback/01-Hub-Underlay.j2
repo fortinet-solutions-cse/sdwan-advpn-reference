@@ -53,7 +53,7 @@ config system interface
 end
 
 {# Configure underlay loopback for local-out traffic (e.g. IPSEC src) #}
-{% if i.src_ip is defined %}
+{% if i.role == 'wan' and i.src_ip is defined %}
 config system interface
   edit "Lo-wan{{ loop.index }}"
     set vdom "root"
