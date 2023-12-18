@@ -85,6 +85,18 @@ config system interface
 end
 {% endif %}
 
+{# Configure underlay loopback for local-out traffic (e.g. IPSEC src) #}
+{% if i.src_ip is defined %}
+config system interface
+  edit "Lo-wan{{ loop.index }}"
+    set vdom "root"
+    set type loopback
+    set ip {{ i.src_ip }}
+    set allowaccess ping
+  next
+end
+{% endif %}
+
 {# End Loop: Configure underlay interfaces #}
 {% endfor %}
 

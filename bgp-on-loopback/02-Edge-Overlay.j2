@@ -47,6 +47,9 @@ config vpn ipsec phase1-interface
     set network-overlay enable
     set network-id {{ project.hubs[h].overlays[i.ol_type].network_id }}
     set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
+    {% if i.src_ip is defined %}
+    set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% endif %}
     set dpd-retrycount 3
     set dpd-retryinterval 5
     set dpd on-idle
