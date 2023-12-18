@@ -7,12 +7,15 @@
 
 {% import 'Project' as project with context %}
 
+{# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
+{% set community_as = project.regions[region].as if project.regions[region].as|int < 65536 else project.short_community_as|default('65000') %}
+
 config router community-list
   edit "SLA_OK"
     config rule
       edit 1
         set action permit
-        set match "{{ project.regions[region].as }}:99"
+        set match "{{ community_as }}:99"
       next
     end
   next
