@@ -7,6 +7,9 @@
 
 {% import 'Project' as project with context %}
 
+{# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
+{% set community_as = project.regions[region].as if project.regions[region].as|int < 65536 else project.short_community_as|default('65000') %}
+
 {# Hub2Hub tunnels within the region (for DC-to-DC traffic) #}
 {% set my_index = project.regions[region].hubs.index(hostname) + 1 %}
 {% if project.intrareg_hub2hub|default(false) %}
@@ -63,7 +66,7 @@ config router community-list
     config rule
       edit 1
         set action permit
-        set match "{{ project.regions[region].as }}:95"
+        set match "{{ community_as }}:95"
       next
     end    
   next
@@ -72,7 +75,7 @@ config router route-map
   edit "HUB_IN"
     config rule
       edit 1
-        set set-community "{{ project.regions[region].as }}:95"
+        set set-community "{{ community_as }}:95"
       next
     end
   next
