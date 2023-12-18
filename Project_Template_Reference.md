@@ -273,24 +273,25 @@ Each parameter can be configured simply as follows:
 The following table lists all the supported parameters, as well as their default values (applied when
 they are not configured explicitly):
 
-| Parameter              |    Values    | Description                                                                                   |      Default      |
-|:-----------------------|:------------:|:----------------------------------------------------------------------------------------------|:-----------------:|
-| create_hub2hub_zone    | true / false | Create System Zone for inter-regional Hub-to-Hub tunnels                                      |       true        |
-| hub2hub_zone           |   \<str\>    | Name of System Zone for inter-regional Hub-to-Hub tunnels _(when create_hub2hub_zone = true)_ | 'hub2hub_overlay' |
-| create_lan_zone        | true / false | Create System Zone for LAN interfaces (with 'role' = 'lan' in the profile)                    |       true        |
-| lan_zone               |   \<str\>    | Name of System Zone for LAN interfaces _(when create_lan_zone = true)_                        |    'lan_zone'     |
-| create_lan_dhcp_server | true / false | Configure DHCP Servers on LAN interfaces                                                      |       true        |
-| cert_auth              | true / false | Certificate-based auth for IKE/IPSEC                                                          |       true        |
-| hub_cert_template      |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                            |       'Hub'       |
-| edge_cert_template     |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                            |      'Edge'       |
-| psk                    |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                    |     'S3cr3t!'     |
-| overlay_stickiness     | true / false | Generate "overlay stickiness" policy routes on the Hubs _("BGP on Loopback" only)_            |       true        |
-| intrareg_hub2hub       | true / false | Build intra-regional Hub-to-Hub tunnels for DC-to-DC traffic _("BGP on Loopback" only)_       |       false       |
-| intrareg_advpn         | true / false | Enable ADVPN within each region                                                               |       true        |
-| multireg_advpn         | true / false | Extend ADVPN across the regions _(automatically enables "multireg_lo")_                       |       false       |
-| multireg_lo            | true / false | Make loopbacks reachable across the regions _("BGP on Loopback" only)_                        |       false       |
-| hub_hc_server          |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)            |   '10.200.99.1'   |
-| monitoring_enhancements| true / false | Improved support of monitoring tools (e.g. FortiManager VPN Monitor, FOS 7.2.6+)              |        false      |
+| Parameter               |    Values    | Description                                                                                                  |      Default      |
+|:------------------------|:------------:|:-------------------------------------------------------------------------------------------------------------|:-----------------:|
+| create_hub2hub_zone     | true / false | Create System Zone for inter-regional Hub-to-Hub tunnels                                                     |       true        |
+| hub2hub_zone            |   \<str\>    | Name of System Zone for inter-regional Hub-to-Hub tunnels _(when create_hub2hub_zone = true)_                | 'hub2hub_overlay' |
+| create_lan_zone         | true / false | Create System Zone for LAN interfaces (with 'role' = 'lan' in the profile)                                   |       true        |
+| lan_zone                |   \<str\>    | Name of System Zone for LAN interfaces _(when create_lan_zone = true)_                                       |    'lan_zone'     |
+| create_lan_dhcp_server  | true / false | Configure DHCP Servers on LAN interfaces                                                                     |       true        |
+| cert_auth               | true / false | Certificate-based auth for IKE/IPSEC                                                                         |       true        |
+| hub_cert_template       |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                                           |       'Hub'       |
+| edge_cert_template      |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                                           |      'Edge'       |
+| psk                     |   \<str\>    | Pre-shared secret for IKE/IPSEC _(when cert_auth = false)_                                                   |     'S3cr3t!'     |
+| overlay_stickiness      | true / false | Generate "overlay stickiness" policy routes on the Hubs _("BGP on Loopback" only)_                           |       true        |
+| intrareg_hub2hub        | true / false | Build intra-regional Hub-to-Hub tunnels for DC-to-DC traffic _("BGP on Loopback" only)_                      |       false       |
+| intrareg_advpn          | true / false | Enable ADVPN within each region                                                                              |       true        |
+| multireg_advpn          | true / false | Extend ADVPN across the regions _(automatically enables "multireg_lo")_                                      |       false       |
+| multireg_lo             | true / false | Make loopbacks reachable across the regions _("BGP on Loopback" only)_                                       |       false       |
+| hub_hc_server           |    \<ip\>    | Health server IP on the Hubs (set on Lo-HC interface on the Hubs, probed by Edges)                           |   '10.200.99.1'   |
+| short_community_as      |   \<asn\>    | Fictitious Autonomous System number for BGP communities in regions with 4-byte AS _("BGP on Loopback" only)_ |      '65000'      |
+| monitoring_enhancements | true / false | Improved support of monitoring tools (e.g. FortiManager VPN Monitor, FOS 7.2.6+)                             |       false       |
 
 #### Additional parameters for the Multi-VRF flavor
 
