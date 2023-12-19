@@ -90,4 +90,23 @@ config firewall policy
     set schedule "always"
     set service "PING"
   next
+  {# Permit incoming traffic to underlay loopback, when used #}
+  {% set lo_wan = [] %}
+  {% for i in project.profiles[profile].interfaces if i.name is defined %}
+    {% if i.src_ip is defined %}
+    {{ lo_wan.append("Lo-wan"~loop.index) or "" }}
+    {% endif %}
+  {% endfor %}
+  {% if lo_wan|count %}
+  edit 5
+    set name "Underlay Loopback"
+    set srcintf "underlay"
+    set dstintf {{ lo_wan|join(' ') }}
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+  next  
+  {% endif %}  
 end
