@@ -37,6 +37,9 @@ config vpn ipsec phase1-interface
     set ipv4-start-ip {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr(2)|ipaddr('address') }}
     set ipv4-end-ip {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr(-3)|ipaddr('address') }}
     set ipv4-netmask {{ project.hubs[hostname].overlays[i.ol_type].tunnel_net|ipaddr('netmask') }}
+    {% if i.src_ip is defined %}
+    set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% endif %}    
     set dpd-retrycount 3
     set dpd-retryinterval 5
     set dpd on-demand

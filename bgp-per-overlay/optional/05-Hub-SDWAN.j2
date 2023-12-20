@@ -20,6 +20,9 @@ config system sdwan
     edit {{ ns.mbr_i }}
       set interface "{{ i.name }}"
       set zone "underlay"
+      {% if i.src_ip is defined %}
+      set source {{ i.src_ip }}
+      {% endif %}      
       # Gateway is fetched from DHCP
     next
     {% set ns.mbr_i = ns.mbr_i + 1 %}

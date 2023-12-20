@@ -37,6 +37,9 @@ config vpn ipsec phase1-interface
     set add-route disable
     set network-overlay enable
     set network-id {{ project.hubs[hostname].overlays[i.ol_type].network_id }}
+    {% if i.src_ip is defined %}
+    set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% endif %}    
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
