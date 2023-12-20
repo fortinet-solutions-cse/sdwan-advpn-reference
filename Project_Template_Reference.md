@@ -144,14 +144,15 @@ each device interface:
 
 #### Additional parameters for WAN-facing interfaces
 
-| Parameter       | Values  | Description                                            |    Example     |
-|:----------------|:-------:|:-------------------------------------------------------|:--------------:|
-| ol_type         | \<str\> | Overlay to connect to over this interface*             |     'ISP1'     |
-| ul_name         | \<str\> | Local underlay transport name _(optional)_             |     'ISP1'     |
-| outbandwidth    | \<int\> | Total egress bandwidth _(optional)_                    |     '8000'     |
-| inbandwidth     | \<int\> | Total ingress bandwidth _(optional)_                   |     '8000'     |
-| shaping_profile | \<str\> | Shaping profile to apply _(optional)_                  | 'Edge_Shaping' |
-| dia             |  true   | Interface used for Direct Internet Access _(optional)_ |                |
+| Parameter       |   Values    | Description                                                    |    Example     |
+|:----------------|:-----------:|:---------------------------------------------------------------|:--------------:|
+| ol_type         |   \<str\>   | Overlay to connect to over this interface*                     |     'ISP1'     |
+| ul_name         |   \<str\>   | Local underlay transport name _(optional)_                     |     'ISP1'     |
+| src_ip          | \<ip/mask\> | Source IP for all local-out traffic (incl. IPSEC) _(optional)_ |  '1.2.3.4/32'  |
+| outbandwidth    |   \<int\>   | Total egress bandwidth _(optional)_                            |     '8000'     |
+| inbandwidth     |   \<int\>   | Total ingress bandwidth _(optional)_                           |     '8000'     |
+| shaping_profile |   \<str\>   | Shaping profile to apply _(optional)_                          | 'Edge_Shaping' |
+| dia             |    true     | Interface used for Direct Internet Access _(optional)_         |                |
 
 \* - The overlay types referenced here must correspond to those defined in the Hub dictionary [below](#hubs)
 
