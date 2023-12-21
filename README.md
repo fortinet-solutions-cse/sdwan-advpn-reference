@@ -11,6 +11,9 @@ It will generate a set of plain-text files with FOS configuration for each devic
 FortiGate devices (or use the [Configuration Scripts](https://docs.fortinet.com/document/fortigate/7.0.6/administration-guide/780930/configuration-scripts) feature).
 This method is handy to build a quick and simple lab or to quickly validate the changes made to your Jinja templates.
 
+A brief summary of features supported by these templates is available in the file [Supported_Features.md](./Supported_Features.md).  
+A complete reference of all supported parameters in the Project Template is available in the file [Project_Template_Reference.md](./Project_Template_Reference.md).
+
 Please also check the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki) page of this repository for some useful tips and examples.
 
 Finally, feel free to report issues and provide your suggestions ([right here](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/issues)).
@@ -212,7 +215,7 @@ The template contains the following sections:
 - **Hubs** describe all the Hubs in your project, mainly the overlays that they create (and how Edges can connect to them)
 
 We recommend that you start from the pre-configured examples and adjust them as necessary!  
-A complete up-to-date reference listing all the currently supported parameters in the Project template is available in [this](./Project_Template_Reference.md) file.
+A complete up-to-date reference listing all the currently supported parameters in the Project Template is available in [this](./Project_Template_Reference.md) file.
 
 For more details, please refer to the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki) page, check our Deployment Guide or consult your Fortinet representatives.
 
