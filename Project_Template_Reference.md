@@ -159,11 +159,10 @@ each device interface:
 
 #### Additional parameters for LAN-facing interfaces
 
-| Parameter | Values | Description                                 | Example |
-|:----------|:------:|:--------------------------------------------|:-------:|
-| advertise | false  | Advertise the prefix into BGP _(optional)*_ |         |
-
-\* - By default, all the LAN-facing prefixes are advertised into BGP.
+| Parameter   |    Values    | Description                                          | Default |
+|:------------|:------------:|:-----------------------------------------------------|:-------:|
+| advertise   | true / false | Advertise the prefix into BGP _(optional)_           |  true   |
+| dhcp_server | true / false | Configure DHCP server on this interface _(optional)_ |  true   |
 
 
 #### Additional parameters for the Multi-VRF flavor
