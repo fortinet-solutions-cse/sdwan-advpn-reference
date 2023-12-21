@@ -58,7 +58,7 @@ config system interface
   edit "Lo-wan{{ loop.index }}"
     set vdom "root"
     set type loopback
-    set ip {{ i.src_ip }}
+    set ip {{ i.src_ip|ipaddr('address') }}/32
     set allowaccess ping
   next
 end

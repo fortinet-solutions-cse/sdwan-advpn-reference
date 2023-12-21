@@ -30,7 +30,7 @@ config system sdwan
       set interface "{{ i.name }}"
       set zone "underlay"
       {% if i.src_ip is defined %}
-      set source {{ i.src_ip }}
+      set source {{ i.src_ip|ipaddr('address') }}
       {% endif %}
       # Best priority, used for Internet access in implicit rule / local-out
       # Gateway is fetched from DHCP
