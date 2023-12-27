@@ -30,6 +30,7 @@
 - Hub-to-Hub tunnels within and between regions
 - Spoke-to-Hub connectivity options: One-to-One, Many-to-One and Full-Mesh
 - IPSEC authentication: certificate-based and PSK 
+- Redundant IPSEC tunnels ("monitor" feature)
 - Overlay stickiness
 
 ## Other features:
