@@ -10,6 +10,7 @@
 {% for h in project.regions[region].hubs %}
 {% set hubloop = loop %}
 {% set ol_tunnels = [] %}
+{% set backup_tunnel = {} %}
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
   {# Track generated tunnels, to handle duplicates by adding extra index as a suffix #}
   {% set ul_name = i.ul_name~"-" if i.ul_name is defined else "" %}
@@ -49,6 +50,13 @@ config vpn ipsec phase1-interface
     set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
     {% if i.src_ip is defined %}
     set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% endif %}
+    {% if i.backup_group is defined %}
+    {% if i.backup|default(false) %}
+    set monitor "{{ backup_tunnel[i.backup_group] }}"
+    {% else %}
+      {{ backup_tunnel.update({i.backup_group: ol_tun_name}) or "" }}
+    {% endif %}
     {% endif %}
     set dpd-retrycount 3
     set dpd-retryinterval 5
