@@ -153,7 +153,7 @@ each device interface:
 | inbandwidth     | \<int\> | Total ingress bandwidth _(optional)_                                    |     '8000'     |
 | shaping_profile | \<str\> | Shaping profile to apply _(optional)_                                   | 'Edge_Shaping' |
 | dia             |  true   | Interface used for Direct Internet Access _(optional)_                  |                |
-| backup_group    | \<int>\ | Backup group ID _(optional)_                                            |       1        |
+| backup_group    | \<int\> | Backup group ID _(optional)_                                            |       1        |
 | backup          |  true   | Designate this interface as backup within its backup group _(optional)_ |                |
 
 \* - The overlay types referenced here must correspond to those defined in the Hub dictionary [below](#hubs)
