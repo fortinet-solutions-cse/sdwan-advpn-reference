@@ -35,6 +35,7 @@ config vpn ipsec phase1-interface
     set exchange-fgt-device-id enable
     {% endif %}
     set net-device enable
+    set link-cost {{ 10 if i.backup|default(false) else 0 }}
     set proposal aes256gcm-prfsha256 aes256-sha256
     set idle-timeout enable
     {% if project.intrareg_advpn|default(true) %}

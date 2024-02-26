@@ -7,6 +7,10 @@
 
 {% import 'Project' as project with context %}
 
+{% if project.profiles[profile].advpn2 is not defined %}
+{{ project.profiles[profile].update({'advpn2': project.advpn2|default(false)}) or "" }}
+{% endif %}
+
 {# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
 {% set community_as = project.regions[region].as if project.regions[region].as|int < 65536 else project.short_community_as|default('65000') %}
 
@@ -36,7 +40,7 @@ config router bgp
   set holdtime-timer 45
   set ibgp-multipath enable
   set recursive-next-hop enable
-  set tag-resolve-mode merge
+  set tag-resolve-mode {{ 'merge' if not project.profiles[profile].advpn2 else 'disable' }}
   set graceful-restart enable
   config neighbor
     {% for h in project.regions[region].hubs %}
@@ -48,7 +52,11 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as {{ project.regions[region].as }}
+      {% if not project.profiles[profile].advpn2 %}
       set route-map-in "H{{loop.index}}_TAG"
+      {% else %}
+      unset route-map-in
+      {% endif %}
       set route-map-out-preferable "SLA_OK" 
     next
     {% endfor %}

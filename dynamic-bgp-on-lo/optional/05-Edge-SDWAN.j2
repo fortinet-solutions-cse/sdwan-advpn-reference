@@ -7,6 +7,10 @@
 
 {% import 'Project' as project with context %}
 
+{% if project.profiles[profile].advpn2 is not defined %}
+{{ project.profiles[profile].update({'advpn2': project.advpn2|default(false)}) or "" }}
+{% endif %}
+
 {% set hub_sla_members = [ ] %}
 {% set hub_rule_members = [ ] %}
 {% set dia_members = [ ] %}
@@ -21,6 +25,7 @@ config system sdwan
     edit "underlay"
     next
     edit "overlay"
+      set advpn-select {{ 'enable' if project.profiles[profile].advpn2 else 'disable' }}
     next
   end
   config members
@@ -32,6 +37,9 @@ config system sdwan
       {% if i.src_ip is defined %}
       set source {{ i.src_ip|ipaddr('address') }}
       {% endif %}
+      {% if i.backup|default(false) %}
+      set cost 10
+      {% endif %}      
       # Best priority, used for Internet access in implicit rule / local-out
       # Gateway is fetched from DHCP
     next
@@ -54,7 +62,13 @@ config system sdwan
       set interface "{{ ol_tun_name }}"
       set priority 10
       set source {{ loopback|ipaddr('address') }}
+      {% if i.backup|default(false) %}
+      set cost 10
+      {% endif %}      
       set zone "overlay"
+      {% if project.profiles[profile].advpn2 %}
+      set transport-group {{ i.transport_group|default(0) }}
+      {% endif %}
     next
     {{ hub_sla_members.append(ns.mbr_i) or "" }}
     {{ this_hub_members.append(ns.mbr_i) or "" }}
@@ -98,16 +112,19 @@ config system sdwan
   {% for h in project.regions[region].hubs %}
     edit {{loop.index}}
       set name "Corporate-H{{loop.index}}"
-      set mode sla
+      set mode {{ project.profiles[profile].sdwan_mode|default('sla') }}
       set dst "CORP_LAN"
       set src "CORP_LAN"
-      set hold-down-time 20
       set tie-break fib-best-match
+      {% if project.profiles[profile].sdwan_mode|default('sla') == 'sla'  %}
       config sla
         edit "HUB"
           set id 1
         next
       end
+      {% elif project.profiles[profile].sdwan_mode|default('sla') == 'priority' %}
+      set health-check "HUB"
+      {% endif %}
       # Using Hub {{h}}
       set priority-members {{ hub_rule_members[loop.index0]|join(' ') }}
     next
@@ -121,6 +138,13 @@ config system sdwan
       set priority-members {{ dia_members|join(' ') }}
     next
   end
+  {% if project.profiles[profile].advpn2 %}
+  config zone
+    edit "overlay"
+      set advpn-health-check "HUB"
+    next
+  end  
+  {% endif %}
 end
 
 config router static
