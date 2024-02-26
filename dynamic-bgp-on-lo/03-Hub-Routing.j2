@@ -75,7 +75,7 @@ config router bgp
   end
 end
 
-{% if project.overlay_stickiness|default(true) %}
+{% if project.overlay_stickiness|default(false) %}
 config router policy
   {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
   edit {{ loop.index }}

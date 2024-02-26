@@ -30,7 +30,7 @@
           set exchange-fgt-device-id enable
           {% endif %}          
           set proposal aes256gcm-prfsha256
-          {% if project.multireg_advpn|default(false) %}
+          {% if project.multireg_advpn|default(true) %}
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -82,7 +82,7 @@ config system zone
 end
 {% endif %}
 
-{% if project.multireg_advpn|default(false) or project.multireg_lo|default(false) %}
+{% if project.multireg_advpn|default(true) or project.multireg_lo|default(false) %}
 {# Advertise loopback summaries between the regions #}
 config router access-list
   {# Regional loopback summary #}
@@ -103,7 +103,7 @@ config router route-map
         set match-ip-address "LO_REGIONAL_SUMMARY"
         set set-community no-advertise
       next
-      {% if project.multireg_advpn|default(false) %}
+      {% if project.multireg_advpn|default(true) %}
       edit 100
       next
       {% endif %}
@@ -125,7 +125,7 @@ config router bgp
   config neighbor-group
     edit "EDGE"
       set route-map-out EDGE_OUT
-      {% if project.multireg_advpn|default(false) %}
+      {% if project.multireg_advpn|default(true) %}
       {# Preserve next-hop of prefixes coming from remote regions #}
       unset next-hop-self
       {% endif %}
@@ -145,7 +145,7 @@ config router static
   next
 end
 {% endif %}
-{% if not project.multireg_advpn|default(false) %}
+{% if not project.multireg_advpn|default(true) %}
 {# Advertise regional LAN summaries between the regions #}
 config router bgp
   config aggregate-address
@@ -191,7 +191,7 @@ config router bgp
       set interface "Lo"
       set update-source "Lo"
       set route-map-out "HUB2HUB_OUT"
-      {% if project.multireg_advpn|default(false) %}
+      {% if project.multireg_advpn|default(true) %}
       set attribute-unchanged next-hop
       {% endif %}
       set connect-timer 1
