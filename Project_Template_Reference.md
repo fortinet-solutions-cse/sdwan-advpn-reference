@@ -161,10 +161,12 @@ each device interface:
 
 #### Additional parameters for LAN-facing interfaces
 
-| Parameter   |    Values    | Description                                          | Default |
-|:------------|:------------:|:-----------------------------------------------------|:-------:|
-| advertise   | true / false | Advertise the prefix into BGP _(optional)_           |  true   |
-| dhcp_server | true / false | Configure DHCP server on this interface _(optional)_ |  true   |
+| Parameter          |    Values    | Description                                          | Default |
+|:-------------------|:------------:|:-----------------------------------------------------|:-------:|
+| advertise          | true / false | Advertise the prefix into BGP _(optional)_           |  true   |
+| dhcp_server        | true / false | Configure DHCP server on this interface _(optional)_ |  true   |
+| dhcp_relay         | true / false | Enable DHCP relay on this interface _(optional)_     |  false  |
+| dhcp_relay_servers |   \<str\>    | List of DHCP relay servers _(optional)_              |         |
 
 
 #### Additional parameters for the Multi-VRF flavor
@@ -282,6 +284,8 @@ they are not configured explicitly):
 | create_lan_zone         | true / false | Create System Zone for LAN interfaces (with 'role' = 'lan' in the profile)                                   |       true        |
 | lan_zone                |   \<str\>    | Name of System Zone for LAN interfaces _(when create_lan_zone = true)_                                       |    'lan_zone'     |
 | create_lan_dhcp_server  | true / false | Configure DHCP Servers on LAN interfaces                                                                     |       true        |
+| dhcp_server_startip     |   \<int\>    | First IP for DHCP Server pool, seq. in the LAN subnet _(when create_lan_dhcp_server = true)_                 |         4         |
+| dhcp_server_endip       |   \<int\>    | Last IP for DHCP Server pool, seq. in the LAN subnet _(when create_lan_dhcp_server = true)_                  |        -5         |
 | cert_auth               | true / false | Certificate-based auth for IKE/IPSEC                                                                         |       true        |
 | hub_cert_template       |   \<str\>    | Certificate name on Hubs _(when cert_auth = true)_                                                           |       'Hub'       |
 | edge_cert_template      |   \<str\>    | Certificate name on Edge _(when cert_auth = true)_                                                           |      'Edge'       |
