@@ -7,6 +7,17 @@
 
 {% import 'Project' as project with context %}
 
+{% if project.hubs[hostname].peering is not defined %}
+  {% set default_peering = {
+        'EDGE': {
+          'dynamic_bgp': project.dynamic_bgp|default(false),
+          'lo_summary': project.lo_summary
+        }
+      }
+  %}
+  {{ project.hubs[hostname].update({'peering': default_peering}) or "" }}
+{% endif %}
+
 {# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
 {% set community_as = project.regions[region].as if project.regions[region].as|int < 65536 else project.short_community_as|default('65000') %}
 
@@ -40,8 +51,9 @@ config router bgp
   set recursive-next-hop enable
   set recursive-inherit-priority enable
   set graceful-restart enable
+  {% for k,v in project.hubs[hostname].peering.items() %}  
   config neighbor-group
-    edit "EDGE"
+    edit {{ k }}
       set soft-reconfiguration enable
       set capability-graceful-restart enable
       set advertisement-interval 1
@@ -49,7 +61,7 @@ config router bgp
       set remote-as {{ project.regions[region].as }}
       set interface "Lo"
       set update-source "Lo"
-      {% if project.intrareg_advpn|default(true) %}
+      {% if not v.dynamic_bgp and project.intrareg_advpn|default(true) %}
       set route-reflector-client enable
       {% else %}
       set route-reflector-client disable
@@ -57,11 +69,12 @@ config router bgp
     next
   end
   config neighbor-range
-    edit 1
-      set prefix {{ project.lo_summary }}
-      set neighbor-group "EDGE"
+    edit {{ loop.index }}
+      set prefix {{ v.lo_summary }}
+      set neighbor-group "{{ k }}"
     next
   end
+  {% endfor %}
   config network
     edit 1
       set prefix {{ project.lo_summary }}
