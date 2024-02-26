@@ -8,6 +8,7 @@
 {% import 'Project' as project with context %}
 
 {% set hub2hub_ol = [] %}
+{% set my_index = project.regions[region].hubs.index(hostname) + 1 %}
 {% if project.regions|count > 1  %}
 
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
@@ -102,6 +103,7 @@ config router route-map
         {# Do not readvertise regional loopback summary to remote Edges and other regions #}
         set match-ip-address "LO_REGIONAL_SUMMARY"
         set set-community no-advertise
+        set set-metric {{ 100 if my_index == 2 else 0 }}
       next
       {% if project.multireg_advpn|default(true) %}
       edit 100
@@ -169,6 +171,7 @@ config router route-map
     config rule
       edit 2
         set match-ip-address "LAN_REGIONAL_SUMMARY"
+        set set-metric {{ 100 if my_index == 2 else 0 }}
         unset set-community
       next
       edit 100
