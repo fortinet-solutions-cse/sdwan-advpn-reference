@@ -26,7 +26,10 @@
 {% set hub2hub_zone = 'hub2hub_overlay' %}
 {% set create_lan_zone = true %}
 {% set lan_zone = 'lan_zone' %}
+
 {% set create_lan_dhcp_server = true %}
+{% set dhcp_server_startip = 4 %}
+{% set dhcp_server_endip = -5 %}
 
 {% set cert_auth = true %}
 {% set hub_cert_template = 'Hub' %}
@@ -82,6 +85,9 @@
           'outbandwidth': ,
           'inbandwidth': ,
           'shaping_profile': ,
+          'dhcp_server': ,
+          'dhcp_relay': ,
+          'dhcp_relay_servers': ,
           'dia': ,
           'advertise' 
         },

@@ -60,6 +60,14 @@ config system interface
       {% endif %}
     {% endif %}
 
+    {# DHCP Relay #}
+    {% if i.dhcp_relay|default(false) %}
+    set dhcp-relay-service enable
+    set dhcp-relay-ip {{ i.dhcp_relay_servers }}
+    {% else %}
+    set dhcp-relay-service disable
+    {% endif %}
+
     {# Other settings #}
     {% if i.role == 'wan' %}
     set role wan
@@ -143,7 +151,7 @@ end
 {% if project.create_lan_dhcp_server|default(true) %}
 config system dhcp server
   {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined %}
-  {% if i.dhcp_server|default(true) %}
+  {% if i.dhcp_server|default(true) and not i.dhcp_relay|default(false) %}
   edit {{ 10 + loop.index0 }}
     set dns-service default
     set default-gateway {{ i.ip|ipaddr('address') }}
@@ -151,8 +159,8 @@ config system dhcp server
     set interface {{ i.name }}
     config ip-range
       edit 1
-        set start-ip {{ i.ip|ipaddr(4)|ipaddr('address') }}
-        set end-ip {{ i.ip|ipaddr(-5)|ipaddr('address') }}
+        set start-ip {{ i.ip|ipaddr(project.dhcp_server_startip|default(4))|ipaddr('address') }}
+        set end-ip {{ i.ip|ipaddr(project.dhcp_server_endip|default(-5))|ipaddr('address') }}
       next
     end
   next

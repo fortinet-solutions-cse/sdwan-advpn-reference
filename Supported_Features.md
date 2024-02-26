@@ -16,6 +16,7 @@
 - FEX support
 - FortiLink (SD-Branch) support
 - DHCP Server for LAN clients
+- DHCP Relay for LAN clients
 - Underlay Loopback (dedicated source IP for all local-out traffic, e.g. routable public IP or provider-independent IP)
 
 ## List of supported overlay network designs:
