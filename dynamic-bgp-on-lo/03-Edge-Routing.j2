@@ -8,7 +8,10 @@
 {% import 'Project' as project with context %}
 
 {% if project.profiles[profile].advpn2 is not defined %}
-{{ project.profiles[profile].update({'advpn2': project.advpn2|default(false)}) or "" }}
+  {{ project.profiles[profile].update({'advpn2': project.advpn2|default(false)}) or "" }}
+{% endif %}
+{% if project.profiles[profile].dynamic_bgp is not defined %}
+  {{ project.profiles[profile].update({'dynamic_bgp': project.dynamic_bgp|default(false)}) or "" }}
 {% endif %}
 
 {# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
@@ -61,6 +64,33 @@ config router bgp
     next
     {% endfor %}
   end
+  {% if project.profiles[profile].dynamic_bgp %}
+  config neighbor-group
+    edit "DYN_EDGE"
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set next-hop-self enable
+      set remote-as {{ project.regions[region].as }}
+      set interface "Lo"
+      set update-source "Lo"
+      set passive enable
+    next
+  end
+  config neighbor-range
+    edit 1
+      set prefix {{ project.lo_summary }}
+      set neighbor-group "DYN_EDGE"
+    next
+  end  
+  {% else %}
+  config neighbor-range
+    delete 1
+  end
+  config neighbor-group
+    delete "DYN_EDGE"
+  end
+  {% endif %}
   config network
     {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
     edit {{ loop.index }}
