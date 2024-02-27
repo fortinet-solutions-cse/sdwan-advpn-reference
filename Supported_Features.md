@@ -13,6 +13,7 @@
 
 - DHCP and static IP
 - VLAN tagging
+- Bridging (built-in hardware switches, incl. virtual-switch-vlan support)
 - FEX support
 - FortiLink (SD-Branch) support
 - DHCP Server for LAN clients
