@@ -67,13 +67,24 @@ The following table lists all the parameters that must be configured for each re
 
 The `profiles` dictionary describes all the device profiles in the project.
 By device profiles we mainly mean the list of interfaces for each site,
-with the respective options for each interface. Thus, the profile describes the
-local topology and the connectivity options for each site:
+with the respective options for each interface. Optionally, there can also be a list of 
+bridges - the hardware switches built into certain FortiGate models, also known as "virtual-switches". 
+Thus, the profile describes the local topology and the connectivity options for each site:
 
 ```
 {# Device Profiles #}
 {% set profiles = {
     'Profile1': {
+      'bridges': [
+        {# Optional: virtual-switch (build-in hardware switch) parameters #}
+        {
+          {# Virtual-switch1 parameters #}
+        },
+        {
+          {# Virtual-switch2 parameters #}
+        }
+        {# ... #}
+      ],
       'interfaces': [
         {
           {# Interface1 parameters #}
@@ -102,7 +113,7 @@ local topology and the connectivity options for each site:
 
 NOTE: All the Edge devices and the Hubs must be assigned a profile!
 
-Apart from the list of interfaces, the profile can also specify that a device is in HA cluster mode:
+Apart from the lists of bridges and interfaces, the profile can also specify that a device is in HA cluster mode:
 
 | Parameter | Values | Description                           | Example |
 |:----------|:------:|:--------------------------------------|:-------:|
@@ -127,20 +138,38 @@ Example:
 
 Each deployed SD-WAN site will be assigned a profile.
 
+The following table lists all the supported parameters that can be configured for 
+each bridge (remember that the list of bridges is optional):
+
+| Parameter | Values  | Description                                                             | Example  |
+|:----------|:-------:|:------------------------------------------------------------------------|:--------:|
+| name      | \<str\> | Bridge (virtual-switch) name                                            | 'BR_LAN' |
+| vlanid    | \<int\> | VLAN ID (automatically enables virtual-switch-vlan feature) _optional_) |   '10'   |
+
+NOTE: It is the user's responsibility to ensure that the FortiGate devices being used support hardware switches 
+and/or virtual-switch-vlan functionality. No hardware model check is performed.
+
 The following tables lists all the supported parameters that can be configured for
 each device interface:
 
 #### Parameters for all interfaces
 
-| Parameter |           Values            | Description                                                        |        Example         |
-|:----------|:---------------------------:|:-------------------------------------------------------------------|:----------------------:|
-| name      |           \<str\>           | Interface name                                                     |        'port1'         |
-| role      | 'wan' / 'lan' / 'sd_branch' | Interface role (respectively: WAN-facing / LAN-facing / Fortilink) |                        |
-| ip        |    \<ip/mask\> / 'dhcp'     | Interface IP address (with mask) / Enable DHCP client              | '10.0.1.1/24' / 'dhcp' |
-| vlanid    |           \<int\>           | VLAN ID (for VLAN interfaces, _optional_)                          |          '10'          |
-| parent    |           \<str\>           | Parent interface (for VLAN interfaces, _when vlan_id is set_)      |        'port1'         |
-| access    |           \<str\>           | Custom list of services to allow access (such as FGFM, _optional_) |   'ping fgfm https'    |
+| Parameter |        Values        | Description                                                        |        Example         |
+|:----------|:--------------------:|:-------------------------------------------------------------------|:----------------------:|
+| name      |       \<str\>        | Interface name                                                     |        'port1'         |
+| role      |       \<role\>       | Interface role*                                                    |                        |
+| ip        | \<ip/mask\> / 'dhcp' | Interface IP address (with mask) / Enable DHCP client              | '10.0.1.1/24' / 'dhcp' |
+| vlanid    |       \<int\>        | VLAN ID (for VLAN interfaces, _optional_)                          |          '10'          |
+| parent    |       \<str\>        | Parent interface (for VLAN and bridge interfaces)                  |        'port1'         |
+| access    |       \<str\>        | Custom list of services to allow access (such as FGFM, _optional_) |   'ping fgfm https'    |
 
+\* - The following interface roles are supported:
+
+  - `wan`: a WAN-facing Layer3 interface (incl. physical, VLAN, IRB...)
+  - `lan`: a LAN-facing Layer3 interface (incl. physical, VLAN, IRB...)
+  - `sd_branch`: a Fortilink member (usually connected to a FortiSwitch)
+  - `bridge`: a virtual-switch (built-in hardware switch) member
+  - `trunk`: 802.1Q trunk (for virtual-vlan-switch feature)
 
 #### Additional parameters for WAN-facing interfaces
 
