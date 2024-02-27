@@ -7,9 +7,13 @@
 
 {% import 'Project' as project with context %}
 
-{% if project.profiles[profile].advpn2 is not defined %}
-{{ project.profiles[profile].update({'advpn2': project.advpn2|default(false)}) or "" }}
-{% endif %}
+{# If options are not customized, use the project-wide defaults #}
+{% set options = project.profiles[profile].options|default(
+        {
+          'advpn2': project.advpn2|default(false)
+        }
+    )
+%}
 
 {% set hub_sla_members = [ ] %}
 {% set hub_rule_members = [ ] %}
@@ -25,7 +29,7 @@ config system sdwan
     edit "underlay"
     next
     edit "overlay"
-      set advpn-select {{ 'enable' if project.profiles[profile].advpn2 else 'disable' }}
+      set advpn-select {{ 'enable' if options.advpn2 else 'disable' }}
     next
   end
   config members
@@ -66,7 +70,7 @@ config system sdwan
       set cost 10
       {% endif %}      
       set zone "overlay"
-      {% if project.profiles[profile].advpn2 %}
+      {% if options.advpn2 %}
       set transport-group {{ i.transport_group|default(0) }}
       {% endif %}
     next
@@ -112,17 +116,17 @@ config system sdwan
   {% for h in project.regions[region].hubs %}
     edit {{loop.index}}
       set name "Corporate-H{{loop.index}}"
-      set mode {{ project.profiles[profile].sdwan_mode|default('sla') }}
+      set mode {{ options.sdwan_mode|default('sla') }}
       set dst "CORP_LAN"
       set src "CORP_LAN"
       set tie-break fib-best-match
-      {% if project.profiles[profile].sdwan_mode|default('sla') == 'sla'  %}
+      {% if options.sdwan_mode|default('sla') == 'sla'  %}
       config sla
         edit "HUB"
           set id 1
         next
       end
-      {% elif project.profiles[profile].sdwan_mode|default('sla') == 'priority' %}
+      {% elif options.sdwan_mode|default('sla') == 'priority' %}
       set health-check "HUB"
       {% endif %}
       # Using Hub {{h}}
@@ -138,7 +142,7 @@ config system sdwan
       set priority-members {{ dia_members|join(' ') }}
     next
   end
-  {% if project.profiles[profile].advpn2 %}
+  {% if options.advpn2 %}
   config zone
     edit "overlay"
       set advpn-health-check "HUB"

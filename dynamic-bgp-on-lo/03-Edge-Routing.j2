@@ -7,15 +7,19 @@
 
 {% import 'Project' as project with context %}
 
-{% if project.profiles[profile].advpn2 is not defined %}
-  {{ project.profiles[profile].update({'advpn2': project.advpn2|default(false)}) or "" }}
-{% endif %}
-{% if project.profiles[profile].dynamic_bgp is not defined %}
-  {{ project.profiles[profile].update({'dynamic_bgp': project.dynamic_bgp|default(false)}) or "" }}
-{% endif %}
+{# If options are not customized, use the project-wide defaults #}
+{% set options = project.profiles[profile].options|default(
+        {
+          'advpn2': project.advpn2|default(false),
+          'dynamic_bgp': project.dynamic_bgp|default(false)
+        }
+    )
+%}
 
 {# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
-{% set community_as = project.regions[region].as if project.regions[region].as|int < 65536 else project.short_community_as|default('65000') %}
+{% set community_as = project.regions[region].as 
+                      if project.regions[region].as|int < 65536 
+                      else project.short_community_as|default('65000') %}
 
 config router route-map
   {% for i in range(1,3) %}
@@ -43,7 +47,7 @@ config router bgp
   set holdtime-timer 45
   set ibgp-multipath enable
   set recursive-next-hop enable
-  set tag-resolve-mode {{ 'merge' if not project.profiles[profile].advpn2 else 'disable' }}
+  set tag-resolve-mode {{ 'merge' if not options.advpn2 else 'disable' }}
   set graceful-restart enable
   config neighbor
     {% for h in project.regions[region].hubs %}
@@ -55,7 +59,7 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as {{ project.regions[region].as }}
-      {% if not project.profiles[profile].advpn2 %}
+      {% if not options.advpn2 %}
       set route-map-in "H{{loop.index}}_TAG"
       {% else %}
       unset route-map-in
@@ -64,7 +68,7 @@ config router bgp
     next
     {% endfor %}
   end
-  {% if project.profiles[profile].dynamic_bgp %}
+  {% if options.dynamic_bgp %}
   config neighbor-group
     edit "DYN_EDGE"
       set soft-reconfiguration enable

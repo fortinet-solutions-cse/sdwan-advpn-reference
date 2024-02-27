@@ -7,19 +7,21 @@
 
 {% import 'Project' as project with context %}
 
-{% if project.hubs[hostname].peering is not defined %}
-  {% set default_peering = {
-        'EDGE': {
-          'dynamic_bgp': project.dynamic_bgp|default(false),
-          'lo_summary': project.lo_summary
+{# If BGP peering is not customized, use the project-wide defaults #}
+{% set peering = project.hubs[hostname].peering|default(
+        {
+          'EDGE': {
+            'dynamic_bgp': project.dynamic_bgp|default(false),
+            'lo_summary': project.lo_summary
+          }
         }
-      }
-  %}
-  {{ project.hubs[hostname].update({'peering': default_peering}) or "" }}
-{% endif %}
+    )
+%}
 
 {# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
-{% set community_as = project.regions[region].as if project.regions[region].as|int < 65536 else project.short_community_as|default('65000') %}
+{% set community_as = project.regions[region].as 
+                      if project.regions[region].as|int < 65536 
+                      else project.short_community_as|default('65000') %}
 
 config router community-list
   edit "SLA_OK"
@@ -51,7 +53,7 @@ config router bgp
   set recursive-next-hop enable
   set recursive-inherit-priority enable
   set graceful-restart enable
-  {% for k,v in project.hubs[hostname].peering.items() %}  
+  {% for k,v in peering.items() %}  
   config neighbor-group
     edit {{ k }}
       set soft-reconfiguration enable
