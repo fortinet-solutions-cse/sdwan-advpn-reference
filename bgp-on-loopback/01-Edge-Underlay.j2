@@ -17,6 +17,30 @@ config system global
   {% endif %}
 end
 
+{# Create hardware switches #}
+{% if project.profiles[profile].bridges is defined %}
+{% set vlan_switch = project.profiles[profile].bridges|selectattr('vlanid', 'defined')|list %}
+config system global
+  set virtual-switch-vlan {{ 'enable' if vlan_switch else 'disable' }}
+end
+{% for br in project.profiles[profile].bridges if br.name is defined %}
+config system virtual-switch
+  edit "{{br.name}}"
+    set physical-switch "sw0"
+    {% if br.vlanid is defined %}
+    set vlan {{br.vlanid}}
+    {% endif %}
+    config port
+      {% for i in project.profiles[profile].interfaces if i.role == 'bridge' and i.parent == br.name and i.name is defined %}
+      edit "{{i.name}}"
+      next
+      {% endfor %}
+    end
+  next
+end
+{% endfor %}
+{% endif %}
+
 {# Loop: Configure underlay interfaces #}
 {% for i in project.profiles[profile].interfaces if i.name is defined %}
 config system interface
@@ -61,22 +85,25 @@ config system interface
     {% endif %}
 
     {# DHCP Relay #}
-    {% if i.dhcp_relay|default(false) %}
+    {% if i.role == 'lan' and i.dhcp_relay|default(false) %}
     set dhcp-relay-service enable
     set dhcp-relay-ip {{ i.dhcp_relay_servers }}
-    {% else %}
+    {% elif i.role == 'lan' %}
     set dhcp-relay-service disable
     {% endif %}
 
     {# Other settings #}
     {% if i.role == 'wan' %}
     set role wan
-    {% endif %}
-    {% if i.role == 'lan' %}
+    {% elif i.role == 'lan' %}
     set role lan
     set device-identification enable
+    {% elif i.role == 'trunk' %}
+    set trunk enable
     {% endif %}
+    {% if i.ip is defined %}
     set allowaccess {{ 'ping' if not i.access|default(false) else i.access }}
+    {% endif %}
   next
 end
 
