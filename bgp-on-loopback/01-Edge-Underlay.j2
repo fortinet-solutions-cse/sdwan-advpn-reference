@@ -18,8 +18,8 @@ config system global
 end
 
 {# Create hardware switches #}
+{% set vlan_switch = project.profiles[profile].bridges|default({})|selectattr('vlanid', 'defined')|list %}
 {% if project.profiles[profile].bridges is defined %}
-{% set vlan_switch = project.profiles[profile].bridges|selectattr('vlanid', 'defined')|list %}
 config system global
   set virtual-switch-vlan {{ 'enable' if vlan_switch else 'disable' }}
 end
@@ -99,7 +99,7 @@ config system interface
     set role lan
     set device-identification enable
     {% elif i.role == 'trunk' %}
-    set trunk enable
+    set trunk {{ 'enable' if vlan_switch else 'disable' }}
     {% endif %}
     {% if i.ip is defined %}
     set allowaccess {{ 'ping' if not i.access|default(false) else i.access }}
