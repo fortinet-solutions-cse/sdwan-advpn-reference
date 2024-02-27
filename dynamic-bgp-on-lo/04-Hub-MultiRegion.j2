@@ -7,11 +7,10 @@
 
 {% import 'Project' as project with context %}
 
-{# Loop: multi-regional config #}
-{% if project.multireg|default(true) and project.regions|count > 1  %}
-
 {% set hub2hub_ol = [] %}
 {% set my_index = project.regions[region].hubs.index(hostname) + 1 %}
+{# Start: multi-regional config #}
+{% if project.multireg|default(true) and project.regions|count > 1  %}
 
 {# Build Hub-to-Hub tunnels #}
 
@@ -181,5 +180,5 @@ config router bgp
   end
 end
 
-{# End Loop: multi-regional config #}
+{# End: multi-regional config #}
 {% endif %}
