@@ -7,6 +7,9 @@
 
 {% import 'Project' as project with context %}
 
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+
 {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
 config vpn ipsec phase1-interface
   edit "EDGE_{{ i.ol_type }}"
@@ -15,8 +18,9 @@ config vpn ipsec phase1-interface
     set ike-version 2
     {% if project.cert_auth|default(true) %}
     set authmethod signature
-    set certificate "{{ project.edge_cert_template|default('Hub') }}"
+    set certificate "{{ project.hub_cert_template|default('Hub') }}"
     {% else %}
+    set authmethod psk
     set psksecret {{ project.psk|default('S3cr3t!') }}
     {% endif %}
     set peertype any
@@ -31,6 +35,7 @@ config vpn ipsec phase1-interface
     set exchange-interface-ip enable
     {% endif %}    
     set add-route disable
+    set encapsulation {{ 'vpn-id-ipip' if multi_vrf else 'none' }}
     set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
     set network-overlay enable
     set network-id {{ project.hubs[hostname].overlays[i.ol_type].network_id }}
@@ -47,6 +52,11 @@ config vpn ipsec phase2-interface
     set phase1name "EDGE_{{ i.ol_type }}"
     set proposal aes256gcm
     set keepalive enable
+  next
+end
+config system interface
+  edit "EDGE_{{ i.ol_type }}"
+    set vrf {{ pe_vrf }}
   next
 end
 {% endfor %}

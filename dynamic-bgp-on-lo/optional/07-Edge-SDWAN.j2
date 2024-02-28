@@ -10,7 +10,7 @@
 {# If options are not customized, use the project-wide defaults #}
 {% set options = project.profiles[profile].options|default(
         {
-          'advpn2': project.advpn2|default(false)
+          'advpn2': project.advpn2|default(true)
         }
     )
 %}

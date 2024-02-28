@@ -7,9 +7,15 @@
 
 {% import 'Project' as project with context %}
 
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+
 {# General settings #}
 config system settings
   set location-id {{ loopback|ipaddr('address') }}
+  {% if multi_vrf %}
+  set allow-subnet-overlap enable
+  {% endif %}
 end
 config system global
   {% if not project.profiles[profile].ha|default(false) and hostname is defined %}
@@ -54,6 +60,9 @@ config system interface
     set ip {{ i.ip }}
     {% endif %}
     {% endif %}
+
+    {# VRF #}
+    set vrf {{ i.vrf|default(pe_vrf) }}
 
     {# VLAN #}
     {% if i.vlanid is defined and i.parent is defined %}
@@ -126,6 +135,7 @@ config system interface
   edit "Lo-wan{{ loop.index }}"
     set vdom "root"
     set type loopback
+    set vrf {{ pe_vrf }}
     set ip {{ i.src_ip|ipaddr('address') }}/32
     set allowaccess ping
   next
@@ -140,6 +150,7 @@ config system interface
   edit "Lo"
     set vdom "root"
     set type loopback
+    set vrf {{ pe_vrf }}
     set ip {{ loopback|ipaddr('address') }}/32
     set allowaccess ping
   next

@@ -7,10 +7,14 @@
 
 {% import 'Project' as project with context %}
 
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+{% set vrf_rt_as = project.vrf_rt_as|default('65000') %}
+
 {# If options are not customized, use the project-wide defaults #}
 {% set options = project.profiles[profile].options|default(
         {
-          'advpn2': project.advpn2|default(false),
+          'advpn2': project.advpn2|default(true),
           'dynamic_bgp': project.dynamic_bgp|default(false)
         }
     )
@@ -59,15 +63,31 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as {{ project.regions[region].as }}
+      set route-map-out-preferable "SLA_OK" 
       {% if not options.advpn2 %}
       set route-map-in "H{{loop.index}}_TAG"
       {% else %}
       unset route-map-in
       {% endif %}
-      set route-map-out-preferable "SLA_OK" 
+      {% if multi_vrf %}
+      set soft-reconfiguration-vpnv4 enable
+      set capability-graceful-restart-vpnv4 enable
+      set route-map-out-vpnv4-preferable "SLA_OK"
+        {% if not options.advpn2 %}
+        set route-map-in-vpnv4 "H{{loop.index}}_TAG"
+        {% else %}
+        unset route-map-in-vpnv4
+        {% endif %}
+      {% else %}
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
+      unset route-map-out-vpnv4-preferable
+      unset route-map-in-vpnv4
+      {% endif %}
     next
     {% endfor %}
   end
+
   {% if options.dynamic_bgp %}
   config neighbor-group
     edit "DYN_EDGE"
@@ -78,7 +98,14 @@ config router bgp
       set remote-as {{ project.regions[region].as }}
       set interface "Lo"
       set update-source "Lo"
-      set passive enable
+      set passive disable
+      {% if multi_vrf %}
+      set soft-reconfiguration-vpnv4 enable
+      set capability-graceful-restart-vpnv4 enable      
+      {% else %}
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
+      {% endif %}
     next
   end
   config neighbor-range
@@ -95,11 +122,41 @@ config router bgp
     delete "DYN_EDGE"
   end
   {% endif %}
+
   config network
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
+    {% set network_to_advertise = [] %}
+    {% for i in project.profiles[profile].interfaces 
+                if i.role == 'lan' and 
+                i.name is defined and 
+                i.advertise|default(true) %}
+      {% if not i.ip in network_to_advertise %}
+        {{ network_to_advertise.append(i.ip) or "" }}
+      {% endif %}
+    {% endfor %}
+    {% for i in network_to_advertise if i|length %}
     edit {{ loop.index }}
-      set prefix {{ i.ip|ipaddr(0) }}
+      set prefix {{ i|ipaddr(0) }}
     next
     {% endfor %}
   end
+  
+  {% if multi_vrf %}
+  config vrf
+    edit "{{ pe_vrf }}"
+      set role pe
+    next
+    {% for i in project.profiles[profile].interfaces if i.vrf is defined and i.name is defined %}
+    edit "{{ i.vrf }}"
+      set role "ce"
+      set rd "{{ vrf_rt_as }}:{{ i.vrf }}"
+      set import-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
+      set export-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
+    next
+    {% endfor %}
+  end  
+  {% else %}
+  config vrf
+    purge
+  end
+  {% endif %}
 end

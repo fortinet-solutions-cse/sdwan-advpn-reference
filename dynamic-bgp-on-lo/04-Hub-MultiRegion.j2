@@ -7,6 +7,9 @@
 
 {% import 'Project' as project with context %}
 
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+
 {% set hub2hub_ol = [] %}
 {% set my_index = project.regions[region].hubs.index(hostname) + 1 %}
 {# Start: multi-regional config #}
@@ -28,7 +31,7 @@
           set ike-version 2
           {% if project.cert_auth|default(true) %}
           set authmethod signature
-          set certificate "{{ project.edge_cert_template|default('Hub') }}"
+          set certificate "{{ project.hub_cert_template|default('Hub') }}"
           {% else %}
           set authmethod psk
           set psksecret {{ project.psk|default('S3cr3t!') }}
@@ -48,6 +51,7 @@
           set auto-discovery-forwarder disable          
           set exchange-interface-ip enable
           {% endif %}
+          set encapsulation {{ 'vpn-id-ipip' if multi_vrf else 'none' }}
           set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
           set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
           set network-overlay disable
@@ -62,6 +66,11 @@
           set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
+        next
+      end
+      config system interface
+        edit "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
+          set vrf {{ pe_vrf }} 
         next
       end
       {% if project.overlay_stickiness|default(false) %}
@@ -98,18 +107,26 @@ config router access-list
   {# Advertise regional LAN summaries between the regions #}
   edit "LAN_REGIONAL_SUMMARY"
     config rule
-      edit 1
-        set prefix {{ project.regions[region].lan_summary }}
+      purge
+      {% for v in project.regions[region].vrfs|default(
+                  [{ 'lan_summary': project.regions[region].lan_summary }]) %}
+      edit 0
+        set prefix {{ v.lan_summary }}
         set exact-match enable
       next
+      {% endfor %}      
     end
   next
 end
 config router bgp
   config aggregate-address
-    edit 1
-      set prefix {{ project.regions[region].lan_summary }}
+    purge
+    {% for v in project.regions[region].vrfs|default(
+                [{ 'lan_summary': project.regions[region].lan_summary }]) %}
+    edit 0
+      set prefix {{ v.lan_summary }}
     next
+    {% endfor %}
   end
 end
 
@@ -171,9 +188,16 @@ config router bgp
       set advertisement-interval 1
       set interface "Lo"
       set update-source "Lo"
-      set route-map-out "HUB2HUB_OUT"
       set connect-timer 1
       set remote-as {{ project.regions[r].as }}
+      set route-map-out{{'-vpnv4' if multi_vrf}} "HUB2HUB_OUT"      
+      {% if multi_vrf %}
+      set soft-reconfiguration-vpnv4 enable
+      set capability-graceful-restart-vpnv4 enable
+      {% else %}
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
+      {% endif %}
     next
     {% endfor %}
     {% endfor %}

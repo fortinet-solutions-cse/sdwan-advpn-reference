@@ -7,6 +7,10 @@
 
 {% import 'Project' as project with context %}
 
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+{% set vrf_rt_as = project.vrf_rt_as|default('65000') %}
+
 {# If BGP peering is not customized, use the project-wide defaults #}
 {% set peering = project.hubs[hostname].peering|default(
         {
@@ -43,6 +47,7 @@ config router route-map
     end
   next
 end
+
 config router bgp
   set as {{ project.regions[region].as }}
   set router-id {{ loopback|ipaddr('address') }}
@@ -64,9 +69,16 @@ config router bgp
       set interface "Lo"
       set update-source "Lo"
       {% if not v.dynamic_bgp and project.intrareg_advpn|default(true) %}
-      set route-reflector-client enable
+      set route-reflector-client{{'-vpnv4' if multi_vrf}} enable
       {% else %}
-      set route-reflector-client disable
+      set route-reflector-client{{'-vpnv4' if multi_vrf}} disable
+      {% endif %}
+      {% if multi_vrf %}
+      set soft-reconfiguration-vpnv4 enable
+      set capability-graceful-restart-vpnv4 enable      
+      {% else %}
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
       {% endif %}
     next
   end
@@ -77,17 +89,47 @@ config router bgp
     next
   end
   {% endfor %}
+
   config network
     edit 1
       set prefix {{ project.lo_summary }}
       set route-map "LOCAL_REGION"
     next
-    {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
+    {% set network_to_advertise = [] %}
+    {% for i in project.profiles[profile].interfaces 
+                if i.role == 'lan' and 
+                i.name is defined and 
+                i.advertise|default(true) %}
+      {% if not i.ip in network_to_advertise %}
+        {{ network_to_advertise.append(i.ip) or "" }}
+      {% endif %}
+    {% endfor %}
+    {% for i in network_to_advertise if i|length %}
     edit {{ loop.index + 1 }}
-      set prefix {{ i.ip|ipaddr(0) }}
+      set prefix {{ i|ipaddr(0) }}
     next
     {% endfor %}
   end
+
+  {% if multi_vrf %}
+  config vrf
+    edit "{{ pe_vrf }}"
+      set role pe
+    next
+    {% for i in project.profiles[profile].interfaces if i.vrf is defined and i.name is defined %}
+    edit "{{ i.vrf }}"
+      set role "ce"
+      set rd "{{ vrf_rt_as }}:{{ i.vrf }}"
+      set import-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
+      set export-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
+    next
+    {% endfor %}
+  end  
+  {% else %}
+  config vrf
+    purge
+  end
+  {% endif %}
 end
 
 {% if project.overlay_stickiness|default(false) %}
@@ -106,13 +148,13 @@ config router static
   edit 101
     set dst {{ project.lan_summary }}
     set blackhole enable
-    set vrf 0
+    set vrf {{ pe_vrf }}
     set comment "Avoid potential leak of corporate traffic to underlay"
   next
   edit 102
     set dst {{ project.lo_summary }}
     set blackhole enable
-    set vrf 0
+    set vrf {{ pe_vrf }}
     set comment "Avoid potential recursive resolution of corporate BGP routes via underlay"
   next
 end

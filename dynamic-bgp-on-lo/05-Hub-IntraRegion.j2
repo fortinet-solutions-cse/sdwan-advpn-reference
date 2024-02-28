@@ -32,7 +32,7 @@
       set ike-version 2
       {% if project.cert_auth|default(true) %}
       set authmethod signature
-      set certificate "{{ project.edge_cert_template|default('Hub') }}"
+      set certificate "{{ project.hub_cert_template|default('Hub') }}"
       {% else %}
       set authmethod psk
       set psksecret {{ project.psk|default('S3cr3t!') }}
