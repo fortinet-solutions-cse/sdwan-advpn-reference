@@ -4,9 +4,9 @@ import argparse, json, textwrap, jinja2, shutil
 from ansible_collections.ansible.utils.plugins.filter.ipaddr import ipaddr
 from os import listdir, chdir, path, makedirs, remove
 
-print("==============================================")
-print("FOS Reference SD-WAN/ADVPN Config Renderer 7.2")
-print("==============================================")
+print("===============================================")
+print("Jinja Orchestrator 7.4: Offline Config Renderer")
+print("===============================================")
 
 #############################################
 
@@ -86,6 +86,7 @@ for devgroup, devlist in devices.items():
     for devname, devmeta in devlist.items():
         print("Rendering device " + devname + "...")
         with open(outdir + '/' + devname, 'w') as outfile:
+            print("execute batch start", file=outfile)
             for j2 in list_of_templates:
                 rendered = env.get_template(j2).render(devmeta)
                 # Delete empty lines (cosmetic)
@@ -96,6 +97,7 @@ for devgroup, devlist in devices.items():
                 print("######################################", file=outfile)
                 print(rendered_stripped, file=outfile)
                 print('', file=outfile)
+            print("execute batch end", file=outfile)
 
 print()
 print("Rendering complete.")
