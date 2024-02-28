@@ -1,3 +1,4 @@
+execute batch start
 ######################################
 # 01-Hub-Underlay.j2
 ######################################
@@ -6,11 +7,12 @@ config system settings
   set tcp-session-without-syn enable
 end
 config system global
-    set hostname site1-H1
+  set hostname site1-H1
 end
 config system interface
   edit "port1"
     set mode dhcp
+    set vrf 0
     set role wan
     set allowaccess ping
   next
@@ -18,6 +20,7 @@ end
 config system interface
   edit "port2"
     set mode dhcp
+    set vrf 0
     set role wan
     set allowaccess ping
   next
@@ -26,6 +29,7 @@ config system interface
   edit "port4"
     set mode static
     set ip 172.16.1.5/24
+    set vrf 0
     set role wan
     set allowaccess ping
   next
@@ -34,6 +38,7 @@ config system interface
   edit "port5"
     set mode static
     set ip 10.1.0.1/24
+    set vrf 0
     set role lan
     set device-identification enable
     set allowaccess ping
@@ -43,12 +48,14 @@ config system interface
   edit "Lo-HC"
     set vdom "root"
     set type loopback
+    set vrf 0
     set ip 10.200.99.1/32
     set allowaccess ping
   next
   edit "Lo"
     set vdom "root"
     set type loopback
+    set vrf 0
     set ip 10.200.1.253/32
     set allowaccess ping
   next
@@ -81,12 +88,14 @@ config vpn ipsec phase1-interface
     set type dynamic
     set interface "port1"
     set ike-version 2
+    set authmethod psk
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256gcm-prfsha256
+    set proposal aes256gcm-prfsha256 aes256-sha256
     set auto-discovery-sender enable
-    set exchange-ip-addr4 10.200.1.253
     set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.253
     set network-overlay enable
     set network-id 11
     set dpd-retrycount 2
@@ -101,17 +110,24 @@ config vpn ipsec phase2-interface
     set keepalive enable
   next
 end
+config system interface
+  edit "EDGE_ISP1"
+    set vrf 0
+  next
+end
 config vpn ipsec phase1-interface
   edit "EDGE_ISP2"
     set type dynamic
     set interface "port2"
     set ike-version 2
+    set authmethod psk
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256gcm-prfsha256
+    set proposal aes256gcm-prfsha256 aes256-sha256
     set auto-discovery-sender enable
-    set exchange-ip-addr4 10.200.1.253
     set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.253
     set network-overlay enable
     set network-id 12
     set dpd-retrycount 2
@@ -126,17 +142,24 @@ config vpn ipsec phase2-interface
     set keepalive enable
   next
 end
+config system interface
+  edit "EDGE_ISP2"
+    set vrf 0
+  next
+end
 config vpn ipsec phase1-interface
   edit "EDGE_MPLS"
     set type dynamic
     set interface "port4"
     set ike-version 2
+    set authmethod psk
     set psksecret S3cr3t!
     set peertype any
-    set proposal aes256gcm-prfsha256
+    set proposal aes256gcm-prfsha256 aes256-sha256
     set auto-discovery-sender enable
-    set exchange-ip-addr4 10.200.1.253
     set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.253
     set network-overlay enable
     set network-id 13
     set dpd-retrycount 2
@@ -149,6 +172,11 @@ config vpn ipsec phase2-interface
     set phase1name "EDGE_MPLS"
     set proposal aes256gcm
     set keepalive enable
+  next
+end
+config system interface
+  edit "EDGE_MPLS"
+    set vrf 0
   next
 end
 
@@ -183,15 +211,19 @@ config router bgp
   set ebgp-multipath enable
   set recursive-next-hop enable
   set recursive-inherit-priority enable
+  set graceful-restart enable
   config neighbor-group
-    edit "EDGE"
+    edit EDGE
       set soft-reconfiguration enable
+      set capability-graceful-restart enable
       set advertisement-interval 1
       set next-hop-self enable
       set remote-as 65001
       set interface "Lo"
       set update-source "Lo"
       set route-reflector-client enable
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
     next
   end
   config neighbor-range
@@ -209,23 +241,9 @@ config router bgp
       set prefix 10.1.0.0/24
     next
   end
-end
-config router policy
-  edit 1
-    set input-device "EDGE_ISP1"
-    set output-device "EDGE_ISP1"
-    set dst 10.0.0.0/8
-  next
-  edit 2
-    set input-device "EDGE_ISP2"
-    set output-device "EDGE_ISP2"
-    set dst 10.0.0.0/8
-  next
-  edit 3
-    set input-device "EDGE_MPLS"
-    set output-device "EDGE_MPLS"
-    set dst 10.0.0.0/8
-  next
+  config vrf
+    purge
+  end
 end
 config router static
   edit 101
@@ -249,14 +267,17 @@ end
         edit "EAST_H1_ISP1"
           set interface "port1"
           set ike-version 2
+          set authmethod psk
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
+          set exchange-fgt-device-id disable
           set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
+          set encapsulation none
           set remote-gw 100.64.4.1
           set exchange-ip-addr4 10.200.1.253
           set network-overlay disable
@@ -273,30 +294,26 @@ end
           set keylifeseconds 3600
         next
       end
-      config router policy
-        edit 11
-          set input-device "EDGE_ISP1"
-          set output-device "EAST_H1_ISP1"
-          set dst 10.0.0.0/8
-        next
-        edit 12
-          set input-device "EAST_H1_ISP1"
-          set output-device "EDGE_ISP1"
-          set dst 10.0.0.0/8
+      config system interface
+        edit "EAST_H1_ISP1"
+          set vrf 0 
         next
       end
       config vpn ipsec phase1-interface
         edit "EAST_H1_MPLS"
           set interface "port4"
           set ike-version 2
+          set authmethod psk
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
+          set exchange-fgt-device-id disable
           set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
           set add-route disable
+          set encapsulation none
           set remote-gw 172.16.4.5
           set exchange-ip-addr4 10.200.1.253
           set network-overlay disable
@@ -313,16 +330,9 @@ end
           set keylifeseconds 3600
         next
       end
-      config router policy
-        edit 13
-          set input-device "EDGE_MPLS"
-          set output-device "EAST_H1_MPLS"
-          set dst 10.0.0.0/8
-        next
-        edit 14
-          set input-device "EAST_H1_MPLS"
-          set output-device "EDGE_MPLS"
-          set dst 10.0.0.0/8
+      config system interface
+        edit "EAST_H1_MPLS"
+          set vrf 0 
         next
       end
 config system zone
@@ -331,55 +341,33 @@ config system zone
   next
 end
 config router access-list
-  edit "LO_REGIONAL_SUMMARY"
+  edit "LAN_REGIONAL_SUMMARY"
     config rule
-      edit 1
-        set prefix 10.200.1.0/24
+      purge
+      edit 0
+        set prefix 10.0.0.0/14
         set exact-match enable
       next
     end
   next
 end
+config router bgp
+  config aggregate-address
+    purge
+    edit 0
+      set prefix 10.0.0.0/14
+    next
+  end
+end
 config router route-map
   edit "HUB2HUB_OUT"
     config rule
+      purge
       edit 1
-        set match-ip-address "LO_REGIONAL_SUMMARY"
-        set set-community no-advertise
-      next
-      edit 100
+        set match-ip-address "LAN_REGIONAL_SUMMARY"
+        set set-metric 0
       next
     end
-  next
-  edit "EDGE_OUT"
-    config rule
-      edit 1
-        set match-ip-address "LO_REGIONAL_SUMMARY"
-        set action deny
-      next
-      edit 100
-      next
-    end
-  next
-end
-config router bgp
-  config neighbor-group
-    edit "EDGE"
-      set route-map-out EDGE_OUT
-      unset next-hop-self
-    next
-  end
-  config network
-    edit 103
-      set prefix 10.200.1.0/24
-    next
-  end
-end
-config router static
-  edit 103
-    set dst 10.200.1.0/24
-    set blackhole enable
-    set comment "Regional loopback summary"
   next
 end
 config router bgp
@@ -387,14 +375,15 @@ config router bgp
     edit 10.200.2.253
       set ebgp-enforce-multihop enable
       set soft-reconfiguration enable
+      set capability-graceful-restart enable
       set advertisement-interval 1
-      set link-down-failover enable
       set interface "Lo"
       set update-source "Lo"
-      set route-map-out "HUB2HUB_OUT"
-      set attribute-unchanged next-hop
       set connect-timer 1
       set remote-as 65002
+      set route-map-out "HUB2HUB_OUT"      
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
     next
   end
 end
@@ -405,7 +394,12 @@ end
 
 
 ######################################
-# optional/05-Hub-SDWAN.j2
+# 06-Hub-InterVRF.j2
+######################################
+
+
+######################################
+# optional/07-Hub-SDWAN.j2
 ######################################
 config system sdwan
   set status enable
@@ -463,7 +457,7 @@ config router static
 end
 
 ######################################
-# optional/06-Hub-Firewall.j2
+# optional/08-Hub-Firewall.j2
 ######################################
 config firewall address
   edit "CORP_LAN"
@@ -546,3 +540,4 @@ config firewall policy
   next
 end
 
+execute batch end
