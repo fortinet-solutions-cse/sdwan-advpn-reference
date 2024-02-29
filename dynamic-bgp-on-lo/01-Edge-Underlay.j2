@@ -55,6 +55,11 @@ config system interface
     {% if i.ip is defined %}
     {% if i.ip == 'dhcp' %}
     set mode dhcp
+    {% elif i.ip == 'pppoe' %}
+    set mode pppoe
+    set username {{ i.pppoe_username }}
+    set password {{ i.pppoe_password }}
+    set auth-type auto
     {%  else %}
     set mode static
     set ip {{ i.ip }}
