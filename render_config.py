@@ -73,6 +73,7 @@ env.filters['ipaddr'] = ipaddr
 with open(inventory, 'r') as inventoryFile:
     devices = json.load(inventoryFile)
 
+defaults = devices.pop('defaults', {})
 for devgroup, devlist in devices.items():
     print()
     print("Rendering group '" + devgroup + "'...")
@@ -88,7 +89,7 @@ for devgroup, devlist in devices.items():
         with open(outdir + '/' + devname, 'w') as outfile:
             print("execute batch start", file=outfile)
             for j2 in list_of_templates:
-                rendered = env.get_template(j2).render(devmeta)
+                rendered = env.get_template(j2).render(devmeta|defaults)
                 # Delete empty lines (cosmetic)
                 rendered_stripped = '\n'.join(l for l in rendered.split('\n') if l.strip())
 
