@@ -7,12 +7,29 @@
 
 {% import 'Project' as project with context %}
 
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+
+{# If options are not customized, use the project-wide defaults #}
+{% set options = project.profiles[profile].options|default(
+        {
+          'strict_firewall': project.strict_firewall|default(true)
+        }
+    )
+%}
+
 config firewall address
   edit "CORP_LAN"
-    set subnet {{ project.lan_summary }}
+    set subnet {{ project.lan_summary|default('10.0.0.0/8') }}
+  next
+end
+config firewall ippool
+  edit "Lo"
+    set startip {{ loopback|ipaddr('address') }}
+    set endip {{ loopback|ipaddr('address') }}
   next
 end
 config firewall policy
+  {{ 'purge' if options.strict_firewall|default(true) or "" }}
   edit 1
     set name "Corporate"
     set srcintf {{ project.lan_zone|default('lan_zone') }} "overlay"
@@ -27,9 +44,26 @@ config firewall policy
     set application-list "default"
     set logtraffic all
   next
+  {% if multi_vrf %}
   edit 2
-    set name "Internet (DIA)"
+    set name "Internet (to PE)"
     set srcintf {{ project.lan_zone|default('lan_zone') }}
+    set dstintf {{ project.vrf_leak_zone|default('vrfs_leak_zone') }}
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+    set nat enable
+  next  
+  {% endif %}
+  edit 3
+    set name "Internet (DIA)"
+    set srcintf {{ project.lan_zone|default('lan_zone') if not multi_vrf else project.pevrf_leak_zone|default('pevrf_leak_zone') }}
     set dstintf "underlay"
     set srcaddr "all"
     set dstaddr "all"
@@ -42,9 +76,9 @@ config firewall policy
     set logtraffic all
     set nat enable
   next
-  edit 3
+  edit 4
     set name "Internet (RIA)"
-    set srcintf {{ project.lan_zone|default('lan_zone') }}
+    set srcintf {{ project.lan_zone|default('lan_zone') if not multi_vrf else project.pevrf_leak_zone|default('pevrf_leak_zone') }}
     set dstintf "overlay"
     set srcaddr "all"
     set dstaddr "all"
@@ -55,8 +89,13 @@ config firewall policy
     set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
+    {% if multi_vrf %}
+    set nat enable
+    set ippool enable
+    set poolname "Lo"    
+    {% endif %}
   next
-  edit 4
+  edit 5
     set name "Health-Check"
     set srcintf "overlay"
     set dstintf "Lo"
@@ -74,7 +113,7 @@ config firewall policy
     {% endif %}
   {% endfor %}
   {% if lo_wan|count %}
-  edit 5
+  edit 6
     set name "Underlay Loopback"
     set srcintf "underlay"
     set dstintf {{ lo_wan|join(' ') }}

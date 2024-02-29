@@ -24,9 +24,7 @@ config vpn ipsec phase1-interface
     set psksecret {{ project.psk|default('S3cr3t!') }}
     {% endif %}
     set peertype any
-    {% if project.monitoring_enhancements|default(false) %}
     set exchange-fgt-device-id enable
-    {% endif %}    
     set proposal aes256gcm-prfsha256 aes256-sha256
     {% if project.intrareg_advpn|default(true) %}
     set auto-discovery-sender enable
@@ -39,12 +37,14 @@ config vpn ipsec phase1-interface
     set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
     set network-overlay enable
     set network-id {{ project.hubs[hostname].overlays[i.ol_type].network_id }}
-    {% if i.src_ip is defined %}
-    set local-gw {{ i.src_ip|ipaddr('address') }}
-    {% endif %}    
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
+    {% if i.src_ip is defined %}
+    set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% else %}
+    unset local-gw
+    {% endif %}    
   next
 end
 config vpn ipsec phase2-interface

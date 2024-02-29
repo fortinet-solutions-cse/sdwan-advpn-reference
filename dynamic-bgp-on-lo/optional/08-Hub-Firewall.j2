@@ -7,16 +7,25 @@
 
 {% import 'Project' as project with context %}
 
+{# If options are not customized, use the project-wide defaults #}
+{% set options = project.profiles[profile].options|default(
+        {
+          'strict_firewall': project.strict_firewall|default(true)
+        }
+    )
+%}
+
 {% set ol_zones = ['overlay'] %}
 {% if project.regions|reject("==", region)|list|count %}
 {{ ol_zones.append('hub2hub_overlay') or "" }}
 {% endif %}
 config firewall address
   edit "CORP_LAN"
-    set subnet {{ project.lan_summary }}
+    set subnet {{ project.lan_summary|default('10.0.0.0/8') }}
   next
 end
 config firewall policy
+  {{ 'purge' if options.strict_firewall|default(true) or "" }}
   edit 1
     set name "Edge-Edge"
     set srcintf {{ ol_zones|join(' ') }}

@@ -24,6 +24,8 @@ config system sdwan
       set zone "underlay"
       {% if i.src_ip is defined %}
       set source {{ i.src_ip|ipaddr('address') }}
+      {% else %}
+      unset source
       {% endif %}
       # Gateway is fetched from DHCP
     next

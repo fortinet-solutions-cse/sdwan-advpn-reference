@@ -15,7 +15,8 @@
 {% set options = project.profiles[profile].options|default(
         {
           'advpn2': project.advpn2|default(true),
-          'dynamic_bgp': project.dynamic_bgp|default(false)
+          'dynamic_bgp': project.dynamic_bgp|default(false),
+          'strict_peering': project.strict_peering|default(true)
         }
     )
 %}
@@ -54,6 +55,7 @@ config router bgp
   set tag-resolve-mode {{ 'merge' if not options.advpn2 else 'disable' }}
   set graceful-restart enable
   config neighbor
+    {{ 'purge' if options.strict_peering|default(true) or "" }}
     {% for h in project.regions[region].hubs %}
     edit {{ project.hubs[h].lo_bgp }}
       set soft-reconfiguration enable
@@ -63,16 +65,16 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as {{ project.regions[region].as }}
-      set route-map-out-preferable "SLA_OK" 
       {% if not options.advpn2 %}
       set route-map-in "H{{loop.index}}_TAG"
       {% else %}
       unset route-map-in
       {% endif %}
+      unset route-map-out{{'-vpnv4' if not multi_vrf}}-preferable
+      set route-map-out{{'-vpnv4' if multi_vrf}}-preferable "SLA_OK" 
       {% if multi_vrf %}
       set soft-reconfiguration-vpnv4 enable
       set capability-graceful-restart-vpnv4 enable
-      set route-map-out-vpnv4-preferable "SLA_OK"
         {% if not options.advpn2 %}
         set route-map-in-vpnv4 "H{{loop.index}}_TAG"
         {% else %}
@@ -81,7 +83,6 @@ config router bgp
       {% else %}
       unset soft-reconfiguration-vpnv4
       unset capability-graceful-restart-vpnv4
-      unset route-map-out-vpnv4-preferable
       unset route-map-in-vpnv4
       {% endif %}
     next
@@ -124,19 +125,19 @@ config router bgp
   {% endif %}
 
   config network
-    {% set network_to_advertise = [] %}
-    {% for i in project.profiles[profile].interfaces 
-                if i.role == 'lan' and 
-                i.name is defined and 
-                i.advertise|default(true) %}
-      {% if not i.ip in network_to_advertise %}
-        {{ network_to_advertise.append(i.ip) or "" }}
-      {% endif %}
-    {% endfor %}
-    {% for i in network_to_advertise if i|length %}
-    edit {{ loop.index }}
-      set prefix {{ i|ipaddr(0) }}
+    {% set network_advertised = [] %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' %}
+    {% if i.name is defined and 
+          i.ip is defined and 
+          i.advertise|default(true) and
+          not i.ip in network_advertised %}
+    edit {{ 110 + loop.index }}
+      set prefix {{ i.ip|ipaddr(0) }}
     next
+    {{ network_advertised.append(i.ip) or "" }}
+    {% else %}
+    delete {{ 110 + loop.index }}
+    {% endif %}
     {% endfor %}
   end
   

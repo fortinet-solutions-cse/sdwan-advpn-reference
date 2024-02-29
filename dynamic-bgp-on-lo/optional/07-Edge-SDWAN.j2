@@ -20,7 +20,7 @@
 {% set dia_members = [ ] %}
 config firewall address
   edit "CORP_LAN"
-    set subnet {{ project.lan_summary }}
+    set subnet {{ project.lan_summary|default('10.0.0.0/8') }}
   next
 end
 config system sdwan
@@ -40,10 +40,10 @@ config system sdwan
       set zone "underlay"
       {% if i.src_ip is defined %}
       set source {{ i.src_ip|ipaddr('address') }}
+      {% else %}
+      unset source
       {% endif %}
-      {% if i.backup|default(false) %}
-      set cost 10
-      {% endif %}      
+      set cost {{ 10 if i.backup|default(false) else 0 }}
       # Best priority, used for Internet access in implicit rule / local-out
       # Gateway is fetched from DHCP
     next
@@ -66,9 +66,7 @@ config system sdwan
       set interface "{{ ol_tun_name }}"
       set priority 10
       set source {{ loopback|ipaddr('address') }}
-      {% if i.backup|default(false) %}
-      set cost 10
-      {% endif %}      
+      set cost {{ 10 if i.backup|default(false) else 0 }}
       set zone "overlay"
       {% if options.advpn2 %}
       set transport-group {{ i.transport_group|default(0) }}

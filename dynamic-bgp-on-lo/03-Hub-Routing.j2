@@ -22,6 +22,15 @@
     )
 %}
 
+{# If options are not customized, use the project-wide defaults #}
+{% set options = project.profiles[profile].options|default(
+        {
+          'strict_peering': project.strict_peering|default(true),
+          'strict_pbr': project.strict_pbr|default(true)
+        }
+    )
+%}
+
 {# For regions with 4-byte ASN, use a dummy 2-byte ASN for BGP communities (4-byte ASN is not supported in communities) #}
 {% set community_as = project.regions[region].as 
                       if project.regions[region].as|int < 65536 
@@ -58,6 +67,14 @@ config router bgp
   set recursive-next-hop enable
   set recursive-inherit-priority enable
   set graceful-restart enable
+  {% if options.strict_peering|default(true) %}
+  config neighbor-range
+    purge
+  end
+  config neighbor-group
+    purge
+  end
+  {% endif %}
   {% for k,v in peering.items() %}  
   config neighbor-group
     edit {{ k }}
@@ -68,6 +85,7 @@ config router bgp
       set remote-as {{ project.regions[region].as }}
       set interface "Lo"
       set update-source "Lo"
+      unset route-reflector-client{{'-vpnv4' if not multi_vrf}}
       {% if not v.dynamic_bgp and project.intrareg_advpn|default(true) %}
       set route-reflector-client{{'-vpnv4' if multi_vrf}} enable
       {% else %}
@@ -91,23 +109,23 @@ config router bgp
   {% endfor %}
 
   config network
-    edit 1
+    edit 102
       set prefix {{ project.lo_summary }}
       set route-map "LOCAL_REGION"
+    next  
+    {% set network_advertised = [] %}
+    {% for i in project.profiles[profile].interfaces if i.role == 'lan' %}
+    {% if i.name is defined and 
+          i.ip is defined and 
+          i.advertise|default(true) and
+          not i.ip in network_advertised %}
+    edit {{ 110 + loop.index }}
+      set prefix {{ i.ip|ipaddr(0) }}
     next
-    {% set network_to_advertise = [] %}
-    {% for i in project.profiles[profile].interfaces 
-                if i.role == 'lan' and 
-                i.name is defined and 
-                i.advertise|default(true) %}
-      {% if not i.ip in network_to_advertise %}
-        {{ network_to_advertise.append(i.ip) or "" }}
-      {% endif %}
-    {% endfor %}
-    {% for i in network_to_advertise if i|length %}
-    edit {{ loop.index + 1 }}
-      set prefix {{ i|ipaddr(0) }}
-    next
+    {{ network_advertised.append(i.ip) or "" }}
+    {% else %}
+    delete {{ 110 + loop.index }}
+    {% endif %}
     {% endfor %}
   end
 
@@ -132,25 +150,34 @@ config router bgp
   {% endif %}
 end
 
+{% if options.strict_pbr|default(true) %}
+config router policy
+  purge
+end
+{% endif %}
 {% if project.overlay_stickiness|default(false) %}
 config router policy
   {% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
   edit {{ loop.index }}
     set input-device "EDGE_{{ i.ol_type }}"
     set output-device "EDGE_{{ i.ol_type }}"
-    set dst {{ project.lan_summary }}
+    {{'un' if not project.lan_summary|default()}}set dst {{ project.lan_summary|default() }}
   next
   {% endfor %}
 end
 {% endif %}
 
 config router static
+  {% if project.lan_summary is defined %}
   edit 101
     set dst {{ project.lan_summary }}
     set blackhole enable
     set vrf {{ pe_vrf }}
     set comment "Avoid potential leak of corporate traffic to underlay"
   next
+  {% else %}
+  delete 101
+  {% endif %}
   edit 102
     set dst {{ project.lo_summary }}
     set blackhole enable

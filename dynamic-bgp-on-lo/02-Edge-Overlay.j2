@@ -35,9 +35,7 @@ config vpn ipsec phase1-interface
     {% endif %}
     set keylife 28800
     set peertype any
-    {% if project.monitoring_enhancements|default(false) %}
     set exchange-fgt-device-id enable
-    {% endif %}
     set net-device enable
     set link-cost {{ 10 if i.backup|default(false) else 0 }}
     set proposal aes256gcm-prfsha256 aes256-sha256
@@ -54,19 +52,23 @@ config vpn ipsec phase1-interface
     set network-overlay enable
     set network-id {{ project.hubs[h].overlays[i.ol_type].network_id }}
     set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
-    {% if i.src_ip is defined %}
-    set local-gw {{ i.src_ip|ipaddr('address') }}
-    {% endif %}
-    {% if i.backup_group is defined %}
-    {% if i.backup|default(false) %}
-    set monitor "{{ backup_tunnel[i.backup_group] }}"
-    {% else %}
-      {{ backup_tunnel.update({i.backup_group: ol_tun_name}) or "" }}
-    {% endif %}
-    {% endif %}
     set dpd-retrycount 3
     set dpd-retryinterval 5
-    set dpd on-idle
+    set dpd on-idle    
+    {% if i.src_ip is defined %}
+    set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% else %}
+    unset local-gw
+    {% endif %}
+    {% if i.backup_group is defined %}
+      {% if i.backup|default(false) %}
+      set monitor "{{ backup_tunnel[i.backup_group] }}"
+      {% else %}
+      {{ backup_tunnel.update({i.backup_group: ol_tun_name}) or "" }}
+      {% endif %}
+    {% else %}
+    unset monitor
+    {% endif %}
   next
 end
 config vpn ipsec phase2-interface

@@ -38,7 +38,7 @@
           {% endif %}
           set keylife 28800
           set peertype any
-          set exchange-fgt-device-id {{ 'enable' if project.monitoring_enhancements|default(false) else 'disable' }}
+          set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
           {% if project.multireg_advpn|default(true) %}
           set auto-discovery-sender enable
@@ -78,12 +78,12 @@
         edit {{ hub2hub_ol|length * 2 + 11 }}
           set input-device "EDGE_{{ i.ol_type }}"
           set output-device "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
-          set dst {{ project.lan_summary }}
+          {{'un' if not project.lan_summary|default()}}set dst {{ project.lan_summary|default() }}
         next
         edit {{ hub2hub_ol|length * 2 + 12 }}
           set input-device "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
           set output-device "EDGE_{{ i.ol_type }}"
-          set dst {{ project.lan_summary }}
+          {{'un' if not project.lan_summary|default()}}set dst {{ project.lan_summary|default() }}
         next
       end
       {% endif %}
@@ -135,6 +135,7 @@ end
 config router access-list
   edit "LO_REGIONAL_SUMMARY"
     config rule
+      purge
       edit 1
         set prefix {{ project.regions[region].lo_summary }}
         set exact-match enable
@@ -154,6 +155,15 @@ config router bgp
     edit 103
       set prefix {{ project.regions[region].lo_summary }}
     next
+  end
+end
+{% else %}
+config router static
+  delete 103
+end
+config router bgp
+  config network
+    delete 103
   end
 end
 {% endif %}
@@ -190,6 +200,7 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as {{ project.regions[r].as }}
+      unset route-map-out{{'-vpnv4' if not multi_vrf}}
       set route-map-out{{'-vpnv4' if multi_vrf}} "HUB2HUB_OUT"      
       {% if multi_vrf %}
       set soft-reconfiguration-vpnv4 enable

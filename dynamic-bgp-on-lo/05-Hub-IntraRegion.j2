@@ -39,7 +39,7 @@
       {% endif %}
       set keylife 28800
       set peertype any
-      set exchange-fgt-device-id {{ 'enable' if project.monitoring_enhancements|default(false) else 'disable' }}
+      set exchange-fgt-device-id enable
       set proposal aes256gcm-prfsha256
       set exchange-interface-ip enable
       set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
@@ -115,7 +115,10 @@ config router bgp
   {% endfor %}
   end
   config network
-  {% for i in project.profiles[profile].interfaces if i.role == 'lan' and i.name is defined and i.advertise|default(true) %}
+  {% for i in project.profiles[profile].interfaces 
+              if i.role == 'lan' and 
+              i.name is defined 
+              and i.advertise|default(true) %}
   edit {{ loop.index + 1 }}
    {# Mark prefixes originated behind the Hub #}
     set route-map "HUB_IN"
