@@ -96,14 +96,14 @@ config firewall policy
     {% endif %}
   next
   edit 5
-    set name "Health-Check"
+    set name "Peering"
     set srcintf "overlay"
     set dstintf "Lo"
     set srcaddr "all"
     set dstaddr "all"
     set action accept
     set schedule "always"
-    set service "PING"
+    set service "PING" "BGP"
   next
   {# Permit incoming traffic to underlay loopback, when used #}
   {% set lo_wan = [] %}
