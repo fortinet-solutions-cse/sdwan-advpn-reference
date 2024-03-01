@@ -13,6 +13,7 @@
 
 - DHCP and static IP
 - VLAN tagging
+- PPPoE support
 - Bridging (built-in hardware switches, incl. virtual-switch-vlan support)
 - FEX support
 - FortiLink (SD-Branch) support
@@ -22,8 +23,11 @@
 
 ## List of supported overlay network designs:
 
-- BGP on Loopback
-- BGP per Overlay
+- Dynamic BGP on Loopback (unified)
+  - RR-based and RR-less ADVPN support
+  - ADVPN 2.0 support
+  - Multi-VRF support ("Segmentation over Single Overlay"), including Internet access
+  - Mixed RR-based/RR-less deployment support
 
 ## Overlay topology options:
 
@@ -33,10 +37,10 @@
 - Spoke-to-Hub connectivity options: One-to-One, Many-to-One and Full-Mesh
 - IPSEC authentication: certificate-based and PSK 
 - Redundant IPSEC tunnels ("monitor" feature)
-- Overlay stickiness
+- Overlay stickiness (legacy)
 
 ## Other features:
 
-- Multi-VRF (“Segmentation over Single Overlay”), including Internet access
 - Automatic System Zone creation for FW policies
 - QoS: ingress/egress shaping profile 
+- CRL support on Hubs
