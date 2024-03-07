@@ -43,6 +43,20 @@ config router route-map
       next
     end
   next
+  edit "LAN_TAG"
+    config rule
+      edit 1
+        set set-tag 100
+      next
+    end
+  next
+  edit "LAN_OUT"
+    config rule
+      edit 1
+        set match-tag 100
+      next
+    end  
+  next
 end
 
 config router bgp
@@ -90,16 +104,28 @@ config router bgp
   end
 
   {% if options.dynamic_bgp %}
+    {% if options.strict_peering|default(true) %}
+    config neighbor-range
+      purge
+    end
+    config neighbor-group
+      purge
+    end
+    {% endif %}
   config neighbor-group
-    edit "DYN_EDGE"
+    {# TODO: Replace with remote-as-filter support #}
+    {% for r in project.regions %}
+    edit "DYN_EDGE_{{r}}"
+      set ebgp-enforce-multihop enable 
       set soft-reconfiguration enable
       set capability-graceful-restart enable
       set advertisement-interval 1
       set next-hop-self enable
-      set remote-as {{ project.regions[region].as }}
+      set remote-as {{ project.regions[r].as }}
       set interface "Lo"
       set update-source "Lo"
       set passive disable
+      set route-map-out{{'-vpnv4' if multi_vrf}} "LAN_OUT"
       {% if multi_vrf %}
       set soft-reconfiguration-vpnv4 enable
       set capability-graceful-restart-vpnv4 enable      
@@ -108,19 +134,26 @@ config router bgp
       unset capability-graceful-restart-vpnv4
       {% endif %}
     next
+    {% endfor %}
   end
   config neighbor-range
-    edit 1
-      set prefix {{ project.lo_summary }}
-      set neighbor-group "DYN_EDGE"
+    {# TODO: Replace with remote-as-filter support #}
+    {% for r in project.regions %}
+    edit {{ loop.index }}
+      set prefix {{ project.regions[r].lo_summary }}
+      set neighbor-group "DYN_EDGE_{{r}}"
     next
+    {% endfor %}
   end  
   {% else %}
+  {# TODO: Replace with remote-as-filter support #}
   config neighbor-range
-    delete 1
+    {# delete 1 #}
+    purge
   end
   config neighbor-group
-    delete "DYN_EDGE"
+    {# delete "DYN_EDGE" #}
+    purge
   end
   {% endif %}
 
@@ -133,6 +166,7 @@ config router bgp
           not i.ip in network_advertised %}
     edit {{ 110 + loop.index }}
       set prefix {{ i.ip|ipaddr(0) }}
+      set route-map "LAN_TAG"
     next
     {{ network_advertised.append(i.ip) or "" }}
     {% else %}
