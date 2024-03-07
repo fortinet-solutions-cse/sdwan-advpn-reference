@@ -36,8 +36,8 @@ config firewall policy
     set schedule "always"
     set service "ALL"
     # Allow overlay switchover for existing sessions (from shortcut to Hub)
-    set anti-replay disable
-    set tcp-session-without-syn all
+    set anti-replay {{ 'disable' if not project.hub_strict_syn|default(false) else 'enable' }}
+    set tcp-session-without-syn {{ 'all' if not project.hub_strict_syn|default(false) else 'disable' }}
   next
   edit 2
     set name "Edge-Hub"

@@ -75,9 +75,9 @@ config router bgp
     purge
   end
   {% endif %}
-  {% for k,v in peering.items() %}  
+  {% for p in peering %}  
   config neighbor-group
-    edit {{ k }}
+    edit {{ p }}
       set soft-reconfiguration enable
       set capability-graceful-restart enable
       set advertisement-interval 1
@@ -86,7 +86,7 @@ config router bgp
       set interface "Lo"
       set update-source "Lo"
       unset route-reflector-client{{'-vpnv4' if not multi_vrf}}
-      {% if not v.dynamic_bgp and project.intrareg_advpn|default(true) %}
+      {% if not peering[p].dynamic_bgp and project.intrareg_advpn|default(true) %}
       set route-reflector-client{{'-vpnv4' if multi_vrf}} enable
       {% else %}
       set route-reflector-client{{'-vpnv4' if multi_vrf}} disable
@@ -102,8 +102,8 @@ config router bgp
   end
   config neighbor-range
     edit {{ loop.index }}
-      set prefix {{ v.lo_summary }}
-      set neighbor-group "{{ k }}"
+      set prefix {{ peering[p].lo_summary }}
+      set neighbor-group "{{ p }}"
     next
   end
   {% endfor %}
