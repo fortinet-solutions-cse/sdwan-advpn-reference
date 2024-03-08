@@ -124,7 +124,7 @@ config router bgp
       set prefix {{ i.ip|ipaddr(0) }}
     next
     {{ network_advertised.append(i.ip) or "" }}
-    {% else %}
+    {% elif options.force_cleanup|default(false) %}
     delete {{ 110 + loop.index }}
     {% endif %}
     {% endfor %}
