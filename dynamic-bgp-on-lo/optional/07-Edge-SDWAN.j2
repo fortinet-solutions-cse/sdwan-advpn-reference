@@ -97,6 +97,8 @@ config system sdwan
       set server "www.fortinet.com"
       set sla-fail-log-period 10
       set sla-pass-log-period 10
+      set update-cascade-interface disable
+      set update-static-route disable
       set members {{ dia_members|join(' ') }}
     next
   end
