@@ -26,7 +26,8 @@
 {% set options = project.profiles[profile].options|default(
         {
           'strict_peering': project.strict_peering|default(true),
-          'strict_pbr': project.strict_pbr|default(true)
+          'strict_pbr': project.strict_pbr|default(true),
+          'force_cleanup': project.force_cleanup|default(false)
         }
     )
 %}
@@ -175,7 +176,7 @@ config router static
     set vrf {{ pe_vrf }}
     set comment "Avoid potential leak of corporate traffic to underlay"
   next
-  {% else %}
+  {% elif options.force_cleanup|default(false) %}
   delete 101
   {% endif %}
   edit 102
