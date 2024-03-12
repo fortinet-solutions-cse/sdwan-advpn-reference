@@ -126,22 +126,7 @@ config router access-list
       {% endfor %}      
     end
   next
-end
-config router bgp
-  config aggregate-address
-    purge
-    {% for v in project.regions[region].vrfs|default(
-                [{ 'lan_summary': project.regions[region].lan_summary }]) %}
-    edit 0
-      set prefix {{ v.lan_summary }}
-    next
-    {% endfor %}
-  end
-end
-
-{% if project.multireg_lo|default(false) %}
-{# Make loopbacks reachable across the regions #}
-config router access-list
+  {# Advertise regional loopback summaries between the regions #}
   edit "LO_REGIONAL_SUMMARY"
     config rule
       purge
@@ -160,22 +145,21 @@ config router static
   next
 end
 config router bgp
+  config aggregate-address
+    purge
+    {% for v in project.regions[region].vrfs|default(
+                [{ 'lan_summary': project.regions[region].lan_summary }]) %}
+    edit 0
+      set prefix {{ v.lan_summary }}
+    next
+    {% endfor %}
+  end
   config network
     edit 103
       set prefix {{ project.regions[region].lo_summary }}
     next
   end
 end
-{% elif options.force_cleanup|default(false) %}
-config router static
-  delete 103
-end
-config router bgp
-  config network
-    delete 103
-  end
-end
-{% endif %}
 
 config router route-map
   edit "HUB2HUB_OUT"
@@ -185,14 +169,12 @@ config router route-map
         set match-ip-address "LAN_REGIONAL_SUMMARY"
         set set-metric {{ 100 if my_index == 2 else 0 }}
       next
-      {% if project.multireg_lo|default(false) %}
       edit 2
         {# Do not readvertise regional loopback summary to remote Edges and other regions #}
         set match-ip-address "LO_REGIONAL_SUMMARY"
         set set-community no-advertise
         set set-metric {{ 100 if my_index == 2 else 0 }}
       next
-      {% endif %}
     end
   next
 end
@@ -225,4 +207,13 @@ config router bgp
 end
 
 {# End: multi-regional config #}
+{% elif options.force_cleanup|default(false) %}
+config router static
+  delete 103
+end
+config router bgp
+  config network
+    delete 103
+  end
+end
 {% endif %}
