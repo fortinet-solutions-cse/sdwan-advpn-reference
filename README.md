@@ -1,27 +1,28 @@
-# Jinja CLI Templates for Fortinet SD-WAN/ADVPN
+# Jinja Orchestrator 7.2 (for Fortinet SD-WAN/ADVPN)
 
-FortiManager 7.0.1+ includes built-in Jinja engine that allows you to use Jinja syntax for CLI Templates.
-This repository contains generic, ready-to-use templates that generate our best-practice SD-WAN/ADVPN configuration.
-These templates are easily tunable for your projects, as will be briefly explained below.
+This repository contains generic, ready-to-use Jinja templates that generate our best-practice SD-WAN/ADVPN configuration.
+These templates are easily tunable for your projects. We call them the Jinja Orchestrator, because of the layer of abstraction that they provide.
 
-Our [Deployment Guide for MSSPs (Release 7.2)](https://docs.fortinet.com/document/fortigate/7.2.0/sd-wan-deployment-for-mssps/705134/introduction) contains more information about using these templates in your projects.
+Generally, there are two ways of using the Jinja Orchestrator:
 
-Additionally, we provide a simple renderer written in Python, which you can use to render the templates without FortiManager.
-It will generate a set of plain-text files with FOS configuration for each device, which you can simply copy-paste to your
-FortiGate devices (or use the [Configuration Scripts](https://docs.fortinet.com/document/fortigate/7.0.6/administration-guide/780930/configuration-scripts) feature).
-This method is handy to build a quick and simple lab or to quickly validate the changes made to your Jinja templates.
+- It can be used as part of the FortiManager-based SD-WAN deployment, thanks to the Jinja engine built into the FortiManager 7.0.1+. 
+  The Jinja Orchestrator is used to generate the foundation of your SD-WAN project, supplemented by other templates available in the FortiManager. Our [Deployment Guide for MSSPs (Release 7.2)](https://docs.fortinet.com/document/fortigate/7.2.0/sd-wan-deployment-for-mssps/705134/introduction) contains more information about using the Jinja Orchestrator in this way.
 
-A brief summary of features supported by these templates is available in the file [Supported_Features.md](./Supported_Features.md).  
-A complete reference of all supported parameters in the Project Template is available in the file [Project_Template_Reference.md](./Project_Template_Reference.md).
+- It can also be used for an offline rendering (without the FortiManager), thanks to a simple renderer written in Python.
+  It will generate a set of plain-text files with FOS configuration for each device, which you can simply copy-paste to your FortiGate devices 
+  (or use the [Configuration Scripts](https://docs.fortinet.com/document/fortigate/7.0.6/administration-guide/780930/configuration-scripts) feature). 
+  This method is handy to build a quick and simple lab or to quickly validate the changes made to your Project Template. 
 
-Please also check the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki) page of this repository for some useful tips and examples.
+The main source of documentation for the Jinja Orchestrator - from a brief list of supported features to a detailed reference for each one of them - is available in the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki).
+
+We also recommend consulting the [Deployment Guide for MSSPs (Release 7.2)](https://docs.fortinet.com/document/fortigate/7.2.0/sd-wan-deployment-for-mssps/705134/introduction) for more information about the templates structure and their use in your projects.
 
 Finally, feel free to report issues and provide your suggestions ([right here](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/issues)).
 
 
 ## Routing Design Flavors
 
-Currently we provide three main design flavors - each under its own directory:
+Jinja Orchestrator 7.2 supports three main design flavors - each under its own directory:
 
 - **"BGP per Overlay"** is the traditional routing design for our SD-WAN/ADVPN deployments,
   in which a separate IBGP session is established over each overlay between an Edge device and a Hub.
@@ -78,42 +79,18 @@ Additionally, in the root directory you will find the Python renderer (**render_
 
 ## How-To: Deploy with FortiManager
 
-Follow these steps:
-
-1. Download the selected design flavor
-
-1. Edit the `Project` template to describe your project. Use your favorite plain text editor
-   (how about trying [Atom](https://atom.io/) or [Visual Studio Code](https://code.visualstudio.com/)?).
-   The guidelines to describe your project will follow below.
-   There is no need to edit any other files.
-
-1. Import the edited `Project` template into your FortiManager.
-   Remember to set its type to "Jinja Script" and call it "Project".
-   Create the missing variables, when prompted.
-
-1. Import the rest of the templates from the set ("as is"), setting their type to "Jinja Script" as well.
-   Create the missing variables, when prompted.  
-
-   You DO NOT need to import the "optional" templates.
-
-1. Create CLI Template Groups for your Hubs and Edges, as follows:
-
-   - Edge-Template:
-     - 01-Edge-Underlay
-     - 02-Edge-Overlay
-     - 03-Edge-Routing
-
-   - Hub-Template
-     - 01-Hub-Underlay
-     - 02-Hub-Overlay
-     - 03-Hub-Routing
-     - 04-Hub-MultiRegion
-     - 05-Hub-IntraRegion
-
-1. Deploy your devices, assigning the above CLI Template Groups to them and filling in per-device values of the ADOM variables.
+Please consult the [Deployment Guide for MSSPs (Release 7.2)](https://docs.fortinet.com/document/fortigate/7.2.0/sd-wan-deployment-for-mssps/705134/introduction).
 
 
-## How-To: Use the Python Renderer
+## How-To: Offline Rendering (without FortiManager)
+
+We provide a simple offline renderer written in Python. It is tested on Python 3.11 with the following required packages:
+
+```bash
+pip3 install jinja2 ansible netaddr
+```
+
+Once the required packages are installed, you can render the templates as follows:
 
 1. Clone the repository
 
@@ -197,27 +174,7 @@ site1-1		site1-2		site1-H1	site1-H2	site2-1		site2-H1
 
 ## Describing Your Project
 
-The `Project` template contains comments inside that should be useful to understand its contents.
-Pay special attention to the syntax - it must be a valid Jinja.
-It is recommended to validate the syntax using any online Jinja validation tool, such as [this](https://j2live.ttl255.com/). If there are no syntax errors, the rendering
-will return an empty result (since the `Project` template is only defining data structures).
-
-The template contains the following sections:
-
-- **Mandatory Global Definitions** for your project, such as your corporate LAN summary
-
-- **Optional Settings** to control the resulting configuration (you can keep them all commented out for the default behavior)
-
-- **Regions** describe the regions in your project, including the list of Hubs servicing each region
-
-- **Profiles** describe device profiles, mainly physical connectivity of your different sites (LAN ports, WAN ports, whether DHCP is present etc.)
-
-- **Hubs** describe all the Hubs in your project, mainly the overlays that they create (and how Edges can connect to them)
-
-We recommend that you start from the pre-configured examples and adjust them as necessary!  
-A complete up-to-date reference listing all the currently supported parameters in the Project Template is available in [this](./Project_Template_Reference.md) file.
-
-For more details, please refer to the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki) page, check our Deployment Guide or consult your Fortinet representatives.
+Please consult the [Wiki](https://github.com/fortinet-solutions-cse/sdwan-advpn-reference/wiki) page, check our [Deployment Guide for MSSPs (Release 7.2)](https://docs.fortinet.com/document/fortigate/7.2.0/sd-wan-deployment-for-mssps/705134/introduction) or consult your Fortinet representatives.
 
 
 ## Example Project
