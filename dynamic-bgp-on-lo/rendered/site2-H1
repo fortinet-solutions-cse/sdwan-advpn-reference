@@ -18,9 +18,16 @@ config system interface
   next
 end
 config system interface
+  edit "port2"
+    set mode dhcp
+    set vrf 0
+    set role wan
+    set allowaccess ping
+  next
+end
+config system interface
   edit "port4"
-    set mode static
-    set ip 172.16.4.5/24
+    set mode dhcp
     set vrf 0
     set role wan
     set allowaccess ping
@@ -83,6 +90,7 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set psksecret S3cr3t!
     set peertype any
+    set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
     set auto-discovery-sender enable
     set add-route disable
@@ -93,6 +101,7 @@ config vpn ipsec phase1-interface
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
+    unset local-gw
   next
 end
 config vpn ipsec phase2-interface
@@ -108,6 +117,40 @@ config system interface
   next
 end
 config vpn ipsec phase1-interface
+  edit "EDGE_ISP2"
+    set type dynamic
+    set interface "port2"
+    set ike-version 2
+    set authmethod psk
+    set psksecret S3cr3t!
+    set peertype any
+    set exchange-fgt-device-id enable
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set auto-discovery-sender enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.2.253
+    set network-overlay enable
+    set network-id 42
+    set dpd-retrycount 2
+    set dpd-retryinterval 5
+    set dpd on-idle
+    unset local-gw
+  next
+end
+config vpn ipsec phase2-interface
+  edit "EDGE_ISP2"
+    set phase1name "EDGE_ISP2"
+    set proposal aes256gcm
+    set keepalive enable
+  next
+end
+config system interface
+  edit "EDGE_ISP2"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
   edit "EDGE_MPLS"
     set type dynamic
     set interface "port4"
@@ -115,6 +158,7 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set psksecret S3cr3t!
     set peertype any
+    set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
     set auto-discovery-sender enable
     set add-route disable
@@ -125,6 +169,7 @@ config vpn ipsec phase1-interface
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
+    unset local-gw
   next
 end
 config vpn ipsec phase2-interface
@@ -172,6 +217,12 @@ config router bgp
   set recursive-next-hop enable
   set recursive-inherit-priority enable
   set graceful-restart enable
+  config neighbor-range
+    purge
+  end
+  config neighbor-group
+    purge
+  end
   config neighbor-group
     edit EDGE
       set soft-reconfiguration enable
@@ -181,7 +232,8 @@ config router bgp
       set remote-as 65002
       set interface "Lo"
       set update-source "Lo"
-      set route-reflector-client enable
+      unset route-reflector-client-vpnv4
+      set route-reflector-client disable
       unset soft-reconfiguration-vpnv4
       unset capability-graceful-restart-vpnv4
     next
@@ -193,11 +245,11 @@ config router bgp
     next
   end
   config network
-    edit 1
+    edit 102
       set prefix 10.200.0.0/14
       set route-map "LOCAL_REGION"
-    next
-    edit 2
+    next  
+    edit 111
       set prefix 10.4.0.0/24
     next
   end
@@ -205,13 +257,10 @@ config router bgp
     purge
   end
 end
+config router policy
+  purge
+end
 config router static
-  edit 101
-    set dst 10.0.0.0/8
-    set blackhole enable
-    set vrf 0
-    set comment "Avoid potential leak of corporate traffic to underlay"
-  next
   edit 102
     set dst 10.200.0.0/14
     set blackhole enable
@@ -224,78 +273,6 @@ end
 # 04-Hub-MultiRegion.j2
 ######################################
       config vpn ipsec phase1-interface
-        edit "WEST_H1_ISP1"
-          set interface "port1"
-          set ike-version 2
-          set authmethod psk
-          set psksecret S3cr3t!
-          set keylife 28800
-          set peertype any
-          set exchange-fgt-device-id disable
-          set proposal aes256gcm-prfsha256
-          set auto-discovery-sender enable
-          set auto-discovery-receiver enable
-          set auto-discovery-forwarder enable
-          set add-route disable
-          set encapsulation none
-          set remote-gw 100.64.1.1
-          set exchange-ip-addr4 10.200.2.253
-          set network-overlay disable
-          set dpd-retrycount 3
-          set dpd-retryinterval 5
-          set dpd on-idle
-        next
-      end
-      config vpn ipsec phase2-interface
-        edit "WEST_H1_ISP1"
-          set phase1name "WEST_H1_ISP1"
-          set proposal aes256gcm
-          set keepalive enable
-          set keylifeseconds 3600
-        next
-      end
-      config system interface
-        edit "WEST_H1_ISP1"
-          set vrf 0 
-        next
-      end
-      config vpn ipsec phase1-interface
-        edit "WEST_H2_ISP1"
-          set interface "port1"
-          set ike-version 2
-          set authmethod psk
-          set psksecret S3cr3t!
-          set keylife 28800
-          set peertype any
-          set exchange-fgt-device-id disable
-          set proposal aes256gcm-prfsha256
-          set auto-discovery-sender enable
-          set auto-discovery-receiver enable
-          set auto-discovery-forwarder enable
-          set add-route disable
-          set encapsulation none
-          set remote-gw 100.64.2.1
-          set exchange-ip-addr4 10.200.2.253
-          set network-overlay disable
-          set dpd-retrycount 3
-          set dpd-retryinterval 5
-          set dpd on-idle
-        next
-      end
-      config vpn ipsec phase2-interface
-        edit "WEST_H2_ISP1"
-          set phase1name "WEST_H2_ISP1"
-          set proposal aes256gcm
-          set keepalive enable
-          set keylifeseconds 3600
-        next
-      end
-      config system interface
-        edit "WEST_H2_ISP1"
-          set vrf 0 
-        next
-      end
-      config vpn ipsec phase1-interface
         edit "WEST_H1_MPLS"
           set interface "port4"
           set ike-version 2
@@ -303,7 +280,7 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set exchange-fgt-device-id disable
+          set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
@@ -339,7 +316,7 @@ end
           set psksecret S3cr3t!
           set keylife 28800
           set peertype any
-          set exchange-fgt-device-id disable
+          set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
@@ -369,7 +346,7 @@ end
       end
 config system zone
   edit "hub2hub_overlay"
-    append interface WEST_H1_ISP1 WEST_H2_ISP1 WEST_H1_MPLS WEST_H2_MPLS
+    append interface WEST_H1_MPLS WEST_H2_MPLS
   next
 end
 config router access-list
@@ -382,12 +359,33 @@ config router access-list
       next
     end
   next
+  edit "LO_REGIONAL_SUMMARY"
+    config rule
+      purge
+      edit 1
+        set prefix 10.200.2.0/24
+        set exact-match enable
+      next
+    end
+  next
+end
+config router static
+  edit 103
+    set dst 10.200.2.0/24
+    set blackhole enable
+    set comment "Regional loopback summary"
+  next
 end
 config router bgp
   config aggregate-address
     purge
     edit 0
       set prefix 10.4.0.0/14
+    next
+  end
+  config network
+    edit 103
+      set prefix 10.200.2.0/24
     next
   end
 end
@@ -397,6 +395,11 @@ config router route-map
       purge
       edit 1
         set match-ip-address "LAN_REGIONAL_SUMMARY"
+        set set-metric 0
+      next
+      edit 2
+        set match-ip-address "LO_REGIONAL_SUMMARY"
+        set set-community no-advertise
         set set-metric 0
       next
     end
@@ -413,6 +416,7 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
+      unset route-map-out-vpnv4
       set route-map-out "HUB2HUB_OUT"      
       unset soft-reconfiguration-vpnv4
       unset capability-graceful-restart-vpnv4
@@ -426,6 +430,7 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
+      unset route-map-out-vpnv4
       set route-map-out "HUB2HUB_OUT"      
       unset soft-reconfiguration-vpnv4
       unset capability-graceful-restart-vpnv4
@@ -456,12 +461,11 @@ config system sdwan
   end
   config members
     edit 1
-      set interface "port1"
-      set zone "underlay"
-      # Gateway is fetched from DHCP
+      set interface "EDGE_ISP1"
+      set zone "overlay"
     next
     edit 2
-      set interface "EDGE_ISP1"
+      set interface "EDGE_ISP2"
       set zone "overlay"
     next
     edit 3
@@ -472,7 +476,7 @@ config system sdwan
   config health-check
     edit "EDGE"
       set detect-mode remote
-      set members 2 3
+      set members 1 2 3
       set sla-id-redistribute 1
       config sla
         edit 1
@@ -501,6 +505,7 @@ config firewall address
   next
 end
 config firewall policy
+  purge
   edit 1
     set name "Edge-Edge"
     set srcintf overlay hub2hub_overlay

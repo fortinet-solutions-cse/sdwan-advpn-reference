@@ -17,9 +17,16 @@ config system interface
   next
 end
 config system interface
+  edit "port2"
+    set mode dhcp
+    set vrf 0
+    set role wan
+    set allowaccess ping
+  next
+end
+config system interface
   edit "port4"
-    set mode static
-    set ip 172.16.0.1/29
+    set mode dhcp
     set vrf 0
     set role wan
     set allowaccess ping
@@ -29,6 +36,17 @@ config system interface
   edit "port5"
     set mode static
     set ip 10.0.1.1/24
+    set vrf 0
+    set dhcp-relay-service disable
+    set role lan
+    set device-identification enable
+    set allowaccess ping
+  next
+end
+config system interface
+  edit "port6"
+    set mode static
+    set ip 10.0.101.1/24
     set vrf 0
     set dhcp-relay-service disable
     set role lan
@@ -47,7 +65,7 @@ config system interface
 end
 config system zone
   edit "lan_zone"
-    set interface port5
+    set interface port5 port6
   next
 end
 config system dhcp server
@@ -60,6 +78,18 @@ config system dhcp server
       edit 1
         set start-ip 10.0.1.4
         set end-ip 10.0.1.251
+      next
+    end
+  next
+  edit 11
+    set dns-service default
+    set default-gateway 10.0.101.1
+    set netmask 255.255.255.0
+    set interface port6
+    config ip-range
+      edit 1
+        set start-ip 10.0.101.4
+        set end-ip 10.0.101.251
       next
     end
   next
@@ -76,6 +106,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
@@ -89,7 +120,9 @@ config vpn ipsec phase1-interface
     set remote-gw 100.64.1.1
     set dpd-retrycount 3
     set dpd-retryinterval 5
-    set dpd on-idle
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
   next
 end
 config vpn ipsec phase2-interface
@@ -106,6 +139,46 @@ config system interface
   next
 end
 config vpn ipsec phase1-interface
+  edit "H1_ISP2"
+    set interface "port2"
+    set ike-version 2
+    set authmethod psk
+    set psksecret S3cr3t!
+    set keylife 28800
+    set peertype any
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set idle-timeout enable
+    set auto-discovery-receiver enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay enable
+    set network-id 12
+    set remote-gw 100.64.1.9
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "H1_ISP2"
+    set phase1name "H1_ISP2"
+    set proposal aes256gcm
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "H1_ISP2"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
   edit "H1_MPLS"
     set interface "port4"
     set ike-version 2
@@ -113,6 +186,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
@@ -126,7 +200,9 @@ config vpn ipsec phase1-interface
     set remote-gw 172.16.1.5
     set dpd-retrycount 3
     set dpd-retryinterval 5
-    set dpd on-idle
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
   next
 end
 config vpn ipsec phase2-interface
@@ -150,6 +226,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
@@ -163,7 +240,9 @@ config vpn ipsec phase1-interface
     set remote-gw 100.64.2.1
     set dpd-retrycount 3
     set dpd-retryinterval 5
-    set dpd on-idle
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
   next
 end
 config vpn ipsec phase2-interface
@@ -180,6 +259,46 @@ config system interface
   next
 end
 config vpn ipsec phase1-interface
+  edit "H2_ISP2"
+    set interface "port2"
+    set ike-version 2
+    set authmethod psk
+    set psksecret S3cr3t!
+    set keylife 28800
+    set peertype any
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set idle-timeout enable
+    set auto-discovery-receiver enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay enable
+    set network-id 22
+    set remote-gw 100.64.2.9
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "H2_ISP2"
+    set phase1name "H2_ISP2"
+    set proposal aes256gcm
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "H2_ISP2"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
   edit "H2_MPLS"
     set interface "port4"
     set ike-version 2
@@ -187,6 +306,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
@@ -200,7 +320,9 @@ config vpn ipsec phase1-interface
     set remote-gw 172.16.2.5
     set dpd-retrycount 3
     set dpd-retryinterval 5
-    set dpd on-idle
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
   next
 end
 config vpn ipsec phase2-interface
@@ -242,6 +364,20 @@ config router route-map
       next
     end
   next
+  edit "LAN_TAG"
+    config rule
+      edit 1
+        set set-tag 100
+      next
+    end
+  next
+  edit "LAN_OUT"
+    config rule
+      edit 1
+        set match-tag 100
+      next
+    end  
+  next
 end
 config router bgp
   set as 65001
@@ -253,6 +389,7 @@ config router bgp
   set tag-resolve-mode disable
   set graceful-restart enable
   config neighbor
+    purge
     edit 10.200.1.253
       set soft-reconfiguration enable
       set capability-graceful-restart enable
@@ -261,11 +398,11 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
-      set route-map-out-preferable "SLA_OK" 
       unset route-map-in
+      unset route-map-out-vpnv4-preferable
+      set route-map-out-preferable "SLA_OK" 
       unset soft-reconfiguration-vpnv4
       unset capability-graceful-restart-vpnv4
-      unset route-map-out-vpnv4-preferable
       unset route-map-in-vpnv4
     next
     edit 10.200.1.254
@@ -276,23 +413,68 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
-      set route-map-out-preferable "SLA_OK" 
       unset route-map-in
+      unset route-map-out-vpnv4-preferable
+      set route-map-out-preferable "SLA_OK" 
       unset soft-reconfiguration-vpnv4
       unset capability-graceful-restart-vpnv4
-      unset route-map-out-vpnv4-preferable
       unset route-map-in-vpnv4
     next
   end
-  config neighbor-range
-    delete 1
-  end
+    config neighbor-range
+      purge
+    end
+    config neighbor-group
+      purge
+    end
   config neighbor-group
-    delete "DYN_EDGE"
+    edit "DYN_EDGE_West"
+      set ebgp-enforce-multihop enable 
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set next-hop-self enable
+      set remote-as 65001
+      set interface "Lo"
+      set update-source "Lo"
+      set passive disable
+      set route-map-out "LAN_OUT"
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
+    next
+    edit "DYN_EDGE_East"
+      set ebgp-enforce-multihop enable 
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set next-hop-self enable
+      set remote-as 65002
+      set interface "Lo"
+      set update-source "Lo"
+      set passive disable
+      set route-map-out "LAN_OUT"
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
+    next
   end
-  config network
+  config neighbor-range
     edit 1
+      set prefix 10.200.1.0/24
+      set neighbor-group "DYN_EDGE_West"
+    next
+    edit 2
+      set prefix 10.200.2.0/24
+      set neighbor-group "DYN_EDGE_East"
+    next
+  end  
+  config network
+    edit 111
       set prefix 10.0.1.0/24
+      set route-map "LAN_TAG"
+    next
+    edit 112
+      set prefix 10.0.101.0/24
+      set route-map "LAN_TAG"
     next
   end
   config vrf
@@ -324,15 +506,18 @@ config system sdwan
   end
   config members
     edit 1
-      set interface "port1"
-      set zone "underlay"
-      # Best priority, used for Internet access in implicit rule / local-out
-      # Gateway is fetched from DHCP
-    next
-    edit 2
       set interface "H1_ISP1"
       set priority 10
       set source 10.200.1.1
+      set cost 0
+      set zone "overlay"
+      set transport-group 0
+    next
+    edit 2
+      set interface "H1_ISP2"
+      set priority 10
+      set source 10.200.1.1
+      set cost 0
       set zone "overlay"
       set transport-group 0
     next
@@ -340,6 +525,7 @@ config system sdwan
       set interface "H1_MPLS"
       set priority 10
       set source 10.200.1.1
+      set cost 0
       set zone "overlay"
       set transport-group 0
     next
@@ -347,13 +533,23 @@ config system sdwan
       set interface "H2_ISP1"
       set priority 10
       set source 10.200.1.1
+      set cost 0
       set zone "overlay"
       set transport-group 0
     next
     edit 5
+      set interface "H2_ISP2"
+      set priority 10
+      set source 10.200.1.1
+      set cost 0
+      set zone "overlay"
+      set transport-group 0
+    next
+    edit 6
       set interface "H2_MPLS"
       set priority 10
       set source 10.200.1.1
+      set cost 0
       set zone "overlay"
       set transport-group 0
     next
@@ -364,7 +560,7 @@ config system sdwan
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set embed-measured-health enable
-      set members 2 3 4 5
+      set members 1 2 3 4 5 6
       config sla
         edit 1
           set link-cost-factor latency
@@ -376,18 +572,20 @@ config system sdwan
       set server "www.fortinet.com"
       set sla-fail-log-period 10
       set sla-pass-log-period 10
-      set members 1
+      set update-cascade-interface disable
+      set update-static-route disable
+      set members 
     next
   end
   config neighbor
     edit 10.200.1.253
-      set member 2 3
+      set member 1 2 3
       set health-check "HUB"
       set sla-id 1
       set minimum-sla-meet-members 1
     next
     edit 10.200.1.254
-      set member 4 5
+      set member 4 5 6
       set health-check "HUB"
       set sla-id 1
       set minimum-sla-meet-members 1
@@ -406,7 +604,7 @@ config system sdwan
         next
       end
       # Using Hub site1-H1
-      set priority-members 2 3
+      set priority-members 1 2 3
     next
     edit 2
       set name "Corporate-H2"
@@ -420,7 +618,7 @@ config system sdwan
         next
       end
       # Using Hub site1-H2
-      set priority-members 4 5
+      set priority-members 4 5 6
     next
     edit 10
       set name "Local-Breakout"
@@ -428,7 +626,7 @@ config system sdwan
       set dst "all"
       set health-check Internet
       # Using best underlay (DIA) link
-      set priority-members 1
+      set priority-members 
     next
   end
   config zone
@@ -452,7 +650,14 @@ config firewall address
     set subnet 10.0.0.0/8
   next
 end
+config firewall ippool
+  edit "Lo"
+    set startip 10.200.1.1
+    set endip 10.200.1.1
+  next
+end
 config firewall policy
+  purge
   edit 1
     set name "Corporate"
     set srcintf lan_zone "overlay"
@@ -467,7 +672,7 @@ config firewall policy
     set application-list "default"
     set logtraffic all
   next
-  edit 2
+  edit 3
     set name "Internet (DIA)"
     set srcintf lan_zone
     set dstintf "underlay"
@@ -482,7 +687,7 @@ config firewall policy
     set logtraffic all
     set nat enable
   next
-  edit 3
+  edit 4
     set name "Internet (RIA)"
     set srcintf lan_zone
     set dstintf "overlay"
@@ -496,15 +701,15 @@ config firewall policy
     set application-list "default"
     set logtraffic all
   next
-  edit 4
-    set name "Health-Check"
+  edit 5
+    set name "Peering"
     set srcintf "overlay"
     set dstintf "Lo"
     set srcaddr "all"
     set dstaddr "all"
     set action accept
     set schedule "always"
-    set service "PING"
+    set service "PING" "BGP"
   next
 end
 

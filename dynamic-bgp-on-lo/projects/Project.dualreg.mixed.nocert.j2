@@ -1,0 +1,214 @@
+{#                            Project Template                                #}
+{# -------------------------------------------------------------------------- #}
+{# This file describes the project: its Regions, Hubs and Device Profiles     #}
+{# Normally, this is the only file that needs to be edited between            #}
+{# different projects                                                         #}
+{# -------------------------------------------------------------------------- #}
+{# Design flavor: "Dynamic BGP on Loopback"                                   #}
+{# Please contact your Fortinet representatives for more details              #}
+
+{#
+  Per-device variables used:
+  - Required:
+    - hostname
+    - loopback
+    - profile
+    - region
+    - west_h1_isp1
+    - west_h1_isp2
+    - west_h1_mpls
+    - west_h2_isp1
+    - west_h2_isp2
+    - west_h2_mpls
+    - east_h1_isp1
+    - east_h1_isp2
+    - east_h1_mpls    
+  - Depending on topology:
+    - isp1_intf
+    - isp2_intf
+    - mpls_intf
+    - lan_intf
+    - lan_ip
+    - lan2_intf
+    - lan2_ip
+#}
+
+{# Optional settings #}
+{% set cert_auth = false %}
+
+{# Optional defaults (can be overriden by profiles) #}
+{% set advpn2 = true %}
+{% set dynamic_bgp = true %}
+
+{#  Mandatory Global Definitions #}
+{% set lo_summary = '10.200.0.0/14' %}
+
+{# Regions #}
+{% set regions = {
+    'West': {
+      'as': '65001',
+      'lo_summary': '10.200.1.0/24',
+      'lan_summary': '10.0.0.0/14',
+      'hubs': [ 'site1-H1', 'site1-H2' ]
+    },
+    'East': {
+      'as': '65002',
+      'lo_summary': '10.200.2.0/24',
+      'lan_summary': '10.4.0.0/14',
+      'hubs': [ 'site2-H1' ]
+    }
+  }
+%}
+
+{# Device Profiles #}
+{% set profiles = {
+
+    'OneSizeFitsAll': {
+      'interfaces': [
+        {
+          'name': isp1_intf,
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp'
+        },
+        {
+          'name': isp2_intf,
+          'role': 'wan',
+          'ol_type': 'ISP2',
+          'ip': 'dhcp'
+        },
+        {
+          'name': mpls_intf,
+          'role': 'wan',
+          'ol_type': 'MPLS',
+          'ip': 'dhcp'
+        },
+        {
+          'name': lan_intf,
+          'role': 'lan',
+          'ip': lan_ip
+        },
+        {
+          'name': lan2_intf,
+          'role': 'lan',
+          'ip': lan2_ip
+        }
+      ]
+    },
+
+    'LegacySpoke': {
+      'options': {
+        'advpn2': false,
+        'dynamic_bgp': false
+      },
+      'interfaces': [
+        {
+          'name': isp1_intf,
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp'
+        },
+        {
+          'name': mpls_intf,
+          'role': 'wan',
+          'ol_type': 'MPLS',
+          'ip': 'dhcp'
+        },
+        {
+          'name': lan_intf,
+          'role': 'lan',
+          'ip': lan_ip
+        }
+      ]
+    }
+
+  }
+%}
+
+{# Hubs #}
+{% set hubs = {
+
+    'site1-H1': {
+      'lo_bgp': '10.200.1.253',
+      'peering': {
+        'EDGE_RR': { 
+          'dynamic_bgp': false,
+          'lo_summary': '10.200.1.128/25'
+        },
+        'EDGE': {
+          'dynamic_bgp': true,
+          'lo_summary': lo_summary
+
+        }
+      },
+      'overlays': {
+        'ISP1': {
+          'wan_ip': west_h1_isp1,
+          'network_id': '11',
+          'hub2hub': false
+        },
+        'ISP2': {
+          'wan_ip': west_h1_isp2,
+          'network_id': '12',
+          'hub2hub': false
+        },
+        'MPLS': {
+          'wan_ip': west_h1_mpls,
+          'network_id': '13'
+        }
+      }
+    },
+
+    'site1-H2': {
+      'lo_bgp': '10.200.1.254',    
+      'peering': {
+        'EDGE_RR': { 
+          'dynamic_bgp': false,
+          'lo_summary': '10.200.1.128/25'
+        },
+        'EDGE': {
+          'dynamic_bgp': true,
+          'lo_summary': lo_summary
+
+        }
+      },        
+      'overlays': {
+        'ISP1': {
+          'wan_ip': west_h2_isp1,
+          'network_id': '21',
+          'hub2hub': false
+        },
+        'ISP2': {
+          'wan_ip': west_h2_isp2,
+          'network_id': '22',
+          'hub2hub': false
+        },
+        'MPLS': {
+          'wan_ip': west_h2_mpls,
+          'network_id': '23'
+        }
+      }
+    },
+
+    'site2-H1': {
+      'lo_bgp': '10.200.2.253',      
+      'overlays': {
+        'ISP1': {
+          'wan_ip': east_h1_isp1,
+          'network_id': '41',
+          'hub2hub': false
+        },
+        'ISP2': {
+          'wan_ip': east_h1_isp2,
+          'network_id': '42',
+          'hub2hub': false
+        },
+        'MPLS': {
+          'wan_ip': east_h1_mpls,
+          'network_id': '43'
+        }
+      }
+    }    
+
+  }
+%}

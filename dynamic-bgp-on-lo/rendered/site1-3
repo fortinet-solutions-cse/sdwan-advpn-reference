@@ -3,7 +3,7 @@ execute batch start
 # 01-Edge-Underlay.j2
 ######################################
 config system settings
-  set location-id 10.200.1.2
+  set location-id 10.200.1.203
 end
 config system global
   set hostname site1-2
@@ -27,7 +27,7 @@ end
 config system interface
   edit "port5"
     set mode static
-    set ip 10.0.2.1/24
+    set ip 10.0.3.1/24
     set vrf 0
     set dhcp-relay-service disable
     set role lan
@@ -40,7 +40,7 @@ config system interface
     set vdom "root"
     set type loopback
     set vrf 0
-    set ip 10.200.1.2/32
+    set ip 10.200.1.203/32
     set allowaccess ping
   next
 end
@@ -52,13 +52,13 @@ end
 config system dhcp server
   edit 10
     set dns-service default
-    set default-gateway 10.0.2.1
+    set default-gateway 10.0.3.1
     set netmask 255.255.255.0
     set interface port5
     config ip-range
       edit 1
-        set start-ip 10.0.2.4
-        set end-ip 10.0.2.251
+        set start-ip 10.0.3.4
+        set end-ip 10.0.3.251
       next
     end
   next
@@ -83,7 +83,7 @@ config vpn ipsec phase1-interface
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
-    set exchange-ip-addr4 10.200.1.2
+    set exchange-ip-addr4 10.200.1.203
     set network-overlay enable
     set network-id 11
     set remote-gw 100.64.1.1
@@ -123,7 +123,7 @@ config vpn ipsec phase1-interface
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
-    set exchange-ip-addr4 10.200.1.2
+    set exchange-ip-addr4 10.200.1.203
     set network-overlay enable
     set network-id 13
     set remote-gw 172.16.1.5
@@ -163,7 +163,7 @@ config vpn ipsec phase1-interface
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
-    set exchange-ip-addr4 10.200.1.2
+    set exchange-ip-addr4 10.200.1.203
     set network-overlay enable
     set network-id 21
     set remote-gw 100.64.2.1
@@ -203,7 +203,7 @@ config vpn ipsec phase1-interface
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
-    set exchange-ip-addr4 10.200.1.2
+    set exchange-ip-addr4 10.200.1.203
     set network-overlay enable
     set network-id 23
     set remote-gw 172.16.2.5
@@ -270,12 +270,12 @@ config router route-map
 end
 config router bgp
   set as 65001
-  set router-id 10.200.1.2
+  set router-id 10.200.1.203
   set keepalive-timer 15
   set holdtime-timer 45
   set ibgp-multipath enable
   set recursive-next-hop enable
-  set tag-resolve-mode disable
+  set tag-resolve-mode merge
   set graceful-restart enable
   config neighbor
     purge
@@ -287,7 +287,7 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
-      unset route-map-in
+      set route-map-in "H1_TAG"
       unset route-map-out-vpnv4-preferable
       set route-map-out-preferable "SLA_OK" 
       unset soft-reconfiguration-vpnv4
@@ -302,7 +302,7 @@ config router bgp
       set update-source "Lo"
       set connect-timer 1
       set remote-as 65001
-      unset route-map-in
+      set route-map-in "H2_TAG"
       unset route-map-out-vpnv4-preferable
       set route-map-out-preferable "SLA_OK" 
       unset soft-reconfiguration-vpnv4
@@ -310,55 +310,15 @@ config router bgp
       unset route-map-in-vpnv4
     next
   end
-    config neighbor-range
-      purge
-    end
-    config neighbor-group
-      purge
-    end
-  config neighbor-group
-    edit "DYN_EDGE_West"
-      set ebgp-enforce-multihop enable 
-      set soft-reconfiguration enable
-      set capability-graceful-restart enable
-      set advertisement-interval 1
-      set next-hop-self enable
-      set remote-as 65001
-      set interface "Lo"
-      set update-source "Lo"
-      set passive disable
-      set route-map-out "LAN_OUT"
-      unset soft-reconfiguration-vpnv4
-      unset capability-graceful-restart-vpnv4
-    next
-    edit "DYN_EDGE_East"
-      set ebgp-enforce-multihop enable 
-      set soft-reconfiguration enable
-      set capability-graceful-restart enable
-      set advertisement-interval 1
-      set next-hop-self enable
-      set remote-as 65002
-      set interface "Lo"
-      set update-source "Lo"
-      set passive disable
-      set route-map-out "LAN_OUT"
-      unset soft-reconfiguration-vpnv4
-      unset capability-graceful-restart-vpnv4
-    next
-  end
   config neighbor-range
-    edit 1
-      set prefix 10.200.1.0/24
-      set neighbor-group "DYN_EDGE_West"
-    next
-    edit 2
-      set prefix 10.200.2.0/24
-      set neighbor-group "DYN_EDGE_East"
-    next
-  end  
+    purge
+  end
+  config neighbor-group
+    purge
+  end
   config network
     edit 111
-      set prefix 10.0.2.0/24
+      set prefix 10.0.3.0/24
       set route-map "LAN_TAG"
     next
   end
@@ -386,41 +346,37 @@ config system sdwan
     edit "underlay"
     next
     edit "overlay"
-      set advpn-select enable
+      set advpn-select disable
     next
   end
   config members
     edit 1
       set interface "H1_ISP1"
       set priority 10
-      set source 10.200.1.2
+      set source 10.200.1.203
       set cost 0
       set zone "overlay"
-      set transport-group 0
     next
     edit 2
       set interface "H1_MPLS"
       set priority 10
-      set source 10.200.1.2
+      set source 10.200.1.203
       set cost 0
       set zone "overlay"
-      set transport-group 0
     next
     edit 3
       set interface "H2_ISP1"
       set priority 10
-      set source 10.200.1.2
+      set source 10.200.1.203
       set cost 0
       set zone "overlay"
-      set transport-group 0
     next
     edit 4
       set interface "H2_MPLS"
       set priority 10
-      set source 10.200.1.2
+      set source 10.200.1.203
       set cost 0
       set zone "overlay"
-      set transport-group 0
     next
   end
   config health-check
@@ -498,11 +454,6 @@ config system sdwan
       set priority-members 
     next
   end
-  config zone
-    edit "overlay"
-      set advpn-health-check "HUB"
-    next
-  end  
 end
 config router static
   edit 100
@@ -521,8 +472,8 @@ config firewall address
 end
 config firewall ippool
   edit "Lo"
-    set startip 10.200.1.2
-    set endip 10.200.1.2
+    set startip 10.200.1.203
+    set endip 10.200.1.203
   next
 end
 config firewall policy
