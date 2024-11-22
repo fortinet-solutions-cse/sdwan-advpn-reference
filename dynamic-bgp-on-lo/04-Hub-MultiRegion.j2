@@ -38,8 +38,11 @@
     {% for h in project.regions[r].hubs %}
       {% if i.ol_type in project.hubs[h].overlays and 
             project.hubs[h].overlays[i.ol_type].hub2hub|default(true) %}
+      {# If no explicit Hub name is defined, then "H<hub_number>" is used #}
+      {% set hub_name = project.hubs[h].hub_name|upper if project.hubs[h].hub_name is defined else "H"~loop.index %}
+      {% set ol_tun_name = r|upper~"_"~hub_name~"_"~i.ol_type %}            
       config vpn ipsec phase1-interface
-        edit "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
+        edit "{{ ol_tun_name }}"
           set interface "{{ i.name }}"
           set ike-version 2
           {% if project.cert_auth|default(true) %}
@@ -74,15 +77,15 @@
         next
       end
       config vpn ipsec phase2-interface
-        edit "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
-          set phase1name "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
+        edit "{{ ol_tun_name }}"
+          set phase1name "{{ ol_tun_name }}"
           set proposal aes256gcm
           set keepalive enable
           set keylifeseconds 3600
         next
       end
       config system interface
-        edit "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
+        edit "{{ ol_tun_name }}"
           set vrf {{ pe_vrf }} 
         next
       end
@@ -90,17 +93,17 @@
       config router policy
         edit {{ hub2hub_ol|length * 2 + 11 }}
           set input-device "EDGE_{{ i.ol_type }}"
-          set output-device "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
+          set output-device "{{ ol_tun_name }}"
           {{'un' if not project.lan_summary|default()}}set dst {{ project.lan_summary|default() }}
         next
         edit {{ hub2hub_ol|length * 2 + 12 }}
-          set input-device "{{ r|upper }}_H{{ loop.index}}_{{ i.ol_type }}"
+          set input-device "{{ ol_tun_name }}"
           set output-device "EDGE_{{ i.ol_type }}"
           {{'un' if not project.lan_summary|default()}}set dst {{ project.lan_summary|default() }}
         next
       end
       {% endif %}
-      {{ hub2hub_ol.append(r|upper~'_H'~loop.index~'_'~i.ol_type) or "" }}
+      {{ hub2hub_ol.append(ol_tun_name) or "" }}
       {% endif %}
     {% endfor %}
   {% endfor %}
