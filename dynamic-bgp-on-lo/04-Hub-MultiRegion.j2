@@ -119,6 +119,8 @@ end
 
 {# Build Hub-to-Hub BGP peering #}
 
+{% set ns = namespace(summarize = false) %}
+
 config router aspath-list
   edit "SDWAN_AS"
     config rule
@@ -140,11 +142,13 @@ config router access-list
     config rule
       purge
       {% for v in project.regions[region].vrfs|default(
-                  [{ 'lan_summary': project.regions[region].lan_summary }]) %}
+                  [{ 'lan_summary': project.regions[region].lan_summary }]) 
+                  if v.lan_summary is defined %}
       edit 0
         set prefix {{ v.lan_summary }}
         set exact-match enable
       next
+      {% set ns.summarize = true %}
       {% endfor %}      
     end
   next
@@ -183,17 +187,27 @@ config router route-map
         set match-tag 100
       next
       edit 2
-        set match-ip-address "LAN_REGIONAL_SUMMARY"
-        set set-metric {{ 100 if my_index == 2 else 0 }}
+        set match-ip-address "LO_REGIONAL_SUMMARY"
+        set set-metric {{ 100 if my_index == 2 else 50 }}
       next
       edit 3
-        {# Do not readvertise regional loopback summary to remote Edges and other regions #}
-        set match-ip-address "LO_REGIONAL_SUMMARY"
-        set set-community no-advertise
-        set set-metric {{ 100 if my_index == 2 else 0 }}
+        {% if ns.summarize %}
+        set match-ip-address "LAN_REGIONAL_SUMMARY"
+        {% endif %}
+        set set-metric {{ 100 if my_index == 2 else 50 }}
       next
     end
   next
+  edit "EDGE_OUT"
+    config rule
+      edit 100
+        unset match-tag
+        {% if not ns.summarize %}
+        set match-tag 100
+        {% endif %}
+      next
+    end
+  next    
 end
 config router bgp
   config neighbor
@@ -209,7 +223,7 @@ config router bgp
       set connect-timer 1
       set remote-as {{ project.regions[r].as }}
       unset route-map-out{{'-vpnv4' if not multi_vrf}}
-      set route-map-out{{'-vpnv4' if multi_vrf}} "REGION_OUT"      
+      set route-map-out{{'-vpnv4' if multi_vrf}} "REGION_OUT"
       {% if multi_vrf %}
       set soft-reconfiguration-vpnv4 enable
       set capability-graceful-restart-vpnv4 enable
