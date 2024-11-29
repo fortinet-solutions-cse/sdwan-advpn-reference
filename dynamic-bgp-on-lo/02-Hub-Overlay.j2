@@ -10,7 +10,10 @@
 {% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
 {% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
 
-{% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
+{% for i in project.profiles[profile].interfaces 
+      if i.role == 'wan' and 
+      i.name is defined and
+      i.ol_type in project.hubs[hostname].overlays %}
 config vpn ipsec phase1-interface
   edit "EDGE_{{ i.ol_type }}"
     set type dynamic

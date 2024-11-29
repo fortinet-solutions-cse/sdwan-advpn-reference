@@ -14,7 +14,10 @@
 {% set hubloop = loop %}
 {% set ol_tunnels = [] %}
 {% set backup_tunnel = {} %}
-{% for i in project.profiles[profile].interfaces if i.role == 'wan' and i.name is defined %}
+{% for i in project.profiles[profile].interfaces 
+      if i.role == 'wan' and 
+      i.name is defined and
+      i.ol_type in project.hubs[h].overlays %}
   {# Track generated tunnels, to handle duplicates by adding extra index as a suffix #}
   {% set ul_name = i.ul_name~"-" if i.ul_name is defined else "" %}
   {# If no explicit Hub name is defined, then "H<hub_number>" is used #}
