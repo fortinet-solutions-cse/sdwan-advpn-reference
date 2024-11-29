@@ -21,6 +21,7 @@
   {% for i in project.profiles[profile].interfaces 
        if i.role == 'wan' and 
        i.name is defined and 
+       i.ol_type in project.hubs[hostname].overlays and
        i.ol_type in project.hubs[h].overlays and
        project.hubs[hostname].overlays[i.ol_type].hub2hub|default(true) and
        project.hubs[h].overlays[i.ol_type].hub2hub|default(true) %}
