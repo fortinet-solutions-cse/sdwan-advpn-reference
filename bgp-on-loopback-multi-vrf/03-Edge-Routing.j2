@@ -79,7 +79,7 @@ config router bgp
     {% for i in project.profiles[profile].interfaces if i.vrf is defined and i.name is defined %}
     edit "{{ i.vrf }}"
       set role "ce"
-      set rd "{{ vrf_rt_as }}:{{ i.vrf }}"
+      set rd "{{ loopback }}:{{ i.vrf }}"
       set import-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
       set export-rt "{{ vrf_rt_as }}:{{ i.vrf }}"
     next

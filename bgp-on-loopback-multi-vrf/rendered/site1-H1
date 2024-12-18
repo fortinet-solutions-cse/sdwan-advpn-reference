@@ -264,9 +264,13 @@ config router bgp
   set ebgp-multipath enable
   set recursive-next-hop enable
   set recursive-inherit-priority enable
+  set graceful-restart enable
   config neighbor-group
     edit "EDGE"
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable    
       set soft-reconfiguration-vpnv4 enable
+      set capability-graceful-restart-vpnv4 enable
       set advertisement-interval 1
       set next-hop-self enable
       set remote-as 65001
@@ -299,13 +303,13 @@ config router bgp
     next
     edit "11"
       set role "ce"
-      set rd "65000:11"
+      set rd "10.200.1.253:11"
       set import-rt "65000:11"
       set export-rt "65000:11"
     next
     edit "12"
       set role "ce"
-      set rd "65000:12"
+      set rd "10.200.1.253:12"
       set import-rt "65000:12"
       set export-rt "65000:12"
     next
@@ -498,8 +502,10 @@ config router bgp
     edit 10.200.2.253
       set ebgp-enforce-multihop enable
       set soft-reconfiguration enable
+      set capability-graceful-restart enable    
+      set soft-reconfiguration-vpnv4 enable
+      set capability-graceful-restart-vpnv4 enable      
       set advertisement-interval 1
-      set link-down-failover enable
       set interface "Lo"
       set update-source "Lo"
       set attribute-unchanged-vpnv4 next-hop

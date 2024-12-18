@@ -91,7 +91,7 @@ config router bgp
     {% for v in project.regions[region].vrfs %}
     edit "{{ v.id }}"
       set role "ce"
-      set rd "{{ vrf_rt_as }}:{{ v.id }}"
+      set rd "{{ loopback }}:{{ v.id }}"
       set import-rt "{{ vrf_rt_as }}:{{ v.id }}"
       set export-rt "{{ vrf_rt_as }}:{{ v.id }}"
     next
