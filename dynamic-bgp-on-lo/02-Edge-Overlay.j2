@@ -40,6 +40,7 @@ config vpn ipsec phase1-interface
     {% endif %}
     set keylife 28800
     set peertype any
+    set localid {{ ul_name~hostname }}
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost {{ 10 if i.backup|default(false) else 0 }}
