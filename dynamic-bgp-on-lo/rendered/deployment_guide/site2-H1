@@ -84,6 +84,7 @@ config vpn ipsec phase1-interface
     set authmethod signature
     set certificate "Hub"
     set peertype any
+    set localid ISP1-site2-H1
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
     set auto-discovery-sender enable
@@ -118,6 +119,7 @@ config vpn ipsec phase1-interface
     set authmethod signature
     set certificate "Hub"
     set peertype any
+    set localid MPLS-site2-H1
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
     set auto-discovery-sender enable

@@ -103,6 +103,7 @@ config vpn ipsec phase1-interface
     set certificate "Edge"
     set keylife 28800
     set peertype any
+    set localid site1-2
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -143,6 +144,7 @@ config vpn ipsec phase1-interface
     set certificate "Edge"
     set keylife 28800
     set peertype any
+    set localid site1-2
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -183,6 +185,7 @@ config vpn ipsec phase1-interface
     set certificate "Edge"
     set keylife 28800
     set peertype any
+    set localid site1-2
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -223,6 +226,7 @@ config vpn ipsec phase1-interface
     set certificate "Edge"
     set keylife 28800
     set peertype any
+    set localid site1-2
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -263,6 +267,7 @@ config vpn ipsec phase1-interface
     set certificate "Edge"
     set keylife 28800
     set peertype any
+    set localid site1-2
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -303,6 +308,7 @@ config vpn ipsec phase1-interface
     set certificate "Edge"
     set keylife 28800
     set peertype any
+    set localid site1-2
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0

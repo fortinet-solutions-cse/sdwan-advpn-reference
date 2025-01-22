@@ -125,6 +125,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set localid site1-1
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -165,6 +166,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set localid site1-1
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -205,6 +207,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set localid site1-1
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -245,6 +248,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set localid site1-1
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -285,6 +289,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set localid site1-1
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
@@ -325,6 +330,7 @@ config vpn ipsec phase1-interface
     set psksecret S3cr3t!
     set keylife 28800
     set peertype any
+    set localid site1-1
     set exchange-fgt-device-id enable
     set net-device enable
     set link-cost 0
