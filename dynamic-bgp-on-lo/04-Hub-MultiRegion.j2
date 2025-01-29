@@ -52,12 +52,15 @@
           {% if project.cert_auth|default(true) %}
           set authmethod signature
           set certificate "{{ project.hub_cert_template|default('Hub') }}"
+          set peertype {{ 'peer' if project.cert_auth_filter|default(false) else 'any' }}
+            {% if project.cert_auth_filter|default(false) %}
+            set peer {{ project.hub_cert_filter_hub2hub|default('TheCA') }}
+            {% endif %}    
           {% else %}
           set authmethod psk
           set psksecret {{ project.psk|default('S3cr3t!') }}
           {% endif %}
           set keylife 28800
-          set peertype any
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
           {% if project.multireg_advpn|default(true) %}
