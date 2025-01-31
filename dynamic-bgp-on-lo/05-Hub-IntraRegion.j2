@@ -38,10 +38,10 @@
         {% endif %}    
       {% else %}
       set authmethod psk
+      set peertype any
       set psksecret {{ project.psk|default('S3cr3t!') }}
       {% endif %}
       set keylife 28800
-      set peertype any
       set exchange-fgt-device-id enable
       set proposal aes256gcm-prfsha256
       set exchange-interface-ip enable

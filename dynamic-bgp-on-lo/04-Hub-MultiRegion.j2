@@ -58,6 +58,7 @@
             {% endif %}    
           {% else %}
           set authmethod psk
+          set peertype any
           set psksecret {{ project.psk|default('S3cr3t!') }}
           {% endif %}
           set keylife 28800

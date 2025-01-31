@@ -28,6 +28,7 @@ config vpn ipsec phase1-interface
       {% endif %}    
     {% else %}
     set authmethod psk
+    set peertype any
     set psksecret {{ project.psk|default('S3cr3t!') }}
     {% endif %}
     set localid {{ i.ol_type~'-'~hostname }}
