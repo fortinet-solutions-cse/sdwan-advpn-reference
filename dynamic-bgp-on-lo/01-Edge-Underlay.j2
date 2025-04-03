@@ -75,6 +75,20 @@ config system interface
     set interface {{ i.parent }}
     {% endif %}
 
+    {# Aggregate (LAG) #}
+    {% set lag_members = [] %}
+    {% if i.aggregate|default(false) %}
+    set vdom "root"
+    set type aggregate
+    {% for j in project.profiles[profile].interfaces 
+          if j.role == 'lag_member' and 
+          j.parent == i.name and 
+          j.name is defined %}
+    {{ lag_members.append(j.name) or "" }}
+    {% endfor %}
+    {{'un' if not lag_members}}set member {{ lag_members|join(' ') }}
+    {% endif %}     
+
     {# FEX #}
     {% if i.fex|default(false) %}
     set type fext-wan
@@ -115,7 +129,7 @@ config system interface
     {% elif i.role == 'trunk' %}
     set trunk {{ 'enable' if vlan_switch else 'disable' }}
     {% endif %}
-    {% if i.ip is defined %}
+    {% if i.ip is defined and i.role in [ 'lan', 'wan' ] %}
     set allowaccess {{ 'ping' if not i.access|default(false) else i.access|join(' ') }}
     {% endif %}
   next
