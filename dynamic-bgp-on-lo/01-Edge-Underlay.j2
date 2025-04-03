@@ -115,7 +115,7 @@ config system interface
     {% elif i.role == 'trunk' %}
     set trunk {{ 'enable' if vlan_switch else 'disable' }}
     {% endif %}
-    {% if i.ip is defined %}
+    {% if i.ip is defined and i.role in [ 'lan', 'wan' ] %}
     set allowaccess {{ 'ping' if not i.access|default(false) else i.access|join(' ') }}
     {% endif %}
   next
