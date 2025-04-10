@@ -13,6 +13,7 @@
 
 {# Options: project-wide defaults #}
 {% set options = {
+    'vdom': project.vdom|default('root'),
     'leak_npu_link': '',
     'force_cleanup': project.force_cleanup|default(false)
   }
@@ -53,14 +54,14 @@
     edit "vrf{{ i.vrf }}_leak0"
       set type vdom-link
       set vrf {{ pe_vrf }}
-      set vdom 'root'
+      set vdom {{ options.vdom }}
       set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
       set allowaccess ping
     next
     edit "vrf{{ i.vrf }}_leak1"
       set type vdom-link
       set vrf {{ i.vrf }}
-      set vdom 'root'
+      set vdom {{ options.vdom }}
       set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
       set allowaccess ping
     next
@@ -73,7 +74,7 @@
       set vlanid {{ 4000 + i.vrf }}
       set interface "{{options.leak_npu_link}}0"
       set vrf {{ pe_vrf }}
-      set vdom 'root'
+      set vdom {{ options.vdom }}
       set mode static
       set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2 + 1))|ipaddr('address') }}/31
       set allowaccess ping
@@ -83,7 +84,7 @@
       set vlanid {{ 4000 + i.vrf }}
       set interface "{{options.leak_npu_link}}1"
       set vrf {{ i.vrf }}
-      set vdom 'root'
+      set vdom {{ options.vdom }}
       set mode static
       set ip {{ vrf_leak_summary|ipaddr((i.vrf * 2))|ipaddr('address') }}/31
       set allowaccess ping

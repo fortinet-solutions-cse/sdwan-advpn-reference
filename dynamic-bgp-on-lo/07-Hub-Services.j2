@@ -9,6 +9,7 @@
 
 {# Options: project-wide defaults #}
 {% set options = {
+    'vdom': project.vdom|default('root'),   
     'force_cleanup': project.force_cleanup|default(false)
   }
 %}
@@ -24,7 +25,7 @@ config vpn certificate crl
    edit TheCA
       {{'un' if not project.crl_scep_url|default()}}set scep-url {{ project.crl_scep_url|default() }}
       {{'un' if not project.crl_http_url|default()}}set http-url {{ project.crl_http_url|default() }}
-      set update-vdom "root"
+      set update-vdom {{ options.vdom }}
       set update-interval 300
    next
 end
