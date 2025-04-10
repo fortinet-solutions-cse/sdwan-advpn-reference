@@ -86,11 +86,11 @@ config system interface
     set interface {{ i.parent }}
     {% endif %}
 
-    {# Aggregate (LAG) #}
+    {# Aggregate (LAG) and Redundant Interfaces #}
     {% set lag_members = [] %}
-    {% if i.aggregate|default(false) %}
+    {% if i.aggregate|default(false) or i.redundant|default(false) %}
     set vdom {{ options.vdom }}
-    set type aggregate
+    set type {{ 'aggregate' if i.aggregate|default(false) else 'redundant' }}
     {% for j in project.profiles[profile].interfaces 
           if j.role == 'lag_member' and 
           j.parent == i.name and 
