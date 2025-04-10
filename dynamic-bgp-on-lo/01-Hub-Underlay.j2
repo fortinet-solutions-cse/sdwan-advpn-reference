@@ -10,6 +10,17 @@
 {% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
 {% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
 
+{# Options: project-wide defaults #}
+{% set options = {
+    'vdom': project.vdom|default('root')
+  }
+%}
+{# Options can be selectively overriden in profile #}
+{% set _ = options.update(
+      project.profiles[profile].options|default({})
+   ) 
+%}
+
 {# General settings #}
 config system settings
   set location-id {{ loopback|ipaddr('address') }}
@@ -41,7 +52,7 @@ config system interface
 
     {# VLAN #}
     {% if i.vlanid is defined and i.parent is defined %}
-    set vdom "root"
+    set vdom {{ options.vdom }}
     set type vlan
     set vlanid {{ i.vlanid }}
     set interface {{ i.parent }}
@@ -50,7 +61,7 @@ config system interface
     {# Aggregate (LAG) #}
     {% set lag_members = [] %}
     {% if i.aggregate|default(false) %}
-    set vdom "root"
+    set vdom {{ options.vdom }}
     set type aggregate
     {% for j in project.profiles[profile].interfaces 
           if j.role == 'lag_member' and 
@@ -77,7 +88,7 @@ end
 {% if i.role == 'wan' and i.src_ip is defined %}
 config system interface
   edit "Lo-wan{{ loop.index }}"
-    set vdom "root"
+    set vdom {{ options.vdom }}
     set type loopback
     set vrf {{ pe_vrf }}
     set ip {{ i.src_ip|ipaddr('address') }}/32
@@ -92,7 +103,7 @@ end
 {# Loopback for incoming health-check probes #}
 config system interface
   edit "Lo-HC"
-    set vdom "root"
+    set vdom {{ options.vdom }}
     set type loopback
     set vrf {{ pe_vrf }}
     set ip {{ project.hub_hc_server|default('10.200.99.1') }}/32
@@ -100,7 +111,7 @@ config system interface
   next
   {# Main Loopback #}
   edit "Lo"
-    set vdom "root"
+    set vdom {{ options.vdom }}
     set type loopback
     set vrf {{ pe_vrf }}
     set ip {{ loopback|ipaddr('address') }}/32
