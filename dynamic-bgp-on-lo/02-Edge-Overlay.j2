@@ -72,9 +72,10 @@ config vpn ipsec phase1-interface
     {% endif %}
     {% if i.backup_group is defined %}
       {% if i.backup|default(false) %}
-      set monitor "{{ backup_tunnel[i.backup_group] }}"
+      set monitor {{ backup_tunnel[i.backup_group]|join(' ') }}
       {% else %}
-      {{ backup_tunnel.update({i.backup_group: ol_tun_name}) or "" }}
+      {{ backup_tunnel.update({ i.backup_group: backup_tunnel.get(i.backup_group, []) }) or "" }}
+      {{ backup_tunnel[i.backup_group].append(ol_tun_name) or "" }}
       {% endif %}
     {% else %}
     unset monitor
