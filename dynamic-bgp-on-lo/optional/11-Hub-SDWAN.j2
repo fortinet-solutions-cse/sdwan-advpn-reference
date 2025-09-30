@@ -51,12 +51,13 @@ config system sdwan
     edit "EDGE"
       set detect-mode remote
       set members {{ hub_sla_members|join(' ') }}
+      set remote-probe-timeout 1000
       set sla-id-redistribute 1
       config sla
         edit 1
           set link-cost-factor remote
           set priority-in-sla 5
-          set priority-out-sla 995
+          set priority-out-sla 999
         next
       end
     next
