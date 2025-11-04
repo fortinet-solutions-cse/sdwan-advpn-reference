@@ -19,7 +19,7 @@
 {% for h in project.regions[region].hubs if h != hostname %}
   {% set peer_index = project.regions[region].hubs.index(h) + 1 %}
   {% for i in project.profiles[profile].interfaces 
-       if i.role == 'wan' and 
+       if i.role in [ 'wan', 'backbone' ] and 
        i.name is defined and 
        i.ol_type in project.hubs[hostname].overlays and
        i.ol_type in project.hubs[h].overlays and
