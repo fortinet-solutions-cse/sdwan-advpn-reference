@@ -9,7 +9,7 @@ The detailed documentation is now available in the [Wiki](https://github.com/for
 ## FortiManager-based Deployment
 
 The Jinja Orchestrator can be used as part of the FortiManager-based SD-WAN deployment, thanks to the Jinja engine built into the
-FortiManager 7.0.1+. The Jinja Orchestrator is used to generate the foundation of your SD-WAN project, supplemented by other templates available in the FortiManager. Our [Deployment Guide for MSSPs (Release 7.4)](https://docs.fortinet.com/document/fortigate/7.4.0/sd-wan-deployment-for-mssps/705134/introduction) contains more information about using the Jinja Orchestrator in this way.
+FortiManager 7.0.1+. The Jinja Orchestrator is used to generate the foundation of your SD-WAN project, supplemented by other templates available in the FortiManager. Our [Deployment Guide for MSSPs (Release 7.6)](https://docs.fortinet.com/document/fortigate/7.6.0/sd-wan-deployment-for-mssps/) contains more information about using the Jinja Orchestrator in this way.
 
 ## Offline Rendering
 
