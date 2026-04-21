@@ -19,7 +19,8 @@
 {# Options: project-wide defaults #}
 {% set options = {
     'force_cleanup': project.force_cleanup|default(false),
-    'spoke2hub_advpn': project.spoke2hub_advpn|default(false)
+    'spoke2hub_advpn': project.spoke2hub_advpn|default(false),
+    'pqc': project.pqc|default(false)
   }
 %}
 {# Options can be selectively overriden in profile #}
@@ -65,6 +66,8 @@
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          {{ 'set addke1 36 0' if options.pqc else 'unset addke1' }}
           {% if project.multireg_advpn|default(true) %}
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
@@ -89,6 +92,7 @@
         edit "{{ ol_tun_name }}"
           set phase1name "{{ ol_tun_name }}"
           set proposal aes256gcm
+          {{ 'set addke1 36 0' if options.pqc else 'unset addke1' }}
           set keepalive enable
           set keylifeseconds 3600
         next
