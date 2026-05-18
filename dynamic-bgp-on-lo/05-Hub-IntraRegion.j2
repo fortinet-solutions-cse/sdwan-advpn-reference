@@ -57,7 +57,7 @@
       set exchange-fgt-device-id enable
       set proposal aes256gcm-prfsha256
       set dhgrp 20 21
-      {{ 'set addke1 36 0' if options.pqc else 'unset addke1' }}
+      {{ 'set addke1 ml-kem-768 none' if options.pqc else 'unset addke1' }}
       set exchange-interface-ip enable
       set encapsulation {{ 'vpn-id-ipip' if multi_vrf else 'none' }}
       set remote-gw {{ project.hubs[h].overlays[i.ol_type].wan_ip }}
@@ -72,7 +72,7 @@
     edit "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
       set phase1name "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
       set proposal aes256gcm
-      {{ 'set addke1 36 0' if options.pqc else 'unset addke1' }}
+      {{ 'set addke1 ml-kem-768 none' if options.pqc else 'unset addke1' }}
       set keepalive enable
       set keylifeseconds 3600    
     next
