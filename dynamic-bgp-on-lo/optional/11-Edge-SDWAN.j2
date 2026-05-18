@@ -7,6 +7,9 @@
 
 {% import '00-Project' as project with context %}
 
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+
 {# Options: project-wide defaults #}
 {% set options = {
     'advpn2': project.advpn2|default(true),
@@ -100,6 +103,7 @@ config system sdwan
   config health-check
     edit "HUB"
       set server {{ project.hub_hc_server|default('10.200.99.1') }}
+      set vrf {{ pe_vrf }}
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set embed-measured-health enable
@@ -115,6 +119,7 @@ config system sdwan
     {% if dia_members %}
     edit "Internet"
       set server "www.fortinet.com"
+      set vrf {{ pe_vrf }}
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set update-cascade-interface disable
@@ -180,3 +185,17 @@ config router static
     set sdwan-zone "underlay" "overlay"
   next
 end
+{% if multi_vrf %}
+{% for i in project.profiles[profile].interfaces 
+      if i.name is defined and
+      i.vrf is defined and
+      i.allow_dia|default(false) %}
+{# Leak default route to CE VRFs with allow_dia = true #}
+config router static
+  edit {{ 4000 + i.vrf }}
+    set sdwan-zone "underlay" "overlay"
+    set vrf {{ i.vrf }}
+  next
+end  
+{% endfor %}
+{% endif %}
