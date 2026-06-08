@@ -72,6 +72,7 @@
     edit "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
       set phase1name "H{{ my_index }}H{{ peer_index }}_{{ i.ol_type }}"
       set proposal aes256gcm
+      set dhgrp 20 21
       {{ 'set addke1 36 0' if options.pqc else 'unset addke1' }}
       set keepalive enable
       set keylifeseconds 3600    
