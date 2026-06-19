@@ -37,7 +37,7 @@ config vpn ipsec phase1-interface
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
     set dhgrp 20 21 14
-    set addke1 36 0
+    {{ 'set addke1 36 0' if options.pqc else 'unset addke1' }}
     {% if project.intrareg_advpn|default(true) %}
     set auto-discovery-sender enable
     {% else %}
@@ -68,7 +68,7 @@ config vpn ipsec phase2-interface
     set phase1name "EDGE_{{ i.ol_type }}"
     set proposal aes256gcm
     set dhgrp 20 21 14
-    set addke1 36 0
+    {{ 'set addke1 36 0' if options.pqc else 'unset addke1' }}
     set keepalive enable
     set keylifeseconds 3600
   next
