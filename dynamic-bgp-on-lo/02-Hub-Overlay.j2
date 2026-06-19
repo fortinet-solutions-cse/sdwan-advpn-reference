@@ -10,6 +10,17 @@
 {% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
 {% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
 
+{# Options: project-wide defaults #}
+{% set options = {
+    'pqc': project.pqc|default(false)
+  }
+%}
+{# Options can be selectively overriden in profile #}
+{% set _ = options.update(
+      project.profiles[profile].options|default({})
+   ) 
+%}
+
 {% for i in project.profiles[profile].interfaces 
       if i.role == 'wan' and 
       i.name is defined and
@@ -37,7 +48,7 @@ config vpn ipsec phase1-interface
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
     set dhgrp 20 21
-    set addke1 ml-kem-768 none
+    {{ 'set addke1 ml-kem-768 none' if options.pqc else 'unset addke1' }}    
     {% if project.intrareg_advpn|default(true) %}
     set auto-discovery-sender enable
     {% else %}
@@ -67,7 +78,7 @@ config vpn ipsec phase2-interface
   edit "EDGE_{{ i.ol_type }}"
     set phase1name "EDGE_{{ i.ol_type }}"
     set proposal aes256gcm
-    set addke1 ml-kem-768 none
+    {{ 'set addke1 ml-kem-768 none' if options.pqc else 'unset addke1' }}    
     set keepalive enable
     set keylifeseconds 3600
   next
