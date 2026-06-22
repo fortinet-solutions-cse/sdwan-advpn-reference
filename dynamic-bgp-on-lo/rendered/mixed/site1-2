@@ -94,6 +94,8 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    set addke1 ml-kem-768
     set idle-timeout enable
     set shared-idle-timeout enable
     set auto-discovery-receiver enable
@@ -114,6 +116,7 @@ config vpn ipsec phase2-interface
   edit "H1_ISP1"
     set phase1name "H1_ISP1"
     set proposal aes256gcm
+    set addke1 ml-kem-768
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -137,6 +140,8 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    set addke1 ml-kem-768
     set idle-timeout enable
     set shared-idle-timeout enable
     set auto-discovery-receiver enable
@@ -157,6 +162,7 @@ config vpn ipsec phase2-interface
   edit "H1_MPLS"
     set phase1name "H1_MPLS"
     set proposal aes256gcm
+    set addke1 ml-kem-768
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -180,6 +186,8 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    set addke1 ml-kem-768
     set idle-timeout enable
     set shared-idle-timeout enable
     set auto-discovery-receiver enable
@@ -200,6 +208,7 @@ config vpn ipsec phase2-interface
   edit "H2_ISP1"
     set phase1name "H2_ISP1"
     set proposal aes256gcm
+    set addke1 ml-kem-768
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -223,6 +232,8 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    set addke1 ml-kem-768
     set idle-timeout enable
     set shared-idle-timeout enable
     set auto-discovery-receiver enable
@@ -243,6 +254,7 @@ config vpn ipsec phase2-interface
   edit "H2_MPLS"
     set phase1name "H2_MPLS"
     set proposal aes256gcm
+    set addke1 ml-kem-768
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -381,18 +393,6 @@ config router bgp
 end
 
 ######################################
-# 04-Edge-InterVRF.j2
-######################################
-config system zone
-  edit "pevrf_leak_zone"
-    unset interface 
-  next
-  edit "vrfs_leak_zone"
-    unset interface 
-  next
-end
-
-######################################
 # optional/11-Edge-SDWAN.j2
 ######################################
 config firewall address
@@ -467,6 +467,7 @@ config system sdwan
   config health-check
     edit "HUB"
       set server 10.200.99.1
+      set vrf 0
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set embed-measured-health enable
@@ -481,6 +482,7 @@ config system sdwan
     next
     edit "Internet"
       set server "www.fortinet.com"
+      set vrf 0
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set update-cascade-interface disable
@@ -544,12 +546,6 @@ config firewall address
     set subnet 10.0.0.0/8
   next
 end
-config firewall ippool
-  edit "Lo"
-    set startip 10.200.1.2
-    set endip 10.200.1.2
-  next
-end
 config firewall policy
   purge
   edit 1
@@ -579,6 +575,7 @@ config firewall policy
     set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
+    set skip-vrf-match disable
     set nat enable
   next
   edit 4

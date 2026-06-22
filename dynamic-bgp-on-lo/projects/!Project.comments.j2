@@ -32,6 +32,7 @@
 {% set dhcp_server_startip = 4 %}
 {% set dhcp_server_endip = -5 %}
 
+{% set pqc = false %}
 {% set cert_auth = true %}
 {% set cert_auth_filter = false %}
 {% set hub_cert_template = 'Hub' %}
@@ -43,7 +44,6 @@
 {% set hub_crl_check = false %}
 {% set crl_scep_url = '' %}
 {% set crl_http_url = '' %}
-
 
 {% set overlay_stickiness = false %}
 {% set intrareg_hub2hub = false %}
@@ -99,6 +99,7 @@
     'ProfileName': {
       'ha': false,
       'options': {
+          'pqc': ,
           'advpn2': ,
           'dynamic_bgp': ,
           'force_cleanup': ,

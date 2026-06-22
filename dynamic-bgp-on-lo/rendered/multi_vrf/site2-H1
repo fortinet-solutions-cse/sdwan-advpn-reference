@@ -92,9 +92,12 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set peertype any
     set psksecret S3cr3t!
+    set keylife 28800
     set localid ISP1-site2-H1
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    set addke1 ml-kem-768 none    
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation vpn-id-ipip
@@ -111,7 +114,9 @@ config vpn ipsec phase2-interface
   edit "EDGE_ISP1"
     set phase1name "EDGE_ISP1"
     set proposal aes256gcm
+    set addke1 ml-kem-768 none    
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -128,9 +133,12 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set peertype any
     set psksecret S3cr3t!
+    set keylife 28800
     set localid ISP2-site2-H1
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    set addke1 ml-kem-768 none    
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation vpn-id-ipip
@@ -147,7 +155,9 @@ config vpn ipsec phase2-interface
   edit "EDGE_ISP2"
     set phase1name "EDGE_ISP2"
     set proposal aes256gcm
+    set addke1 ml-kem-768 none    
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -164,9 +174,12 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set peertype any
     set psksecret S3cr3t!
+    set keylife 28800
     set localid MPLS-site2-H1
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    set addke1 ml-kem-768 none    
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation vpn-id-ipip
@@ -183,7 +196,9 @@ config vpn ipsec phase2-interface
   edit "EDGE_MPLS"
     set phase1name "EDGE_MPLS"
     set proposal aes256gcm
+    set addke1 ml-kem-768 none    
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -319,6 +334,8 @@ end
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          set addke1 ml-kem-768 none
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -336,6 +353,7 @@ end
         edit "WEST_H1_MPLS"
           set phase1name "WEST_H1_MPLS"
           set proposal aes256gcm
+          set addke1 ml-kem-768 none
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -356,6 +374,8 @@ end
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          set addke1 ml-kem-768 none
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -373,6 +393,7 @@ end
         edit "WEST_H2_MPLS"
           set phase1name "WEST_H2_MPLS"
           set proposal aes256gcm
+          set addke1 ml-kem-768 none
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -500,44 +521,6 @@ end
 
 
 ######################################
-# 06-Hub-InterVRF.j2
-######################################
-  config system vdom-link
-    edit "vrf11_leak"
-    next
-  end
-  config system interface
-    edit "vrf11_leak0"
-      set type vdom-link
-      set vrf 1
-      set vdom root
-      set ip 10.200.255.23/31
-      set allowaccess ping
-    next
-    edit "vrf11_leak1"
-      set type vdom-link
-      set vrf 11
-      set vdom root
-      set ip 10.200.255.22/31
-      set allowaccess ping
-    next
-  end
-  config router static
-    edit 4011
-      set gateway 10.200.255.23
-      set device vrf11_leak1
-    next
-  end  
-config system zone
-  edit "pevrf_leak_zone"
-    set interface vrf11_leak0
-  next
-  edit "vrfs_leak_zone"
-    set interface vrf11_leak1
-  next
-end
-
-######################################
 # 07-Hub-Services.j2
 ######################################
 
@@ -586,12 +569,13 @@ config system sdwan
     edit "EDGE"
       set detect-mode remote
       set members 3 4 5
+      set remote-probe-timeout 1000
       set sla-id-redistribute 1
       config sla
         edit 1
           set link-cost-factor remote
           set priority-in-sla 5
-          set priority-out-sla 995
+          set priority-out-sla 999
         next
       end
     next
@@ -650,6 +634,7 @@ config firewall policy
     set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
+    set skip-vrf-match enable
     set nat enable
   next
   edit 4
@@ -665,6 +650,7 @@ config firewall policy
     set ssl-ssh-profile certificate-inspection
     set application-list "default"
     set logtraffic all
+    set skip-vrf-match enable
     set nat enable
   next
   edit 5
