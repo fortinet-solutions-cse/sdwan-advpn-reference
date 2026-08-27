@@ -12,7 +12,8 @@
 
 {# Options: project-wide defaults #}
 {% set options = {
-    'vdom': project.vdom|default('root')
+    'vdom': project.vdom|default('root'),
+    'hw_switch_vlan': project.hw_switch_vlan|default(true)
   }
 %}
 {# Options can be selectively overriden in profile #}
@@ -35,9 +36,11 @@ end
 {# Create hardware switches #}
 {% set vlan_switch = project.profiles[profile].bridges|default({})|selectattr('vlanid', 'defined')|list %}
 {% if project.profiles[profile].bridges is defined %}
+{% if options.hw_switch_vlan %}
 config system global
   set virtual-switch-vlan {{ 'enable' if vlan_switch else 'disable' }}
 end
+{% endif %}
 {% for br in project.profiles[profile].bridges if br.name is defined %}
 config system virtual-switch
   edit "{{br.name}}"
