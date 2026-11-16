@@ -65,6 +65,7 @@ config system interface
   edit "{{i.name}}"
     {# IP #}
     {% if i.ip is defined %}
+
     {% if i.ip == 'dhcp' %}
     set mode dhcp
     {% elif i.ip == 'pppoe' %}
@@ -76,10 +77,11 @@ config system interface
     set mode static
     set ip {{ i.ip }}
     {% endif %}
-    {% endif %}
 
     {# VRF #}
     set vrf {{ i.vrf|default(pe_vrf) }}
+
+    {% endif %}
 
     {# VLAN #}
     {% if i.vlanid is defined and i.parent is defined %}
