@@ -92,15 +92,17 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set peertype any
     set psksecret S3cr3t!
+    set keylife 28800
     set localid ISP1-site1-H2
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation vpn-id-ipip
     set exchange-ip-addr4 10.200.1.254
-    set network-overlay enable
-    set network-id 21
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
@@ -111,7 +113,10 @@ config vpn ipsec phase2-interface
   edit "EDGE_ISP1"
     set phase1name "EDGE_ISP1"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -128,15 +133,17 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set peertype any
     set psksecret S3cr3t!
+    set keylife 28800
     set localid ISP2-site1-H2
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation vpn-id-ipip
     set exchange-ip-addr4 10.200.1.254
-    set network-overlay enable
-    set network-id 22
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
@@ -147,7 +154,10 @@ config vpn ipsec phase2-interface
   edit "EDGE_ISP2"
     set phase1name "EDGE_ISP2"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -164,15 +174,17 @@ config vpn ipsec phase1-interface
     set authmethod psk
     set peertype any
     set psksecret S3cr3t!
+    set keylife 28800
     set localid MPLS-site1-H2
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation vpn-id-ipip
     set exchange-ip-addr4 10.200.1.254
-    set network-overlay enable
-    set network-id 23
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
@@ -183,7 +195,10 @@ config vpn ipsec phase2-interface
   edit "EDGE_MPLS"
     set phase1name "EDGE_MPLS"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -319,6 +334,8 @@ end
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          unset addke1
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -336,6 +353,8 @@ end
         edit "EAST_H1_MPLS"
           set phase1name "EAST_H1_MPLS"
           set proposal aes256gcm
+          set dhgrp 20 21
+          unset addke1
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -460,20 +479,20 @@ end
       set type vdom-link
       set vrf 1
       set vdom root
-      set ip 10.200.255.23/31
+      set ip 10.200.252.23/31
       set allowaccess ping
     next
     edit "vrf11_leak1"
       set type vdom-link
       set vrf 11
       set vdom root
-      set ip 10.200.255.22/31
+      set ip 10.200.252.22/31
       set allowaccess ping
     next
   end
   config router static
     edit 4011
-      set gateway 10.200.255.23
+      set gateway 10.200.252.23
       set device vrf11_leak1
     next
   end  
@@ -535,12 +554,13 @@ config system sdwan
     edit "EDGE"
       set detect-mode remote
       set members 3 4 5
+      set remote-probe-timeout 1000
       set sla-id-redistribute 1
       config sla
         edit 1
           set link-cost-factor remote
           set priority-in-sla 5
-          set priority-out-sla 995
+          set priority-out-sla 999
         next
       end
     next

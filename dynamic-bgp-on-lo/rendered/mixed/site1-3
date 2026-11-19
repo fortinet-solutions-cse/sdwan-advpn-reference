@@ -94,14 +94,15 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set idle-timeout enable
     set shared-idle-timeout disable
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.203
-    set network-overlay enable
-    set network-id 11
+    set network-overlay disable
     set remote-gw 100.64.1.1
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -114,6 +115,8 @@ config vpn ipsec phase2-interface
   edit "H1_ISP1"
     set phase1name "H1_ISP1"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -137,14 +140,15 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set idle-timeout enable
     set shared-idle-timeout disable
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.203
-    set network-overlay enable
-    set network-id 13
+    set network-overlay disable
     set remote-gw 172.16.1.5
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -157,6 +161,8 @@ config vpn ipsec phase2-interface
   edit "H1_MPLS"
     set phase1name "H1_MPLS"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -180,14 +186,15 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set idle-timeout enable
     set shared-idle-timeout disable
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.203
-    set network-overlay enable
-    set network-id 21
+    set network-overlay disable
     set remote-gw 100.64.2.1
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -200,6 +207,8 @@ config vpn ipsec phase2-interface
   edit "H2_ISP1"
     set phase1name "H2_ISP1"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
     set keylifeseconds 3600
   next
@@ -223,14 +232,15 @@ config vpn ipsec phase1-interface
     set net-device enable
     set link-cost 0
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set idle-timeout enable
     set shared-idle-timeout disable
     set auto-discovery-receiver enable
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.203
-    set network-overlay enable
-    set network-id 23
+    set network-overlay disable
     set remote-gw 172.16.2.5
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -243,6 +253,8 @@ config vpn ipsec phase2-interface
   edit "H2_MPLS"
     set phase1name "H2_MPLS"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
     set keylifeseconds 3600
   next

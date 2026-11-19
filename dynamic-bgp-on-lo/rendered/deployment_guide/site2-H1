@@ -85,15 +85,17 @@ config vpn ipsec phase1-interface
     set authmethod signature
     set certificate "Hub"
     set peertype any
+    set keylife 28800
     set localid ISP1-site2-H1
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.2.253
-    set network-overlay enable
-    set network-id 41
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
@@ -104,7 +106,10 @@ config vpn ipsec phase2-interface
   edit "EDGE_ISP1"
     set phase1name "EDGE_ISP1"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -121,15 +126,17 @@ config vpn ipsec phase1-interface
     set authmethod signature
     set certificate "Hub"
     set peertype any
+    set keylife 28800
     set localid MPLS-site2-H1
     set exchange-fgt-device-id enable
     set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21 14
+    unset addke1
     set auto-discovery-sender enable
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.2.253
-    set network-overlay enable
-    set network-id 43
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
@@ -140,7 +147,10 @@ config vpn ipsec phase2-interface
   edit "EDGE_MPLS"
     set phase1name "EDGE_MPLS"
     set proposal aes256gcm
+    set dhgrp 20 21 14
+    unset addke1
     set keepalive enable
+    set keylifeseconds 3600
   next
 end
 config system interface
@@ -262,6 +272,8 @@ end
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          unset addke1
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -279,6 +291,8 @@ end
         edit "WEST_H1_ISP1"
           set phase1name "WEST_H1_ISP1"
           set proposal aes256gcm
+          set dhgrp 20 21
+          unset addke1
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -299,6 +313,8 @@ end
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          unset addke1
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -316,6 +332,8 @@ end
         edit "WEST_H2_ISP1"
           set phase1name "WEST_H2_ISP1"
           set proposal aes256gcm
+          set dhgrp 20 21
+          unset addke1
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -336,6 +354,8 @@ end
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          unset addke1
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -353,6 +373,8 @@ end
         edit "WEST_H1_MPLS"
           set phase1name "WEST_H1_MPLS"
           set proposal aes256gcm
+          set dhgrp 20 21
+          unset addke1
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -373,6 +395,8 @@ end
           set keylife 28800
           set exchange-fgt-device-id enable
           set proposal aes256gcm-prfsha256
+          set dhgrp 20 21
+          unset addke1
           set auto-discovery-sender enable
           set auto-discovery-receiver enable
           set auto-discovery-forwarder enable
@@ -390,6 +414,8 @@ end
         edit "WEST_H2_MPLS"
           set phase1name "WEST_H2_MPLS"
           set proposal aes256gcm
+          set dhgrp 20 21
+          unset addke1
           set keepalive enable
           set keylifeseconds 3600
         next
@@ -556,12 +582,13 @@ config system sdwan
     edit "EDGE"
       set detect-mode remote
       set members 1 2
+      set remote-probe-timeout 1000
       set sla-id-redistribute 1
       config sla
         edit 1
           set link-cost-factor remote
           set priority-in-sla 5
-          set priority-out-sla 995
+          set priority-out-sla 999
         next
       end
     next
