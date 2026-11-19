@@ -139,8 +139,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.1
-    set network-overlay enable
-    set network-id 11
+    set network-overlay disable
     set remote-gw 100.64.1.1
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -185,8 +184,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.1
-    set network-overlay enable
-    set network-id 12
+    set network-overlay disable
     set remote-gw 100.64.1.9
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -231,8 +229,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.1
-    set network-overlay enable
-    set network-id 13
+    set network-overlay disable
     set remote-gw 172.16.1.5
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -277,8 +274,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.1
-    set network-overlay enable
-    set network-id 21
+    set network-overlay disable
     set remote-gw 100.64.2.1
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -323,8 +319,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.1
-    set network-overlay enable
-    set network-id 22
+    set network-overlay disable
     set remote-gw 100.64.2.9
     set dpd-retrycount 3
     set dpd-retryinterval 5
@@ -369,8 +364,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.1
-    set network-overlay enable
-    set network-id 23
+    set network-overlay disable
     set remote-gw 172.16.2.5
     set dpd-retrycount 3
     set dpd-retryinterval 5

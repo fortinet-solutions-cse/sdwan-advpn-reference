@@ -102,8 +102,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.254
-    set network-overlay enable
-    set network-id 21
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
@@ -143,8 +142,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.254
-    set network-overlay enable
-    set network-id 22
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
@@ -184,8 +182,7 @@ config vpn ipsec phase1-interface
     set add-route disable
     set encapsulation none
     set exchange-ip-addr4 10.200.1.254
-    set network-overlay enable
-    set network-id 23
+    set network-overlay disable
     set dpd-retrycount 2
     set dpd-retryinterval 5
     set dpd on-idle
