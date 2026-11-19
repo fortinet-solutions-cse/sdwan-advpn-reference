@@ -9,7 +9,7 @@
 
 {% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
 {% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
-{% set vrf_leak_summary = project.vrf_leak_summary|default('10.200.255.0/24') %}
+{% set vrf_leak_summary = project.vrf_leak_summary|default('10.200.252.0/22') %}
 
 {# Options: project-wide defaults #}
 {% set options = {
@@ -71,7 +71,7 @@
   config system interface
     edit "vrf{{ i.vrf }}_leak0"
       set type vlan
-      set vlanid {{ 4000 + i.vrf }}
+      set vlanid {{ 3000 + i.vrf }}
       set interface "{{options.leak_npu_link}}0"
       set vrf {{ pe_vrf }}
       set vdom {{ options.vdom }}
@@ -81,7 +81,7 @@
     next
     edit "vrf{{ i.vrf }}_leak1"
       set type vlan
-      set vlanid {{ 4000 + i.vrf }}
+      set vlanid {{ 3000 + i.vrf }}
       set interface "{{options.leak_npu_link}}1"
       set vrf {{ i.vrf }}
       set vdom {{ options.vdom }}
