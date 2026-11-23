@@ -54,4 +54,14 @@ config firewall policy
     set schedule "always"
     set service "PING" "BGP"
   next
+  edit 23
+    set name "Health-Check (Branches)"
+    set srcintf "{{ rh_edge_zone }}"
+    set dstintf "Lo-HC"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "PING"
+  next
 end

@@ -85,6 +85,8 @@ This branch adds a design option on top of the standard Release 8.0 templates:
   Each Branch also connects to a **backup** Regional Hub in *another* region, used only when the primary fails.
   Branch tunnels: `PRH_<ol_type>` (primary, zone `prh_overlay`) and `BRH_<ol_type>` (backup, zone `brh_overlay`).
   Regional Hub dial-up tunnels: `EDGE_<ol_type>` (zone `edge_overlay`).
+  All Regional Hubs share the same health-check loopback (`Lo-HC`, `rh_hc_server`, default 10.200.98.1), like the Global Hubs
+  (`hub_hc_server`, default 10.200.99.1), so that the same SD-WAN health-checks fit every Branch.
 - Branches peer directly (iBGP on loopbacks) with their Regional Hubs: they advertise their own LANs only and accept only the
   Regional Hub's `lan_prefixes` (local-preference 200 for primary, 150 for backup, above the copies reflected by the Global Hubs).
   The Regional Hubs are not route-reflectors, so they never become transit between Branches and Global Hubs.

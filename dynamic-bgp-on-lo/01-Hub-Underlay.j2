@@ -74,6 +74,11 @@ config system interface
     {{'un' if not lag_members}}set member {{ lag_members|join(' ') }}
     {% endif %}        
 
+    {# Alias (only set when defined, to preserve aliases configured elsewhere) #}
+    {% if i.alias is defined %}
+    set alias "{{ i.alias }}"
+    {% endif %}
+
     {# Other settings #}
     {% if i.role == 'wan' %}
     set role wan

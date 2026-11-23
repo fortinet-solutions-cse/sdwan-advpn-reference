@@ -369,6 +369,15 @@ end
 ######################################
 # 08-RH-Overlay.j2
 ######################################
+config system interface
+  edit "Lo-HC"
+    set vdom root
+    set type loopback
+    set vrf 0
+    set ip 10.200.98.1/32
+    set allowaccess ping
+  next
+end
 config vpn ipsec phase1-interface
   edit "EDGE_ISP1"
     set type dynamic
@@ -773,6 +782,16 @@ config firewall policy
     set action accept
     set schedule "always"
     set service "PING" "BGP"
+  next
+  edit 23
+    set name "Health-Check (Branches)"
+    set srcintf "edge_overlay"
+    set dstintf "Lo-HC"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "PING"
   next
 end
 

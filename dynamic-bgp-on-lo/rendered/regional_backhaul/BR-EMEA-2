@@ -776,23 +776,14 @@ config system sdwan
       set update-static-route enable
       set members 7 8 9 10
     next
-    edit "PRH"
-      set server "10.200.0.11"
+    edit "RH"
+      set server "10.200.98.1"
       set vrf 0
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set update-cascade-interface disable
       set update-static-route disable
-      set members 7 8
-    next
-    edit "BRH"
-      set server "10.200.0.12"
-      set vrf 0
-      set sla-fail-log-period 10
-      set sla-pass-log-period 10
-      set update-cascade-interface disable
-      set update-static-route disable
-      set members 9 10
+      set members 7 8 9 10
     next
   end
   config neighbor
@@ -813,7 +804,7 @@ config system sdwan
       set mode priority
       set dst "PRH_LAN"
       set src "CORP_LAN"
-      set health-check "PRH" "HUB"
+      set health-check "RH" "HUB"
       # Directly to the Regional Hub, then via the Global Hubs
       set priority-members 7 8 3 4 5 6
     next
@@ -822,7 +813,7 @@ config system sdwan
       set mode priority
       set dst "BRH_LAN"
       set src "CORP_LAN"
-      set health-check "BRH" "HUB"
+      set health-check "RH" "HUB"
       # Directly to the Regional Hub, then via the Global Hubs
       set priority-members 9 10 3 4 5 6
     next

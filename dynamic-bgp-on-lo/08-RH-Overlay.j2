@@ -19,6 +19,7 @@
 
 {# Options: project-wide defaults #}
 {% set options = {
+    'vdom': project.vdom|default('root'),
     'pqc': project.pqc|default(false)
   }
 %}
@@ -27,6 +28,18 @@
       project.profiles[profile].options|default({})
    )
 %}
+
+{# Loopback for incoming health-check probes from the Branches #}
+{# Same IP on all Regional Hubs: each probe is sent over a specific tunnel #}
+config system interface
+  edit "Lo-HC"
+    set vdom {{ options.vdom }}
+    set type loopback
+    set vrf {{ pe_vrf }}
+    set ip {{ project.rh_hc_server|default('10.200.98.1') }}/32
+    set allowaccess ping
+  next
+end
 
 {% set edge_tunnels = [] %}
 {% for i in project.profiles[profile].interfaces

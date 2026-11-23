@@ -203,21 +203,16 @@ config system sdwan
       set update-static-route enable
       set members {{ inet_members|join(' ') }}
     next
-    {# Reachability of each Regional Hub (its BGP loopback), for the Regional rules #}
-    {% for role, rh, zone in rh_roles %}
-    edit "{{ role }}"
-      set server "{{ rhubs.regional_hubs[rh].lo_bgp }}"
+    {# Reachability of the Regional Hubs (Lo-HC, same IP on all of them), for the Regional rules #}
+    edit "RH"
+      set server "{{ project.rh_hc_server|default('10.200.98.1') }}"
       set vrf {{ pe_vrf }}
       set sla-fail-log-period 10
       set sla-pass-log-period 10
       set update-cascade-interface disable
       set update-static-route disable
-      set members {{ rh_members[role]|join(' ') }}
+      set members {{ inet_members|join(' ') }}
     next
-    {% endfor %}
-    {% if not brh %}
-    delete "BRH"
-    {% endif %}
     {% endif %}
   end
   config neighbor
@@ -236,7 +231,7 @@ config system sdwan
       set mode priority
       set dst "{{ role }}_LAN"
       set src "CORP_LAN"
-      set health-check "{{ role }}" "HUB"
+      set health-check "RH" "HUB"
       # Directly to the Regional Hub, then via the Global Hubs
       set priority-members {{ (rh_members[role] + hub_sla_members)|join(' ') }}
     next
