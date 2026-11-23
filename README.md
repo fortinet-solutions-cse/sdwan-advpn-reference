@@ -74,6 +74,41 @@ For example, you can render the same configuration as in the "deployment_guide" 
 ./render_config.py -p dynamic-bgp-on-lo/projects/Project.dualreg.cert.j2 -i dynamic-bgp-on-lo/projects/inventory.dualreg.json
 ```
 
+## Custom Design Option: Regional Internet Backhaul
+
+This branch adds a design option on top of the standard Release 8.0 templates:
+
+- **Global Hubs** (e.g. GH1, GH2) form a single ADVPN region. All Branches *and* all Regional Hubs connect to both of them.
+  They are the BGP route-reflectors and the primary way of establishing ADVPN shortcuts between Branches.
+  Branch tunnels: `GH1_<ol_type>`, `GH2_<ol_type>` (SD-WAN zone `gh_overlay`).
+- **Regional Hubs** provide Internet backhauling (hub-and-spoke, no ADVPN) to the Branches of their region.
+  Each Branch also connects to a **backup** Regional Hub in *another* region, used only when the primary fails.
+  Branch tunnels: `PRH_<ol_type>` (primary, zone `prh_overlay`) and `BRH_<ol_type>` (backup, zone `brh_overlay`).
+  Regional Hub dial-up tunnels: `EDGE_<ol_type>` (zone `edge_overlay`).
+- Branches peer directly (iBGP on loopbacks) with their Regional Hubs: they advertise their own LANs only and accept only the
+  Regional Hub's `lan_prefixes` (local-preference 200 for primary, 150 for backup, above the copies reflected by the Global Hubs).
+  The Regional Hubs are not route-reflectors, so they never become transit between Branches and Global Hubs.
+
+The Regional Hubs are described in a separate template named **`RegionalHubs`** (an inventory of the Regional Hubs and of the
+primary/backup choice per region), imported by the templates in the same way as the Project Template.
+Branches select their region with the `inet_region` variable (optionally overriding the choice with `inet_hub` / `inet_backup_hub`).
+Rendering fails if the backup Regional Hub belongs to the same region as the primary.
+
+New templates: `08-Edge-RHOverlay.j2`, `09-Edge-RHRouting.j2` (Branches), `08-RH-Overlay.j2`, `09-RH-Routing.j2` and
+`optional/12-RH-Firewall.j2` (Regional Hubs). Regional Hubs also receive all Edge templates (they are Spokes of the Global Hubs).
+`optional/11-Edge-SDWAN.j2` and `optional/12-Edge-Firewall.j2` were extended accordingly (zones, Regional/Internet rules, static
+default routes with priority 1/10/100 for primary/backup/underlay); in FortiManager, these parts are expected to be covered by the
+SD-WAN and Policy templates.
+
+For the offline rendering, put the Regional Hubs in an inventory group called `RH` and pass the `RegionalHubs` file with `-r`:
+
+```
+./render_config.py -p dynamic-bgp-on-lo/projects/Project.regional.nocert.j2 -r dynamic-bgp-on-lo/projects/RegionalHubs.regional.j2 -i dynamic-bgp-on-lo/projects/inventory.regional.json
+```
+
+The CSV converter accepts the Regional Hubs with `--rhubs inventory.RH.csv`.
+The rendered example is available under "dynamic-bgp-on-lo/rendered/regional_backhaul".
+
 ## Credits and Feedback
 
 The Jinja Orchestrator is maintained by a team of Consulting Systems Engineers at Fortinet. 

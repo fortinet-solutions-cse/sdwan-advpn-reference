@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, json, textwrap, jinja2, shutil
+import argparse, json, textwrap, jinja2, shutil, atexit
 from ansible_collections.ansible.utils.plugins.filter.ipaddr import ipaddr
 from os import listdir, chdir, path, makedirs, remove
 
@@ -34,6 +34,9 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpForm
                                  - Render the entire topology config using CSV inventory file:
                                     ./inventory_from_csv.py --hub inventory.Hub.csv --edge inventory.Edge.csv | ./render_config.py -p Project.j2
 
+                                 - Render a Regional Internet Backhaul topology (with Regional Hubs inventory):
+                                    ./render_config.py -p Project.j2 -r RegionalHubs.j2 -i inventory.json
+
                                  """))
 
 parser.add_argument('-f', '--flavor', metavar='dir', default='dynamic-bgp-on-lo',
@@ -47,6 +50,9 @@ parser.add_argument('-i', '--inventory', metavar='file',
 
 parser.add_argument('-o', '--outdir', metavar='dir', default='out',
                     help='output directory (default="out")')
+
+parser.add_argument('-r', '--regional-hubs', metavar='file',
+                    help='Regional Hubs template (optional, imported by the templates as "RegionalHubs")')
 
 parser.add_argument('--skip-optional', action='store_true',
                     help="skip optional templates")
@@ -65,6 +71,27 @@ inventory = args.inventory or 0
 print("Project Template: " + path.relpath(project))
 print("Inventory: " + (path.relpath(inventory) if inventory else "reading from stdin..."))
 shutil.copyfile(project, flavor + '/00-Project')
+# Regional Hubs inventory: always present, so that the templates can import it unconditionally
+if args.regional_hubs:
+    print("Regional Hubs: " + path.relpath(args.regional_hubs))
+    shutil.copyfile(args.regional_hubs, flavor + '/RegionalHubs')
+else:
+    open(flavor + '/RegionalHubs', 'w').close()
+
+# Remove the temporary copies on exit, also when rendering fails
+@atexit.register
+def cleanup():
+    for f in [ '00-Project', 'RegionalHubs' ]:
+        if path.exists(flavor + '/' + f):
+            remove(flavor + '/' + f)
+
+# Device group -> template name tokens ("NN-<token>-Name.j2")
+# Regional Hubs are Spokes of the Global Hubs, so they also get the Edge templates
+group_templates = {
+    'Hub': [ 'Hub' ],
+    'Edge': [ 'Edge' ],
+    'RH': [ 'Edge', 'RH' ]
+}
 
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(flavor),
@@ -80,7 +107,8 @@ for devgroup, devlist in devices.items():
     print()
     print("Rendering group '" + devgroup + "'...")
 
-    list_of_templates = sorted(filter(lambda f: devgroup in f,
+    tokens = group_templates.get(devgroup, [ devgroup ])
+    list_of_templates = sorted(filter(lambda f: any('-' + t + '-' in f for t in tokens),
         listdir(flavor) +
         [ 'optional/' + j2 for j2 in listdir(flavor + '/optional') if not args.skip_optional ]
     ))
@@ -104,4 +132,3 @@ for devgroup, devlist in devices.items():
 
 print()
 print("Rendering complete.")
-remove(flavor + '/00-Project')

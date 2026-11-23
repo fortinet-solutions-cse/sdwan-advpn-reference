@@ -65,6 +65,19 @@
 {% set regex_as = '' %}
 {% set hub_strict_syn = false %}
 {% set lan_summary =  '10.0.0.0/8' %}
+
+{% set gh_zone = 'overlay' %}
+#}
+
+{# Optional Settings: Regional Internet Backhaul (showing default values) #}
+{# Used only by Branches with 'inet_region' and by Regional Hubs (group 'RH') #}
+{#
+{% set prh_zone = 'prh_overlay' %}
+{% set brh_zone = 'brh_overlay' %}
+{% set create_rh_edge_zone = true %}
+{% set rh_edge_zone = 'edge_overlay' %}
+{% set rh_edge_lo_summary = lo_summary %}
+{% set inet_hc_server = '8.8.8.8' %}
 #}
 
 {#  Mandatory Global Definitions #}
@@ -167,6 +180,39 @@
           'wan_ip': ,
           'network_id': ,
           'hub2hub': 
+        },
+        ...
+      }
+    },
+    ...
+  }
+%}
+#}
+
+{# Regional Internet Backhaul: separate template named 'RegionalHubs' #}
+{#
+  Per-device variables used (Branches):
+    - inet_region       (required to enable the backhaul on a Branch)
+    - inet_hub          (optional, overrides the primary Regional Hub)
+    - inet_backup_hub   (optional, overrides the backup Regional Hub; '' = no backup)
+
+{% set inet_regions = {
+    'RegionName': {
+      'primary': ,
+      'backup':
+    },
+    ...
+  }
+%}
+
+{% set regional_hubs = {
+    'RegionalHubName': {
+      'inet_region': ,
+      'lo_bgp': ,
+      'lan_prefixes': [  ],
+      'overlays': {
+        'OverlayName': {
+          'wan_ip':
         },
         ...
       }

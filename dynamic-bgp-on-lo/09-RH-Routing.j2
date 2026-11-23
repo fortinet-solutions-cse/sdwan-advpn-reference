@@ -1,0 +1,86 @@
+{# 09-RH-Routing.j2                                                           #}
+{# Release: 8.0                                                               #}
+{# Design flavor: Dynamic BGP on Loopback (unified, ADVPN 2.0 ready)          #}
+{# Custom design option: Regional Internet Backhaul                           #}
+{# -------------------------------------------------------------------------- #}
+{# Regional Hub: iBGP peering (on loopbacks) with the Branches over the       #}
+{# EDGE_<ol_type> tunnels.                                                    #}
+{# - The Regional Hub is NOT a route-reflector: routes learned from the       #}
+{#   Branches are never re-advertised to the Global Hubs (and vice versa).    #}
+{# - It advertises only its own LAN prefixes (LAN_OUT, tag 100).              #}
+{# - Branch prefixes learned directly are preferred over the copies reflected #}
+{#   by the Global Hubs, so that the return traffic stays symmetric.          #}
+{# Must be rendered after 03-Edge-Routing (which purges neighbor-ranges).     #}
+{# -------------------------------------------------------------------------- #}
+{# Disclaimer: Normally, this file is not supposed to be edited by users.     #}
+{# -------------------------------------------------------------------------- #}
+
+{% import '00-Project' as project with context %}
+
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+
+{# Options: project-wide defaults #}
+{% set options = {
+    'dynamic_bgp': project.dynamic_bgp|default(false)
+  }
+%}
+{# Options can be selectively overriden in profile #}
+{% set _ = options.update(
+      project.profiles[profile].options|default({})
+   )
+%}
+{% if options.dynamic_bgp %}
+{# Abort rendering: DYN_EDGE (03-Edge-Routing) would use the same neighbor-range as RH_EDGE #}
+{{ project.ERROR_set_dynamic_bgp_false_in_regional_hub_profile }}
+{% endif %}
+
+{% if project.lan_summary is defined %}
+config router prefix-list
+  edit "RH_EDGE_LAN"
+    config rule
+      purge
+      edit 1
+        set prefix {{ project.lan_summary|ipaddr('net') }}
+        unset ge
+        set le 32
+      next
+    end
+  next
+end
+{% endif %}
+
+config router route-map
+  edit "RH_EDGE_IN"
+    config rule
+      purge
+      edit 1
+        {% if project.lan_summary is defined %}
+        set match-ip-address "RH_EDGE_LAN"
+        {% endif %}
+        set set-local-preference 200
+      next
+    end
+  next
+end
+
+config router bgp
+  config neighbor-group
+    edit "RH_EDGE"
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set remote-as {{ project.regions[region].as }}
+      set interface "Lo"
+      set update-source "Lo"
+      set route-reflector-client{{'-vpnv4' if multi_vrf}} disable
+      set route-map-in{{'-vpnv4' if multi_vrf}} "RH_EDGE_IN"
+      set route-map-out{{'-vpnv4' if multi_vrf}} "LAN_OUT"
+    next
+  end
+  config neighbor-range
+    edit 120
+      set prefix {{ project.rh_edge_lo_summary|default(project.lo_summary) }}
+      set neighbor-group "RH_EDGE"
+    next
+  end
+end

@@ -6,8 +6,22 @@
 {# -------------------------------------------------------------------------- #}
 
 {% import '00-Project' as project with context %}
+{% import 'RegionalHubs' as rhubs with context %}
 
 {% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set gh_zone = project.gh_zone|default('overlay') %}
+
+{# Regional Internet Backhaul: zones towards the primary/backup Regional Hubs #}
+{% set inet_mode = inet_region is defined %}
+{% set rh_zones = [] %}
+{% if inet_mode %}
+  {% set brh = inet_backup_hub|default(rhubs.inet_regions[inet_region].backup|default('')) %}
+  {{ rh_zones.append('"'~project.prh_zone|default('prh_overlay')~'"') or "" }}
+  {% if brh %}
+  {{ rh_zones.append('"'~project.brh_zone|default('brh_overlay')~'"') or "" }}
+  {% endif %}
+{% endif %}
+{% set dia = project.profiles[profile].interfaces|selectattr('role', 'equalto', 'wan')|selectattr('dia', 'defined')|selectattr('dia')|list %}
 
 {# Options: project-wide defaults #}
 {% set options = {
@@ -29,8 +43,8 @@ config firewall policy
   {{ 'purge' if options.strict_firewall or "" }}
   edit 1
     set name "Corporate"
-    set srcintf {{ project.lan_zone|default('lan_zone') }} "overlay"
-    set dstintf {{ project.lan_zone|default('lan_zone') }} "overlay"
+    set srcintf {{ project.lan_zone|default('lan_zone') }} "{{ gh_zone }}"
+    set dstintf {{ project.lan_zone|default('lan_zone') }} "{{ gh_zone }}"
     set srcaddr "CORP_LAN"
     set dstaddr "CORP_LAN"
     set action accept
@@ -41,6 +55,23 @@ config firewall policy
     set application-list "default"
     set logtraffic all
   next
+  {% if inet_mode %}
+  edit 2
+    set name "Regional"
+    set srcintf {{ project.lan_zone|default('lan_zone') }} {{ rh_zones|join(' ') }}
+    set dstintf {{ project.lan_zone|default('lan_zone') }} {{ rh_zones|join(' ') }}
+    set srcaddr "CORP_LAN"
+    set dstaddr "CORP_LAN"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+  {% endif %}
+  {% if not inet_mode or dia %}
   edit 3
     set name "Internet (DIA)"
     set srcintf {{ project.lan_zone|default('lan_zone') }}
@@ -57,10 +88,17 @@ config firewall policy
     set skip-vrf-match {{ 'enable' if multi_vrf else 'disable' }}
     set nat enable
   next
+  {% endif %}
   edit 4
+    {% if inet_mode %}
+    set name "Internet (RH)"
+    set srcintf {{ project.lan_zone|default('lan_zone') }}
+    set dstintf {{ rh_zones|join(' ') }}
+    {% else %}
     set name "Internet (RIA)"
     set srcintf {{ project.lan_zone|default('lan_zone') }}
-    set dstintf "overlay"
+    set dstintf "{{ gh_zone }}"
+    {% endif %}
     set srcaddr "all"
     set dstaddr "all"
     set action accept
@@ -73,7 +111,7 @@ config firewall policy
   next
   edit 5
     set name "Peering"
-    set srcintf "overlay"
+    set srcintf "{{ gh_zone }}"{{ (' '~rh_zones|join(' ')) if rh_zones }}
     set dstintf "Lo"
     set srcaddr "all"
     set dstaddr "all"

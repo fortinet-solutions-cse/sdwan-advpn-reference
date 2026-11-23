@@ -1,0 +1,116 @@
+{# 08-Edge-RHOverlay.j2                                                       #}
+{# Release: 8.0                                                               #}
+{# Design flavor: Dynamic BGP on Loopback (unified, ADVPN 2.0 ready)          #}
+{# Custom design option: Regional Internet Backhaul                           #}
+{# -------------------------------------------------------------------------- #}
+{# Builds the hub-and-spoke tunnels (no ADVPN) from a Branch to its primary   #}
+{# Regional Hub (PRH_<ol_type>) and to its backup Regional Hub                #}
+{# (BRH_<ol_type>). Rendered only for devices with 'inet_region' defined.     #}
+{# -------------------------------------------------------------------------- #}
+{# Disclaimer: Normally, this file is not supposed to be edited by users.     #}
+{# -------------------------------------------------------------------------- #}
+
+{% import '00-Project' as project with context %}
+{% import 'RegionalHubs' as rhubs with context %}
+
+{% if inet_region is defined %}
+
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+
+{# Options: project-wide defaults #}
+{% set options = {
+    'pqc': project.pqc|default(false)
+  }
+%}
+{# Options can be selectively overriden in profile #}
+{% set _ = options.update(
+      project.profiles[profile].options|default({})
+   )
+%}
+
+{# Primary and backup Regional Hubs: regional defaults, overridable per device #}
+{# Set 'inet_backup_hub' to an empty string to build no backup tunnels        #}
+{% set prh = inet_hub|default(rhubs.inet_regions[inet_region].primary) %}
+{% set brh = inet_backup_hub|default(rhubs.inet_regions[inet_region].backup|default('')) %}
+{% if brh and rhubs.regional_hubs[brh].inet_region == rhubs.regional_hubs[prh].inet_region %}
+{# Abort rendering: the backup Regional Hub must belong to another region #}
+{{ rhubs.ERROR_backup_regional_hub_must_be_in_another_region }}
+{% endif %}
+{% set rh_roles = [ ('PRH', prh) ] + ([ ('BRH', brh) ] if brh else []) %}
+
+{% for role, rh in rh_roles %}
+{% set ol_tunnels = [] %}
+{% for i in project.profiles[profile].interfaces
+      if i.role == 'wan' and
+      i.name is defined and
+      i.ol_type in rhubs.regional_hubs[rh].overlays %}
+  {# Track generated tunnels, to handle duplicates by adding extra index as a suffix #}
+  {% set ul_name = i.ul_name~"-" if i.ul_name is defined else "" %}
+  {% set ol_tun = ul_name~role~"_"~i.ol_type %}
+  {% set count = ol_tunnels|select("equalto", ol_tun)|list|count %}
+  {# Tunnel name = '<PRH|BRH>_<ol_type>' if no duplicates, otherwise '<PRH|BRH>_<ol_type>_<index>' #}
+  {% set ol_tun_name = ol_tun if not count else ol_tun~'_'~(count+1) %}
+  {{ ol_tunnels.append(ol_tun) or "" }}
+config vpn ipsec phase1-interface
+  edit "{{ ol_tun_name }}"
+    set interface "{{ i.name }}"
+    set ike-version 2
+    set transport udp
+    {% if project.cert_auth|default(true) %}
+    set authmethod signature
+    set certificate "{{ project.edge_cert_template|default('Edge') }}"
+    set peertype {{ 'peer' if project.cert_auth_filter|default(false) else 'any' }}
+      {% if project.cert_auth_filter|default(false) %}
+      set peer {{ project.edge_cert_filter|default('TheCA') }}
+      {% endif %}
+    {% else %}
+    set authmethod psk
+    set peertype any
+    set psksecret {{ project.psk|default('S3cr3t!') }}
+    {% endif %}
+    set keylife 28800
+    set localid {{ ul_name~hostname }}
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost {{ 10 if i.backup|default(false) else 0 }}
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    {{ 'set addke1 ml-kem-768' if options.pqc else 'unset addke1' }}
+    set idle-timeout disable
+    set auto-discovery-receiver disable
+    set exchange-interface-ip enable
+    set add-route disable
+    set encapsulation {{ 'vpn-id-ipip' if multi_vrf else 'none' }}
+    set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
+    set network-overlay disable
+    set remote-gw {{ rhubs.regional_hubs[rh].overlays[i.ol_type].wan_ip }}
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle
+    {% if i.src_ip is defined %}
+    set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% else %}
+    unset local-gw
+    {% endif %}
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "{{ ol_tun_name }}"
+    set phase1name "{{ ol_tun_name }}"
+    set proposal aes256gcm
+    {{ 'set addke1 ml-kem-768' if options.pqc else 'unset addke1' }}
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "{{ ol_tun_name }}"
+    set vrf {{ pe_vrf }}
+  next
+end
+{% endfor %}
+{% endfor %}
+
+{% endif %}

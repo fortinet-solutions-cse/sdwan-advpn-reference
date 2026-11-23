@@ -1,0 +1,943 @@
+execute batch start
+######################################
+# 01-Edge-Underlay.j2
+######################################
+config system settings
+  set location-id 10.200.1.1
+  set allow-subnet-overlap enable
+end
+config system global
+  set hostname BR-EMEA-1
+end
+config system interface
+  edit "port1"
+    set mode dhcp
+    set vrf 0
+    unset egress-shaping-profile
+    unset ingress-shaping-profile
+    unset outbandwidth
+    unset inbandwidth
+    unset estimated-upstream-bandwidth 
+    unset estimated-downstream-bandwidth 
+    set role wan
+    set allowaccess ping
+  next
+end
+config system interface
+  edit "port2"
+    set mode dhcp
+    set vrf 0
+    unset egress-shaping-profile
+    unset ingress-shaping-profile
+    unset outbandwidth
+    unset inbandwidth
+    unset estimated-upstream-bandwidth 
+    unset estimated-downstream-bandwidth 
+    set role wan
+    set allowaccess ping
+  next
+end
+config system interface
+  edit "port5"
+    set mode static
+    set ip 10.11.1.1/24
+    set vrf 0
+    set dhcp-relay-service disable
+    set role lan
+    set device-identification enable
+    set allowaccess ping
+  next
+end
+config system interface
+  edit "Lo"
+    set vdom root
+    set type loopback
+    set vrf 0
+    set ip 10.200.1.1/32
+    set allowaccess ping
+  next
+end
+config system zone
+  edit "lan_zone"
+    set interface port5
+  next
+end
+config system dhcp server
+  edit 10
+    set dns-service default
+    set default-gateway 10.11.1.1
+    set netmask 255.255.255.0
+    set interface port5
+    config ip-range
+      edit 1
+        set start-ip 10.11.1.4
+        set end-ip 10.11.1.251
+      next
+    end
+  next
+end
+
+######################################
+# 02-Edge-Overlay.j2
+######################################
+config vpn ipsec phase1-interface
+  edit "GH1_ISP1"
+    set interface "port1"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout enable
+    set shared-idle-timeout enable
+    set auto-discovery-receiver enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.1.1
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "GH1_ISP1"
+    set phase1name "GH1_ISP1"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "GH1_ISP1"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
+  edit "GH1_ISP2"
+    set interface "port2"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout enable
+    set shared-idle-timeout enable
+    set auto-discovery-receiver enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.1.9
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "GH1_ISP2"
+    set phase1name "GH1_ISP2"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "GH1_ISP2"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
+  edit "GH2_ISP1"
+    set interface "port1"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout enable
+    set shared-idle-timeout enable
+    set auto-discovery-receiver enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.2.1
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "GH2_ISP1"
+    set phase1name "GH2_ISP1"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "GH2_ISP1"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
+  edit "GH2_ISP2"
+    set interface "port2"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout enable
+    set shared-idle-timeout enable
+    set auto-discovery-receiver enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.2.9
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle    
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "GH2_ISP2"
+    set phase1name "GH2_ISP2"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "GH2_ISP2"
+    set vrf 0
+  next
+end
+
+######################################
+# 03-Edge-Routing.j2
+######################################
+config router aspath-list
+  edit "SDWAN_AS"
+    config rule
+      purge
+      edit 1
+        set action permit
+        set regexp "65000"
+      next
+    end
+  next
+end
+config router route-map
+  edit "H1_TAG"
+    config rule
+      edit 1
+        set set-tag 1
+      next
+    end
+  next
+  edit "H2_TAG"
+    config rule
+      edit 1
+        set set-tag 2
+      next
+    end
+  next
+  edit "LAN_TAG"
+    config rule
+      edit 1
+        set set-tag 100
+      next
+    end
+  next
+  edit "LAN_OUT"
+    config rule
+      edit 1
+        set match-tag 100
+      next
+    end  
+  next
+end
+config router bgp
+  set as 65000
+  set router-id 10.200.1.1
+  set keepalive-timer 15
+  set holdtime-timer 45
+  set ibgp-multipath enable
+  set recursive-next-hop enable
+  set tag-resolve-mode disable
+  set graceful-restart enable
+  config neighbor
+    purge
+    edit 10.200.0.1
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set interface "Lo"
+      set update-source "Lo"
+      set connect-timer 1
+      set remote-as 65000
+      unset route-map-in
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
+      unset route-map-in-vpnv4
+    next
+    edit 10.200.0.2
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set interface "Lo"
+      set update-source "Lo"
+      set connect-timer 1
+      set remote-as 65000
+      unset route-map-in
+      unset soft-reconfiguration-vpnv4
+      unset capability-graceful-restart-vpnv4
+      unset route-map-in-vpnv4
+    next
+  end
+  config neighbor-range
+    purge
+  end
+  config neighbor-group
+    purge
+  end
+  config network
+    purge
+    edit 111
+      set prefix 10.11.1.0/24
+      set route-map "LAN_TAG"
+    next
+  end
+  config vrf
+    purge
+  end
+end
+
+######################################
+# 08-Edge-RHOverlay.j2
+######################################
+config vpn ipsec phase1-interface
+  edit "PRH_ISP1"
+    set interface "port1"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout disable
+    set auto-discovery-receiver disable
+    set exchange-interface-ip enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.11.1
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "PRH_ISP1"
+    set phase1name "PRH_ISP1"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "PRH_ISP1"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
+  edit "PRH_ISP2"
+    set interface "port2"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout disable
+    set auto-discovery-receiver disable
+    set exchange-interface-ip enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.11.9
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "PRH_ISP2"
+    set phase1name "PRH_ISP2"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "PRH_ISP2"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
+  edit "BRH_ISP1"
+    set interface "port1"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout disable
+    set auto-discovery-receiver disable
+    set exchange-interface-ip enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.12.1
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "BRH_ISP1"
+    set phase1name "BRH_ISP1"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "BRH_ISP1"
+    set vrf 0
+  next
+end
+config vpn ipsec phase1-interface
+  edit "BRH_ISP2"
+    set interface "port2"
+    set ike-version 2
+    set transport udp
+    set authmethod psk
+    set peertype any
+    set psksecret S3cr3t!
+    set keylife 28800
+    set localid BR-EMEA-1
+    set exchange-fgt-device-id enable
+    set net-device enable
+    set link-cost 0
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    unset addke1
+    set idle-timeout disable
+    set auto-discovery-receiver disable
+    set exchange-interface-ip enable
+    set add-route disable
+    set encapsulation none
+    set exchange-ip-addr4 10.200.1.1
+    set network-overlay disable
+    set remote-gw 100.64.12.9
+    set dpd-retrycount 3
+    set dpd-retryinterval 5
+    set dpd on-idle
+    unset local-gw
+    unset monitor
+  next
+end
+config vpn ipsec phase2-interface
+  edit "BRH_ISP2"
+    set phase1name "BRH_ISP2"
+    set proposal aes256gcm
+    unset addke1
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "BRH_ISP2"
+    set vrf 0
+  next
+end
+
+######################################
+# 09-Edge-RHRouting.j2
+######################################
+config router prefix-list
+  edit "PRH_LAN"
+    config rule
+      purge
+      edit 1
+        set prefix 10.10.0.0/16
+        unset ge
+        set le 32
+      next
+    end
+  next
+  edit "BRH_LAN"
+    config rule
+      purge
+      edit 1
+        set prefix 10.20.0.0/16
+        unset ge
+        set le 32
+      next
+    end
+  next
+end
+config router route-map
+  edit "PRH_IN"
+    config rule
+      purge
+      edit 1
+        set match-ip-address "PRH_LAN"
+        set set-local-preference 200
+      next
+    end
+  next
+  edit "BRH_IN"
+    config rule
+      purge
+      edit 1
+        set match-ip-address "BRH_LAN"
+        set set-local-preference 150
+      next
+    end
+  next
+end
+config router bgp
+  config neighbor
+    edit 10.200.0.11
+      set description "PRH: RH-EMEA"
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set interface "Lo"
+      set update-source "Lo"
+      set connect-timer 1
+      set remote-as 65000
+      set route-map-in "PRH_IN"
+      set route-map-out "LAN_OUT"
+    next
+    edit 10.200.0.12
+      set description "BRH: RH-AMER"
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set interface "Lo"
+      set update-source "Lo"
+      set connect-timer 1
+      set remote-as 65000
+      set route-map-in "BRH_IN"
+      set route-map-out "LAN_OUT"
+    next
+  end
+end
+
+######################################
+# optional/11-Edge-SDWAN.j2
+######################################
+config firewall address
+  edit "CORP_LAN"
+    set subnet 10.0.0.0/8
+  next
+  edit "PRH_LAN_1"
+    set subnet 10.10.0.0/16
+  next
+  edit "BRH_LAN_1"
+    set subnet 10.20.0.0/16
+  next
+end
+config firewall addrgrp
+  edit "PRH_LAN"
+    set member "PRH_LAN_1"
+  next
+  edit "BRH_LAN"
+    set member "BRH_LAN_1"
+  next
+end
+config system sdwan
+  set status enable
+  config zone
+    edit "underlay"
+    next
+    edit "gh_overlay"
+      set advpn-select enable
+    next
+    edit "prh_overlay"
+    next
+    edit "brh_overlay"
+    next
+  end
+  config members
+    edit 1
+      set interface "port1"
+      set zone "underlay"
+      unset source
+      set cost 0
+      # Best priority, used for Internet access in implicit rule / local-out
+      set priority 1
+      # Gateway is fetched from DHCP
+    next
+    edit 2
+      set interface "port2"
+      set zone "underlay"
+      unset source
+      set cost 0
+      # Best priority, used for Internet access in implicit rule / local-out
+      set priority 1
+      # Gateway is fetched from DHCP
+    next
+    edit 3
+      set interface "GH1_ISP1"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "gh_overlay"
+      set priority-in-sla 5
+      set priority-out-sla 995
+      set transport-group 0
+    next
+    edit 4
+      set interface "GH1_ISP2"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "gh_overlay"
+      set priority-in-sla 5
+      set priority-out-sla 995
+      set transport-group 0
+    next
+    edit 5
+      set interface "GH2_ISP1"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "gh_overlay"
+      set priority-in-sla 6
+      set priority-out-sla 996
+      set transport-group 0
+    next
+    edit 6
+      set interface "GH2_ISP2"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "gh_overlay"
+      set priority-in-sla 6
+      set priority-out-sla 996
+      set transport-group 0
+    next
+    edit 7
+      set interface "PRH_ISP1"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "prh_overlay"
+    next
+    edit 8
+      set interface "PRH_ISP2"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "prh_overlay"
+    next
+    edit 9
+      set interface "BRH_ISP1"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "brh_overlay"
+    next
+    edit 10
+      set interface "BRH_ISP2"
+      set priority 10
+      set source 10.200.1.1
+      set preferred-source 10.200.1.1
+      set cost 0
+      set zone "brh_overlay"
+    next
+  end
+  config health-check
+    edit "HUB"
+      set server 10.200.99.1
+      set vrf 0
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set embed-measured-health enable
+      set sla-id-redistribute 1
+      set members 3 4 5 6
+      config sla
+        edit 1
+          set link-cost-factor latency
+          set latency-threshold 100
+        next
+      end
+    next
+    delete "Internet"
+    edit "INET"
+      set server "8.8.8.8"
+      set vrf 0
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set update-cascade-interface disable
+      set update-static-route enable
+      set members 7 8 9 10
+    next
+    edit "PRH"
+      set server "10.200.0.11"
+      set vrf 0
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set update-cascade-interface disable
+      set update-static-route disable
+      set members 7 8
+    next
+    edit "BRH"
+      set server "10.200.0.12"
+      set vrf 0
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set update-cascade-interface disable
+      set update-static-route disable
+      set members 9 10
+    next
+  end
+  config neighbor
+    edit 10.200.0.1
+      set member 3 4
+      set route-metric priority
+      set health-check "HUB"
+    next
+    edit 10.200.0.2
+      set member 5 6
+      set route-metric priority
+      set health-check "HUB"
+    next
+  end
+  config service
+    edit 5
+      set name "Regional-PRH"
+      set mode priority
+      set dst "PRH_LAN"
+      set src "CORP_LAN"
+      set health-check "PRH" "HUB"
+      # Directly to the Regional Hub, then via the Global Hubs
+      set priority-members 7 8 3 4 5 6
+    next
+    edit 6
+      set name "Regional-BRH"
+      set mode priority
+      set dst "BRH_LAN"
+      set src "CORP_LAN"
+      set health-check "BRH" "HUB"
+      # Directly to the Regional Hub, then via the Global Hubs
+      set priority-members 9 10 3 4 5 6
+    next
+    edit 1
+      set name "Corporate"
+      set mode sla
+      set dst "CORP_LAN"
+      set src "CORP_LAN"
+      set tie-break fib-best-match
+      config sla
+        edit "HUB"
+          set id 1
+        next
+      end
+      set priority-members 3 4 5 6
+    next
+    delete 10
+    edit 20
+      set name "Internet"
+      set mode priority
+      set dst "all"
+      set src "CORP_LAN"
+      set health-check "INET"
+      # Primary Regional Hub, then backup Regional Hub (only when all primary members fail)
+      set priority-members 7 8 9 10
+    next
+    move 5 before 1
+    move 6 before 1
+  end
+  config zone
+    edit "gh_overlay"
+      set advpn-health-check "HUB"
+    next
+  end  
+end
+config router static
+  edit 100
+    set dst 0.0.0.0/0
+    set sdwan-zone "prh_overlay"
+    set priority 1
+  next
+  edit 101
+    set dst 0.0.0.0/0
+    set sdwan-zone "brh_overlay"
+    set priority 10
+  next
+  edit 102
+    set dst 0.0.0.0/0
+    set sdwan-zone "underlay"
+    set priority 100
+  next
+end
+
+######################################
+# optional/12-Edge-Firewall.j2
+######################################
+config firewall address
+  edit "CORP_LAN"
+    set subnet 10.0.0.0/8
+  next
+end
+config firewall policy
+  purge
+  edit 1
+    set name "Corporate"
+    set srcintf lan_zone "gh_overlay"
+    set dstintf lan_zone "gh_overlay"
+    set srcaddr "CORP_LAN"
+    set dstaddr "CORP_LAN"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+  edit 2
+    set name "Regional"
+    set srcintf lan_zone "prh_overlay" "brh_overlay"
+    set dstintf lan_zone "prh_overlay" "brh_overlay"
+    set srcaddr "CORP_LAN"
+    set dstaddr "CORP_LAN"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+  edit 4
+    set name "Internet (RH)"
+    set srcintf lan_zone
+    set dstintf "prh_overlay" "brh_overlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+  edit 5
+    set name "Peering"
+    set srcintf "gh_overlay" "prh_overlay" "brh_overlay"
+    set dstintf "Lo"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "PING" "BGP"
+  next
+end
+
+execute batch end

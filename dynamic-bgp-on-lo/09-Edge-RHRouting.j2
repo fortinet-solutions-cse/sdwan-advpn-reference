@@ -1,0 +1,80 @@
+{# 09-Edge-RHRouting.j2                                                       #}
+{# Release: 8.0                                                               #}
+{# Design flavor: Dynamic BGP on Loopback (unified, ADVPN 2.0 ready)          #}
+{# Custom design option: Regional Internet Backhaul                           #}
+{# -------------------------------------------------------------------------- #}
+{# Direct iBGP peering (on loopbacks) between a Branch and its primary/backup #}
+{# Regional Hubs, over the PRH_/BRH_ tunnels:                                 #}
+{# - Branch advertises its own LAN prefixes only (LAN_OUT, tag 100), so that  #}
+{#   the Regional Hubs route the return traffic directly back to the Branch.  #}
+{# - Branch accepts only the 'lan_prefixes' of each Regional Hub, preferred   #}
+{#   over the copies reflected by the Global Hubs (local-preference):         #}
+{#   primary (200) > backup (150) > Global Hubs (100).                        #}
+{# Must be rendered after 03-Edge-Routing (which purges the BGP neighbors).   #}
+{# -------------------------------------------------------------------------- #}
+{# Disclaimer: Normally, this file is not supposed to be edited by users.     #}
+{# -------------------------------------------------------------------------- #}
+
+{% import '00-Project' as project with context %}
+{% import 'RegionalHubs' as rhubs with context %}
+
+{% if inet_region is defined %}
+
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+
+{% set prh = inet_hub|default(rhubs.inet_regions[inet_region].primary) %}
+{% set brh = inet_backup_hub|default(rhubs.inet_regions[inet_region].backup|default('')) %}
+{% set rh_roles = [ ('PRH', prh, 200) ] + ([ ('BRH', brh, 150) ] if brh else []) %}
+
+config router prefix-list
+  {% for role, rh, lp in rh_roles %}
+  edit "{{ role }}_LAN"
+    config rule
+      purge
+      {% for p in rhubs.regional_hubs[rh].lan_prefixes|default([]) %}
+      edit {{ loop.index }}
+        set prefix {{ p|ipaddr('net') }}
+        unset ge
+        set le 32
+      next
+      {% endfor %}
+    end
+  next
+  {% endfor %}
+end
+
+config router route-map
+  {% for role, rh, lp in rh_roles %}
+  edit "{{ role }}_IN"
+    config rule
+      purge
+      {# Accept only the LAN prefixes of the Regional Hub, deny everything else #}
+      edit 1
+        set match-ip-address "{{ role }}_LAN"
+        set set-local-preference {{ lp }}
+      next
+    end
+  next
+  {% endfor %}
+end
+
+config router bgp
+  config neighbor
+    {% for role, rh, lp in rh_roles %}
+    edit {{ rhubs.regional_hubs[rh].lo_bgp }}
+      set description "{{ role }}: {{ rh }}"
+      set soft-reconfiguration enable
+      set capability-graceful-restart enable
+      set advertisement-interval 1
+      set interface "Lo"
+      set update-source "Lo"
+      set connect-timer 1
+      set remote-as {{ project.regions[region].as }}
+      set route-map-in{{'-vpnv4' if multi_vrf}} "{{ role }}_IN"
+      set route-map-out{{'-vpnv4' if multi_vrf}} "LAN_OUT"
+    next
+    {% endfor %}
+  end
+end
+
+{% endif %}

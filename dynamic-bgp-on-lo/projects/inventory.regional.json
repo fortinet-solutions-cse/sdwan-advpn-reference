@@ -1,0 +1,70 @@
+{
+
+  "defaults": {
+    "region": "GLOBAL"
+  },
+
+  "Hub": {
+
+    "GH1": {
+      "hostname": "GH1",
+      "loopback": "10.200.0.1",
+      "profile": "GlobalHub",
+      "lan_ip": "10.1.0.1/24"
+    },
+
+    "GH2": {
+      "hostname": "GH2",
+      "loopback": "10.200.0.2",
+      "profile": "GlobalHub",
+      "lan_ip": "10.2.0.1/24"
+    }
+
+  },
+
+  "RH": {
+
+    "RH-EMEA": {
+      "hostname": "RH-EMEA",
+      "loopback": "10.200.0.11",
+      "profile": "RegionalHub",
+      "lan_ip": "10.10.0.1/24"
+    },
+
+    "RH-AMER": {
+      "hostname": "RH-AMER",
+      "loopback": "10.200.0.12",
+      "profile": "RegionalHub",
+      "lan_ip": "10.20.0.1/24"
+    }
+
+  },
+
+  "Edge": {
+
+    "BR-EMEA-1": {
+      "hostname": "BR-EMEA-1",
+      "loopback": "10.200.1.1",
+      "profile": "Branch",
+      "inet_region": "EMEA",
+      "lan_ip": "10.11.1.1/24"
+    },
+
+    "BR-EMEA-2": {
+      "hostname": "BR-EMEA-2",
+      "loopback": "10.200.1.2",
+      "profile": "Branch",
+      "inet_region": "EMEA",
+      "lan_ip": "10.11.2.1/24"
+    },
+
+    "BR-AMER-1": {
+      "hostname": "BR-AMER-1",
+      "loopback": "10.200.2.1",
+      "profile": "Branch",
+      "inet_region": "AMER",
+      "lan_ip": "10.21.1.1/24"
+    }
+
+  }
+}

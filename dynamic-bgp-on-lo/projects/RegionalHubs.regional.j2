@@ -1,0 +1,67 @@
+{#                         Regional Hubs Template                             #}
+{# -------------------------------------------------------------------------- #}
+{# Inventory of the Regional Hubs (Internet backhauling), imported by the     #}
+{# templates as 'RegionalHubs'. In FortiManager, create a CLI template with   #}
+{# exactly that name.                                                         #}
+{# -------------------------------------------------------------------------- #}
+{# Design flavor: "Dynamic BGP on Loopback"                                   #}
+{# Custom design option: Regional Internet Backhaul                           #}
+
+{#
+  inet_regions: for each Internet region, the primary and the backup Regional Hub.
+    - Branches select their region with the per-device variable 'inet_region'
+      (and can override the choice with 'inet_hub' / 'inet_backup_hub').
+    - The backup Regional Hub MUST belong to another region than the primary.
+
+  regional_hubs: one entry per Regional Hub (key = hostname of the Regional Hub)
+    - inet_region:  region for which this Regional Hub is normally the primary
+    - lo_bgp:       BGP loopback (must be inside lo_summary)
+    - lan_prefixes: prefixes behind this Regional Hub, reached directly from the
+                    Branches (SD-WAN rule + BGP filtering on the Branches)
+    - overlays:     public IP of the Regional Hub per overlay type (ol_type)
+#}
+
+{% set inet_regions = {
+    'EMEA': {
+      'primary': 'RH-EMEA',
+      'backup': 'RH-AMER'
+    },
+    'AMER': {
+      'primary': 'RH-AMER',
+      'backup': 'RH-EMEA'
+    }
+  }
+%}
+
+{% set regional_hubs = {
+
+    'RH-EMEA': {
+      'inet_region': 'EMEA',
+      'lo_bgp': '10.200.0.11',
+      'lan_prefixes': [ '10.10.0.0/16' ],
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.11.1'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.11.9'
+        }
+      }
+    },
+
+    'RH-AMER': {
+      'inet_region': 'AMER',
+      'lo_bgp': '10.200.0.12',
+      'lan_prefixes': [ '10.20.0.0/16' ],
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.12.1'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.12.9'
+        }
+      }
+    }
+
+  }
+%}

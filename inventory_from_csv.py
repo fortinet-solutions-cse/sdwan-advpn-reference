@@ -25,6 +25,9 @@ parser.add_argument('--hubs', metavar='file',
 parser.add_argument('--edge', metavar='file',
                     help='Edge inventory file in CSV format (optional)')
 
+parser.add_argument('--rhubs', metavar='file',
+                    help='Regional Hubs inventory file in CSV format (optional, Regional Internet Backhaul design)')
+
 parser.add_argument('--defaults', metavar='file',
                     help='Default variables file in JSON format (optional)')
 
@@ -57,5 +60,7 @@ json_inventory = {
   "Hub": parseCSV(args.hubs),
   "Edge": parseCSV(args.edge)
 }
+if args.rhubs:
+  json_inventory["RH"] = parseCSV(args.rhubs)
 
 print(json.dumps(json_inventory, indent = 3))    

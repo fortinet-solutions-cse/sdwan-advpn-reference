@@ -1,0 +1,57 @@
+{# 12-RH-Firewall.j2                                                          #}
+{# Release: 8.0                                                               #}
+{# Design flavor: Dynamic BGP on Loopback (unified, ADVPN 2.0 ready)          #}
+{# Custom design option: Regional Internet Backhaul                           #}
+{# -------------------------------------------------------------------------- #}
+{# Regional Hub: firewall policies for the Branches connected to it.          #}
+{# Rendered after 12-Edge-Firewall (the Regional Hub is also a Spoke of the   #}
+{# Global Hubs), hence the policy IDs starting at 20.                         #}
+{# -------------------------------------------------------------------------- #}
+{# Disclaimer: Normally, this file is not supposed to be edited by users.     #}
+{# -------------------------------------------------------------------------- #}
+
+{% import '00-Project' as project with context %}
+
+{% set rh_edge_zone = project.rh_edge_zone|default('edge_overlay') %}
+
+config firewall policy
+  edit 20
+    set name "Regional (Branches)"
+    set srcintf {{ project.lan_zone|default('lan_zone') }} "{{ rh_edge_zone }}"
+    set dstintf {{ project.lan_zone|default('lan_zone') }} "{{ rh_edge_zone }}"
+    set srcaddr "CORP_LAN"
+    set dstaddr "CORP_LAN"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+  next
+  edit 21
+    set name "Internet Backhaul"
+    set srcintf "{{ rh_edge_zone }}"
+    set dstintf "underlay"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "ALL"
+    set utm-status enable
+    set ssl-ssh-profile certificate-inspection
+    set application-list "default"
+    set logtraffic all
+    set nat enable
+  next
+  edit 22
+    set name "Peering (Branches)"
+    set srcintf "{{ rh_edge_zone }}"
+    set dstintf "Lo"
+    set srcaddr "all"
+    set dstaddr "all"
+    set action accept
+    set schedule "always"
+    set service "PING" "BGP"
+  next
+end

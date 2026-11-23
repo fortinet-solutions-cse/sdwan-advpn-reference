@@ -1,0 +1,168 @@
+{#                            Project Template                                #}
+{# -------------------------------------------------------------------------- #}
+{# This file describes the project: its Regions, Hubs and Device Profiles     #}
+{# Normally, this is the only file that needs to be edited between            #}
+{# different projects                                                         #}
+{# -------------------------------------------------------------------------- #}
+{# Design flavor: "Dynamic BGP on Loopback"                                   #}
+{# Custom design option: Regional Internet Backhaul                           #}
+{#                                                                            #}
+{# - Two Global Hubs (GH1, GH2) form a single ADVPN region ("GLOBAL").        #}
+{#   All Branches AND all Regional Hubs connect to both of them.              #}
+{# - Regional Hubs (defined in the separate "RegionalHubs" template) provide  #}
+{#   Internet backhauling to the Branches of their region (hub-and-spoke,     #}
+{#   no ADVPN), with a backup Regional Hub from another region.               #}
+{# -------------------------------------------------------------------------- #}
+
+{#
+  Per-device variables used:
+  - Required (all devices):
+    - hostname
+    - loopback
+    - profile
+    - region          (always 'GLOBAL' in this design)
+  - Required (Branches):
+    - inet_region     (key in 'inet_regions' of the RegionalHubs template)
+    - lan_ip
+  - Optional (Branches):
+    - inet_hub        (override the primary Regional Hub of the inet_region)
+    - inet_backup_hub (override the backup Regional Hub of the inet_region)
+  - Required (Hubs and Regional Hubs):
+    - lan_ip
+#}
+
+{# Optional Settings #}
+{% set cert_auth = false %}
+{% set dynamic_bgp = false %}
+{% set intrareg_hub2hub = true %}
+{% set lan_summary = '10.0.0.0/8' %}
+
+{# Zone names (Regional Internet Backhaul) #}
+{% set gh_zone = 'gh_overlay' %}
+{% set prh_zone = 'prh_overlay' %}
+{% set brh_zone = 'brh_overlay' %}
+{% set rh_edge_zone = 'edge_overlay' %}
+{% set inet_hc_server = '8.8.8.8' %}
+
+{#  Mandatory Global Definitions #}
+{% set lo_summary = '10.200.0.0/14' %}
+
+{# Regions: the Global Hubs form a single ADVPN region #}
+{% set regions = {
+    'GLOBAL': {
+      'as': '65000',
+      'hubs': [ 'GH1', 'GH2' ]
+    }
+  }
+%}
+
+{# Device Profiles #}
+{% set profiles = {
+
+    'Branch': {
+      'interfaces': [
+        {
+          'name': 'port1',
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp'
+        },
+        {
+          'name': 'port2',
+          'role': 'wan',
+          'ol_type': 'ISP2',
+          'ip': 'dhcp'
+        },
+        {
+          'name': 'port5',
+          'role': 'lan',
+          'ip': lan_ip
+        }
+      ]
+    },
+
+    'RegionalHub': {
+      'options': {
+        'dynamic_bgp': false
+      },
+      'interfaces': [
+        {
+          'name': 'port1',
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp',
+          'dia': true
+        },
+        {
+          'name': 'port2',
+          'role': 'wan',
+          'ol_type': 'ISP2',
+          'ip': 'dhcp',
+          'dia': true
+        },
+        {
+          'name': 'port5',
+          'role': 'lan',
+          'ip': lan_ip
+        }
+      ]
+    },
+
+    'GlobalHub': {
+      'interfaces': [
+        {
+          'name': 'port1',
+          'role': 'wan',
+          'ol_type': 'ISP1',
+          'ip': 'dhcp',
+          'dia': true
+        },
+        {
+          'name': 'port2',
+          'role': 'wan',
+          'ol_type': 'ISP2',
+          'ip': 'dhcp',
+          'dia': true
+        },
+        {
+          'name': 'port5',
+          'role': 'lan',
+          'ip': lan_ip
+        }
+      ]
+    }
+
+  }
+%}
+
+{# Global Hubs #}
+{% set hubs = {
+
+    'GH1': {
+      'hub_name': 'GH1',
+      'lo_bgp': '10.200.0.1',
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.1.1'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.1.9'
+        }
+      }
+    },
+
+    'GH2': {
+      'hub_name': 'GH2',
+      'lo_bgp': '10.200.0.2',
+      'overlays': {
+        'ISP1': {
+          'wan_ip': '100.64.2.1'
+        },
+        'ISP2': {
+          'wan_ip': '100.64.2.9'
+        }
+      }
+    }
+
+  }
+%}

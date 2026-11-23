@@ -6,6 +6,7 @@
 {# -------------------------------------------------------------------------- #}
 
 {% import '00-Project' as project with context %}
+{% import 'RegionalHubs' as rhubs with context %}
 
 {% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
 {% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
@@ -26,26 +27,60 @@
 {% set hub_sla_members = [ ] %}
 {% set hub_rule_members = [ ] %}
 {% set dia_members = [ ] %}
+{% set gh_zone = project.gh_zone|default('overlay') %}
+
+{# Regional Internet Backhaul: primary (PRH) and backup (BRH) Regional Hubs #}
+{% set inet_mode = inet_region is defined %}
+{% set rh_roles = [] %}
+{% if inet_mode %}
+  {% set prh = inet_hub|default(rhubs.inet_regions[inet_region].primary) %}
+  {% set brh = inet_backup_hub|default(rhubs.inet_regions[inet_region].backup|default('')) %}
+  {% set rh_roles = [ ('PRH', prh, project.prh_zone|default('prh_overlay')) ] +
+                    ([ ('BRH', brh, project.brh_zone|default('brh_overlay')) ] if brh else []) %}
+{% endif %}
+{% set rh_members = {} %}
+{% set inet_members = [] %}
 config firewall address
   edit "CORP_LAN"
     set subnet {{ project.lan_summary|default('10.0.0.0/8') }}
   next
+  {% for role, rh, zone in rh_roles %}
+  {% for p in rhubs.regional_hubs[rh].lan_prefixes|default([]) %}
+  edit "{{ role }}_LAN_{{ loop.index }}"
+    set subnet {{ p|ipaddr('net') }}
+  next
+  {% endfor %}
+  {% endfor %}
 end
+{% if rh_roles %}
+config firewall addrgrp
+  {% for role, rh, zone in rh_roles %}
+  edit "{{ role }}_LAN"
+    set member {% for p in rhubs.regional_hubs[rh].lan_prefixes|default([]) %}"{{ role }}_LAN_{{ loop.index }}"{{ ' ' if not loop.last }}{% endfor %}
+
+  next
+  {% endfor %}
+end
+{% endif %}
 config system sdwan
   set status enable
   config zone
     edit "underlay"
     next
-    edit "overlay"
+    edit "{{ gh_zone }}"
       set advpn-select {{ 'enable' if options.advpn2 else 'disable' }}
     next
+    {% for role, rh, zone in rh_roles %}
+    edit "{{ zone }}"
+    next
+    {% endfor %}
   end
   config members
   {% set ns = namespace(mbr_i = 1) %}
   {% for i in project.profiles[profile].interfaces 
         if i.role == 'wan' and 
         i.name is defined and 
-        i.dia|default(false) %}
+        (i.dia|default(false) or inet_mode) %}
     edit {{ ns.mbr_i }}
       set interface "{{ i.name }}"
       set zone "underlay"
@@ -60,7 +95,9 @@ config system sdwan
       set priority 1
       # Gateway is fetched from DHCP
     next
+    {% if i.dia|default(false) %}
     {{ dia_members.append(ns.mbr_i) or "" }}
+    {% endif %}
     {% set ns.mbr_i = ns.mbr_i + 1 %}
   {% endfor %}
   {% for h in project.regions[region].hubs %}
@@ -86,7 +123,7 @@ config system sdwan
       set source {{ loopback|ipaddr('address') }}
       set preferred-source {{ loopback|ipaddr('address') }}
       set cost {{ 10 if i.backup|default(false) else 0 }}
-      set zone "overlay"
+      set zone "{{ gh_zone }}"
       set priority-in-sla {{ 5 + hubloop.index0 }}
       set priority-out-sla {{ 995 + hubloop.index0 }}
       {% if options.advpn2 %}
@@ -98,6 +135,32 @@ config system sdwan
     {% set ns.mbr_i = ns.mbr_i + 1 %}
   {% endfor %}
   {{ hub_rule_members.append(this_hub_members) or "" }}
+  {% endfor %}
+  {% for role, rh, zone in rh_roles %}
+  {{ rh_members.update({ role: [] }) or "" }}
+  {% set ol_tunnels = [] %}
+  {% for i in project.profiles[profile].interfaces 
+        if i.role == 'wan' and 
+        i.name is defined and
+        i.ol_type in rhubs.regional_hubs[rh].overlays %}
+    {# Same naming as in 08-Edge-RHOverlay #}
+    {% set ul_name = i.ul_name~"-" if i.ul_name is defined else "" %}
+    {% set ol_tun = ul_name~role~"_"~i.ol_type %}
+    {% set count = ol_tunnels|select("equalto", ol_tun)|list|count %}
+    {% set ol_tun_name = ol_tun if not count else ol_tun~'_'~(count+1) %}
+    {{ ol_tunnels.append(ol_tun) or "" }}
+    edit {{ ns.mbr_i }}
+      set interface "{{ ol_tun_name }}"
+      set priority 10
+      set source {{ loopback|ipaddr('address') }}
+      set preferred-source {{ loopback|ipaddr('address') }}
+      set cost {{ 10 if i.backup|default(false) else 0 }}
+      set zone "{{ zone }}"
+    next
+    {{ rh_members[role].append(ns.mbr_i) or "" }}
+    {{ inet_members.append(ns.mbr_i) or "" }}
+    {% set ns.mbr_i = ns.mbr_i + 1 %}
+  {% endfor %}
   {% endfor %}
   end
   config health-check
@@ -129,6 +192,33 @@ config system sdwan
     {% else %}
     delete "Internet"
     {% endif %}
+    {% if inet_mode %}
+    {# Internet reachability through the Regional Hubs: failing members lose their default route #}
+    edit "INET"
+      set server "{{ project.inet_hc_server|default('8.8.8.8') }}"
+      set vrf {{ pe_vrf }}
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set update-cascade-interface disable
+      set update-static-route enable
+      set members {{ inet_members|join(' ') }}
+    next
+    {# Reachability of each Regional Hub (its BGP loopback), for the Regional rules #}
+    {% for role, rh, zone in rh_roles %}
+    edit "{{ role }}"
+      set server "{{ rhubs.regional_hubs[rh].lo_bgp }}"
+      set vrf {{ pe_vrf }}
+      set sla-fail-log-period 10
+      set sla-pass-log-period 10
+      set update-cascade-interface disable
+      set update-static-route disable
+      set members {{ rh_members[role]|join(' ') }}
+    next
+    {% endfor %}
+    {% if not brh %}
+    delete "BRH"
+    {% endif %}
+    {% endif %}
   end
   config neighbor
   {% for h in project.regions[region].hubs %}
@@ -140,6 +230,17 @@ config system sdwan
   {% endfor %}
   end
   config service
+  {% for role, rh, zone in rh_roles %}
+    edit {{ 5 + loop.index0 }}
+      set name "Regional-{{ role }}"
+      set mode priority
+      set dst "{{ role }}_LAN"
+      set src "CORP_LAN"
+      set health-check "{{ role }}" "HUB"
+      # Directly to the Regional Hub, then via the Global Hubs
+      set priority-members {{ (rh_members[role] + hub_sla_members)|join(' ') }}
+    next
+  {% endfor %}
     edit 1
       set name "Corporate"
       set mode {{ options.sdwan_mode }}
@@ -169,10 +270,25 @@ config system sdwan
   {% else %}
     delete 10
   {% endif %}
+  {% if inet_mode %}
+    edit 20
+      set name "Internet"
+      set mode priority
+      set dst "all"
+      set src "CORP_LAN"
+      set health-check "INET"
+      # Primary Regional Hub, then backup Regional Hub (only when all primary members fail)
+      set priority-members {{ inet_members|join(' ') }}
+    next
+    {# Regional rules must be evaluated before Corporate #}
+    {% for role, rh, zone in rh_roles %}
+    move {{ 5 + loop.index0 }} before 1
+    {% endfor %}
+  {% endif %}
   end
   {% if options.advpn2 %}
   config zone
-    edit "overlay"
+    edit "{{ gh_zone }}"
       set advpn-health-check "HUB"
     next
   end  
@@ -180,10 +296,29 @@ config system sdwan
 end
 
 config router static
+  {% if inet_mode %}
+  {# Default routes: primary RH > backup RH > underlay (IKE / local-out, future DIA) #}
+  {% for role, rh, zone in rh_roles %}
+  edit {{ 100 + loop.index0 }}
+    set dst 0.0.0.0/0
+    set sdwan-zone "{{ zone }}"
+    set priority {{ [1, 10][loop.index0] }}
+  next
+  {% endfor %}
+  {% if not brh %}
+  delete 101
+  {% endif %}
+  edit 102
+    set dst 0.0.0.0/0
+    set sdwan-zone "underlay"
+    set priority 100
+  next
+  {% else %}
   edit 100
     # Default route
-    set sdwan-zone "underlay" "overlay"
+    set sdwan-zone "underlay" "{{ gh_zone }}"
   next
+  {% endif %}
 end
 {% if multi_vrf %}
 {% for i in project.profiles[profile].interfaces 
@@ -193,7 +328,7 @@ end
 {# Leak default route to CE VRFs with allow_dia = true #}
 config router static
   edit {{ 4000 + i.vrf }}
-    set sdwan-zone "underlay" "overlay"
+    set sdwan-zone "underlay" "{{ gh_zone }}"
     set vrf {{ i.vrf }}
   next
 end  

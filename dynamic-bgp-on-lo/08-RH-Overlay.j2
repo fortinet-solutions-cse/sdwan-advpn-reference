@@ -1,0 +1,99 @@
+{# 08-RH-Overlay.j2                                                           #}
+{# Release: 8.0                                                               #}
+{# Design flavor: Dynamic BGP on Loopback (unified, ADVPN 2.0 ready)          #}
+{# Custom design option: Regional Internet Backhaul                           #}
+{# -------------------------------------------------------------------------- #}
+{# Regional Hub: dial-up tunnels (EDGE_<ol_type>, hub-and-spoke, no ADVPN)    #}
+{# accepting the Branches for which this Regional Hub is primary or backup.   #}
+{# The Regional Hub is also a Spoke of the Global Hubs (Edge templates).      #}
+{# -------------------------------------------------------------------------- #}
+{# Disclaimer: Normally, this file is not supposed to be edited by users.     #}
+{# -------------------------------------------------------------------------- #}
+
+{% import '00-Project' as project with context %}
+{% import 'RegionalHubs' as rhubs with context %}
+
+{% set multi_vrf = true if project.regions[region].vrfs|default([]) else false %}
+{% set pe_vrf = project.pe_vrf|default(1) if multi_vrf else 0 %}
+{% set my_rh = rhubs.regional_hubs[hostname] %}
+
+{# Options: project-wide defaults #}
+{% set options = {
+    'pqc': project.pqc|default(false)
+  }
+%}
+{# Options can be selectively overriden in profile #}
+{% set _ = options.update(
+      project.profiles[profile].options|default({})
+   )
+%}
+
+{% set edge_tunnels = [] %}
+{% for i in project.profiles[profile].interfaces
+      if i.role == 'wan' and
+      i.name is defined and
+      i.ol_type in my_rh.overlays %}
+config vpn ipsec phase1-interface
+  edit "EDGE_{{ i.ol_type }}"
+    set type dynamic
+    set interface "{{ i.name }}"
+    set ike-version 2
+    set transport udp
+    {% if project.cert_auth|default(true) %}
+    set authmethod signature
+    set certificate "{{ project.hub_cert_template|default('Hub') }}"
+    set peertype {{ 'peer' if project.cert_auth_filter|default(false) else 'any' }}
+      {% if project.cert_auth_filter|default(false) %}
+      set peer {{ project.hub_cert_filter|default('TheCA') }}
+      {% endif %}
+    {% else %}
+    set authmethod psk
+    set peertype any
+    set psksecret {{ project.psk|default('S3cr3t!') }}
+    {% endif %}
+    set keylife 28800
+    set localid {{ i.ol_type~'-'~hostname }}
+    set exchange-fgt-device-id enable
+    set proposal aes256gcm-prfsha256 aes256-sha256
+    set dhgrp 20 21
+    {{ 'set addke1 ml-kem-768 none' if options.pqc else 'unset addke1' }}
+    set auto-discovery-sender disable
+    set exchange-interface-ip enable
+    set add-route disable
+    set encapsulation {{ 'vpn-id-ipip' if multi_vrf else 'none' }}
+    set exchange-ip-addr4 {{ loopback|ipaddr('address') }}
+    set network-overlay disable
+    set dpd-retrycount 2
+    set dpd-retryinterval 5
+    set dpd on-idle
+    {% if i.src_ip is defined %}
+    set local-gw {{ i.src_ip|ipaddr('address') }}
+    {% else %}
+    unset local-gw
+    {% endif %}
+  next
+end
+config vpn ipsec phase2-interface
+  edit "EDGE_{{ i.ol_type }}"
+    set phase1name "EDGE_{{ i.ol_type }}"
+    set proposal aes256gcm
+    {{ 'set addke1 ml-kem-768 none' if options.pqc else 'unset addke1' }}
+    set keepalive enable
+    set keylifeseconds 3600
+  next
+end
+config system interface
+  edit "EDGE_{{ i.ol_type }}"
+    set vrf {{ pe_vrf }}
+  next
+end
+{{ edge_tunnels.append('"EDGE_'~i.ol_type~'"') or "" }}
+{% endfor %}
+
+{% if project.create_rh_edge_zone|default(true) and edge_tunnels %}
+config system zone
+  edit "{{ project.rh_edge_zone|default('edge_overlay') }}"
+    set interface {{ edge_tunnels|join(' ') }}
+  next
+end
+{% endif %}
